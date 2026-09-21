@@ -23,7 +23,7 @@
     "tags": [
         {
             "name": "auth",
-            "description": "Invite → OTP → PIN. There is no self sign-up (decision 15)."
+            "description": "Invite → OTP → password. There is no self sign-up (decision 15)."
         },
         {
             "name": "availability"
@@ -54,6 +54,28 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/AppVersion"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/driver/branding": {
+            "get": {
+                "tags": [
+                    "app"
+                ],
+                "summary": "Platform identity — name, logo and accent (public, read before login)",
+                "description": "The driver app is branded as the PLATFORM, not as any one restaurant (decision 7), and the platform's name and logo are edited in the admin panel — not shipped in the app. A hardcoded logo means a rebrand needs a new APK pushed to every driver's phone; this is read at the login screen instead.\n\nPublic, because it is read BEFORE there is a session — the login screen is where it is shown.\n\nThe same fields the POS app already reads from `/pos/branding`, served from the same settings. A driver must never reach a `/pos/*` route, so the driver app gets its own path rather than borrowing that one.\n\nEvery field is nullable: an unconfigured deployment, or a phone with no connection at the login screen, must still show a usable login screen. The app falls back to the build flavour's own name and mark.\n",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Branding"
                                 }
                             }
                         }
@@ -135,18 +157,26 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Verified. `needs_pin` true means this phone has no secret code yet. An EMPTY `restaurants` array means the phone is verified but no restaurant has invited it — the app then asks for the invite code, because there is no self sign-up.\n",
+                        "description": "Verified, and SIGNED IN: the returned token is a normal session token, so the driver never has to prove the same phone twice in one sitting. `needs_password` true means this phone has no password yet (first run) or is resetting one — the app then goes straight to `set-password` with this token.\n\nAn EMPTY `restaurants` array means the phone is verified but no restaurant has invited it — the app then asks for the invite code, because there is no self sign-up.\n",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "type": "object",
                                     "additionalProperties": false,
                                     "required": [
+                                        "token",
                                         "driver",
                                         "restaurants",
-                                        "needs_pin"
+                                        "needs_password"
                                     ],
                                     "properties": {
+                                        "token": {
+                                            "type": "string"
+                                        },
+                                        "expires_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
                                         "driver": {
                                             "$ref": "#/components/schemas/Driver"
                                         },
@@ -156,7 +186,7 @@
                                                 "$ref": "#/components/schemas/RestaurantLink"
                                             }
                                         },
-                                        "needs_pin": {
+                                        "needs_password": {
                                             "type": "boolean"
                                         }
                                     }
@@ -173,12 +203,13 @@
                 }
             }
         },
-        "/driver/auth/set-pin": {
+        "/driver/auth/set-password": {
             "post": {
                 "tags": [
                     "auth"
                 ],
-                "summary": "Set the 4-digit secret code (immediately after OTP)",
+                "summary": "Choose (or reset) the password, on the session OTP just opened",
+                "description": "Called straight after `verify-otp`, both on first run and when a driver who forgot their password has just proved the phone again. There is no separate reset endpoint and no reset link: proving the phone IS the reset, which is the only credential a driver reliably has.\n\nThe password is what they sign in with from then on, so an SMS is spent once per device rather than on every shift.\n",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -187,12 +218,14 @@
                                 "type": "object",
                                 "additionalProperties": false,
                                 "required": [
-                                    "pin"
+                                    "password"
                                 ],
                                 "properties": {
-                                    "pin": {
+                                    "password": {
                                         "type": "string",
-                                        "pattern": "^[0-9]{4}$"
+                                        "minLength": 6,
+                                        "maxLength": 64,
+                                        "description": "Chosen by the driver, never generated and never sent to them. Minimum six characters — a four-digit code was the earlier design and was changed by the project owner on 2026-09-21, because it is typed from memory for months, not read off an SMS once.\n"
                                     }
                                 }
                             }
@@ -214,7 +247,7 @@
                 "tags": [
                     "auth"
                 ],
-                "summary": "Phone + PIN → token (public)",
+                "summary": "Phone + password → token (public)",
                 "description": "ONE device session: issuing a token revokes the driver's previous one. The token lives 30 days and renews on use. Rate limited by the `driver-login` limiter (10/min per IP + 5/min per phone+IP) with NO hard per-account lockout — locking by phone alone is a denial of service on a driver whose number is public.\n",
                 "security": [],
                 "requestBody": {
@@ -226,7 +259,7 @@
                                 "additionalProperties": false,
                                 "required": [
                                     "phone",
-                                    "pin",
+                                    "password",
                                     "device_name",
                                     "app_version"
                                 ],
@@ -234,9 +267,10 @@
                                     "phone": {
                                         "type": "string"
                                     },
-                                    "pin": {
+                                    "password": {
                                         "type": "string",
-                                        "pattern": "^[0-9]{4}$"
+                                        "minLength": 6,
+                                        "maxLength": 64
                                     },
                                     "device_name": {
                                         "type": "string",
@@ -1390,6 +1424,31 @@
                     "notes": {
                         "type": "string",
                         "nullable": true
+                    }
+                }
+            },
+            "Branding": {
+                "type": "object",
+                "additionalProperties": false,
+                "description": "All fields nullable on purpose — see the endpoint description. The app must render a login screen with none of them.\n",
+                "properties": {
+                    "name_ar": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "name_en": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "logo_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "accent_color": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "Hex, e.g. `#B4471F`. Tints the app; the flavour colour is the fallback."
                     }
                 }
             },

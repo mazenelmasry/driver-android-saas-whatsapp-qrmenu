@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  🔴 These are the ONLY driver-facing wording for a failure. The app never shows
+  the server's own `message`: the backend speaks ar/en only, and a driver may be
+  reading Urdu, Bengali or Hindi. A new error code is added here in ALL FIVE
+  languages in the same change, or that driver is shown the generic line.
+
+  ⏳ ur / bn / hi are written by the agent and still need a native speaker to
+  read them before launch (CLAUDE.md, glossary).
+-->
+<resources>
+    <string name="error_invalid_credentials">ফোন নম্বর বা কোড ভুল।</string>
+    <string name="error_otp_invalid">এই কোডটি সঠিক নয়।</string>
+    <string name="error_otp_expired">কোডের মেয়াদ শেষ। নতুন কোড নিন।</string>
+    <string name="error_too_many_attempts">অনেকবার চেষ্টা হয়েছে। একটু অপেক্ষা করে আবার চেষ্টা করুন।</string>
+    <string name="error_invalid_invite">এই আমন্ত্রণ কোডটি বৈধ নয়।</string>
+    <string name="error_invite_already_used">এই আমন্ত্রণ কোডটি আগেই ব্যবহার হয়েছে।</string>
+    <string name="error_account_inactive">আপনার অ্যাকাউন্ট বন্ধ করা হয়েছে। রেস্তোরাঁর সাথে যোগাযোগ করুন।</string>
+    <string name="error_no_active_link">কোনো রেস্তোরাঁ এখনও আপনাকে চালক তালিকায় যোগ করেনি।</string>
+    <string name="error_company_inactive">এই রেস্তোরাঁটি সক্রিয় নয়।</string>
+    <string name="error_subscription_expired">এই রেস্তোরাঁর সাবস্ক্রিপশন শেষ হয়ে গেছে।</string>
+    <string name="error_feature_not_in_plan">এই রেস্তোরাঁর প্যাকেজে চালক ডেলিভারি নেই।</string>
+    <string name="error_app_update_required">কাজ চালিয়ে যেতে অ্যাপ আপডেট করুন।</string>
+    <string name="error_has_active_trip">আগে আপনার চলমান ট্রিপ শেষ করুন।</string>
+    <string name="error_driver_offline">আগে «উপলব্ধ» চালু করুন।</string>
+    <string name="error_location_permission_required">উপলব্ধ হতে লোকেশন অনুমতি দরকার।</string>
+    <string name="error_already_claimed">অন্য একজন চালক এই অর্ডারটি নিয়েছেন।</string>
+    <string name="error_offer_expired">এই অফারের মেয়াদ শেষ।</string>
+    <string name="error_too_many_active_orders">আপনার কাছে ইতিমধ্যে একটি অর্ডার আছে।</string>
+    <string name="error_order_not_ready">অর্ডারটি এখনও প্রস্তুত নয়।</string>
+    <string name="error_order_cancelled">এই অর্ডারটি বাতিল করা হয়েছে।</string>
+    <string name="error_not_your_order">এই অর্ডারটি আপনার নয়।</string>
+    <string name="error_cash_limit_exceeded">আপনার কাছে নগদের পরিমাণ সীমার বেশি। আগে রেস্তোরাঁর সাথে হিসাব মিটিয়ে নিন।</string>
+    <string name="error_branch_closed">শাখাটি বন্ধ।</string>
+    <string name="error_validation_failed">আপনি যা লিখেছেন তা দেখে নিন।</string>
+    <string name="error_rate_limited">অনেক বেশি অনুরোধ। একটু অপেক্ষা করুন।</string>
+    <string name="error_server_error">আমাদের দিকে কিছু সমস্যা হয়েছে। আবার চেষ্টা করুন।</string>
+    <string name="error_network_unavailable">ইন্টারনেট সংযোগ নেই।</string>
+    <string name="error_unknown">কিছু একটা ভুল হয়েছে। আবার চেষ্টা করুন।</string>
+    <string name="action_retry">আবার চেষ্টা করুন</string>
+</resources>

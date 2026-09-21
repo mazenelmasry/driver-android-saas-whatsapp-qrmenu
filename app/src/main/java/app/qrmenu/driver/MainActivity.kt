@@ -24,6 +24,7 @@ import app.qrmenu.driver.common.locale.SupportedLocales
 import app.qrmenu.driver.datastore.AppLocaleStore
 import app.qrmenu.driver.designsystem.theme.DriverTheme
 import app.qrmenu.driver.designsystem.theme.Spacing
+import app.qrmenu.driver.auth.AuthFlow
 import app.qrmenu.driver.onboarding.language.LanguageRoute
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -82,7 +83,12 @@ private fun DriverApp() {
             },
         )
     } else {
-        ScaffoldPlaceholder()
+        // The whole sign-in flow (phone + password, SMS confirmation, choosing a
+        // password) lives in :feature:auth. What comes after it — the restaurant
+        // picker and the home screen — is not built yet, so success lands on the
+        // placeholder.
+        var signedIn by remember { mutableStateOf(false) }
+        if (signedIn) ScaffoldPlaceholder() else AuthFlow(onSignedIn = { signedIn = true })
     }
 }
 

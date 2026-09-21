@@ -48,6 +48,24 @@ data class LocationPointDto(
     @SerialName("recorded_at") val recordedAt: String,
 )
 
+/**
+ * `Branding` — the platform's own name, logo and accent, edited in the admin
+ * panel rather than shipped in the APK.
+ *
+ * 🔴 Every field is nullable, and the login screen must render without any of
+ * them. It is read BEFORE login, which is exactly when a driver is most likely
+ * to have no signal — a login screen that waits for a logo is a login screen
+ * that cannot be used on a weak connection.
+ */
+@Serializable
+data class BrandingDto(
+    @SerialName("name_ar") val nameAr: String? = null,
+    @SerialName("name_en") val nameEn: String? = null,
+    @SerialName("logo_url") val logoUrl: String? = null,
+    /** Hex, e.g. `#B4471F`. The build flavour's colour is the fallback. */
+    @SerialName("accent_color") val accentColor: String? = null,
+)
+
 /** `Branch`. Everything but id/name is nullable — a branch may have no coordinates yet. */
 @Serializable
 data class BranchDto(

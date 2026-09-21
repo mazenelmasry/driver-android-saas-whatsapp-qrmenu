@@ -2,13 +2,14 @@ package app.qrmenu.driver.network.api
 
 import app.qrmenu.driver.network.dto.AcceptedDto
 import app.qrmenu.driver.network.dto.AppVersionDto
+import app.qrmenu.driver.network.dto.BrandingDto
 import app.qrmenu.driver.network.dto.LoginRequest
 import app.qrmenu.driver.network.dto.LoginResponse
 import app.qrmenu.driver.network.dto.MeResponse
 import app.qrmenu.driver.network.dto.RedeemInviteRequest
 import app.qrmenu.driver.network.dto.RedeemInviteResponse
 import app.qrmenu.driver.network.dto.RequestOtpRequest
-import app.qrmenu.driver.network.dto.SetPinRequest
+import app.qrmenu.driver.network.dto.SetPasswordRequest
 import app.qrmenu.driver.network.dto.VerifyOtpRequest
 import app.qrmenu.driver.network.dto.VerifyOtpResponse
 import retrofit2.http.Body
@@ -34,6 +35,15 @@ interface AuthApi {
         @Tag public: PublicEndpoint = PublicEndpoint.INSTANCE,
     ): AppVersionDto
 
+    /**
+     * Platform identity for the login screen. Public — it is read before a
+     * session exists, which is the whole point of it.
+     */
+    @GET("driver/branding")
+    suspend fun branding(
+        @Tag public: PublicEndpoint = PublicEndpoint.INSTANCE,
+    ): BrandingDto
+
     @POST("driver/auth/request-otp")
     suspend fun requestOtp(
         @Body body: RequestOtpRequest,
@@ -52,9 +62,14 @@ interface AuthApi {
         @Tag public: PublicEndpoint = PublicEndpoint.INSTANCE,
     ): LoginResponse
 
-    /** Authenticated: set immediately after OTP, on the session that OTP opened. */
-    @POST("driver/auth/set-pin")
-    suspend fun setPin(@Body body: SetPinRequest): AcceptedDto
+    /**
+     * Chooses (or resets) the password, on the session `verify-otp` just opened.
+     *
+     * There is no separate reset endpoint: proving the phone by SMS IS the
+     * reset, because it is the only credential a driver reliably has.
+     */
+    @POST("driver/auth/set-password")
+    suspend fun setPassword(@Body body: SetPasswordRequest): AcceptedDto
 
     @POST("driver/auth/redeem-invite")
     suspend fun redeemInvite(@Body body: RedeemInviteRequest): RedeemInviteResponse

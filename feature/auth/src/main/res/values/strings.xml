@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ⏳ ur / bn / hi are written by the agent and still need a native speaker before
+  launch (CLAUDE.md, glossary). ar / en are final.
+
+  🔴 Wording rule for this screen set, decided by the project owner 2026-09-21:
+  the SMS code is a "code" and is entered in cells; what the driver signs in with
+  afterwards is a "password". Calling the password a "code" is what made the two
+  indistinguishable in the first version of this screen.
+-->
+<resources>
+    <string name="login_title">Sign in</string>
+    <string name="login_subtitle">Enter the phone number the restaurant added, and your password.</string>
+    <string name="login_phone_label">Phone number</string>
+    <string name="login_password_label">Password</string>
+    <string name="login_password_show">Show password</string>
+    <string name="login_password_hide">Hide password</string>
+    <string name="login_dial_code_unknown">+ —</string>
+    <string name="login_submit">Sign in</string>
+    <string name="app_platform_name_fallback">Drivers</string>
+    <string name="login_remember_me">Remember my number</string>
+    <string name="login_remember_me_hint">You stay signed in either way.</string>
+    <string name="login_forgot_password">Forgot your password?</string>
+    <string name="otp_title">Confirm your number</string>
+    <string name="otp_subtitle">We sent a code by SMS to %1$s</string>
+    <string name="otp_resend">Send again</string>
+    <string name="otp_resend_in">Send again in %1$d s</string>
+    <string name="otp_verify">Confirm</string>
+    <string name="otp_change_number">Change number</string>
+    <string name="set_password_title">Choose a password</string>
+    <string name="set_password_subtitle">You will sign in with it from now on — no more SMS every time.</string>
+    <string name="set_password_label">Password</string>
+    <string name="set_password_confirm_label">Confirm password</string>
+    <string name="set_password_rule">At least 6 characters</string>
+    <string name="set_password_mismatch">The two entries do not match.</string>
+    <string name="set_password_submit">Save</string>
+    <string name="login_first_time">First time? Request a verification code</string>
+    <string name="login_first_time_needs_phone">Enter your phone number first.</string>
+    <string name="login_phone_invalid">This does not look like a valid number for the selected country.</string>
+</resources>

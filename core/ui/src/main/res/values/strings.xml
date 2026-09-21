@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  🔴 These are the ONLY driver-facing wording for a failure. The app never shows
+  the server's own `message`: the backend speaks ar/en only, and a driver may be
+  reading Urdu, Bengali or Hindi. A new error code is added here in ALL FIVE
+  languages in the same change, or that driver is shown the generic line.
+
+  ⏳ ur / bn / hi are written by the agent and still need a native speaker to
+  read them before launch (CLAUDE.md, glossary).
+-->
+<resources>
+    <string name="error_invalid_credentials">Wrong phone number or code.</string>
+    <string name="error_otp_invalid">That code is not correct.</string>
+    <string name="error_otp_expired">That code has expired. Ask for a new one.</string>
+    <string name="error_too_many_attempts">Too many attempts. Wait a little and try again.</string>
+    <string name="error_invalid_invite">This invite code is not valid.</string>
+    <string name="error_invite_already_used">This invite code has already been used.</string>
+    <string name="error_account_inactive">Your account has been stopped. Contact the restaurant.</string>
+    <string name="error_no_active_link">No restaurant has you on its driver list yet.</string>
+    <string name="error_company_inactive">This restaurant is not active.</string>
+    <string name="error_subscription_expired">This restaurant\'s subscription has ended.</string>
+    <string name="error_feature_not_in_plan">This restaurant\'s plan does not include driver delivery.</string>
+    <string name="error_app_update_required">Update the app to keep working.</string>
+    <string name="error_has_active_trip">Finish your current trip first.</string>
+    <string name="error_driver_offline">Turn on Available first.</string>
+    <string name="error_location_permission_required">Location permission is needed to go Available.</string>
+    <string name="error_already_claimed">Another driver took this order.</string>
+    <string name="error_offer_expired">This offer has expired.</string>
+    <string name="error_too_many_active_orders">You already have an order.</string>
+    <string name="error_order_not_ready">The order is not ready yet.</string>
+    <string name="error_order_cancelled">This order was cancelled.</string>
+    <string name="error_not_your_order">This order is not yours.</string>
+    <string name="error_cash_limit_exceeded">You are holding too much cash. Settle with the restaurant first.</string>
+    <string name="error_branch_closed">The branch is closed.</string>
+    <string name="error_validation_failed">Please check what you entered.</string>
+    <string name="error_rate_limited">Too many requests. Wait a little.</string>
+    <string name="error_server_error">Something went wrong on our side. Try again.</string>
+    <string name="error_network_unavailable">No internet connection.</string>
+    <string name="error_unknown">Something went wrong. Try again.</string>
+    <string name="action_retry">Try again</string>
+</resources>

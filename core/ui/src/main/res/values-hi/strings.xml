@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  🔴 These are the ONLY driver-facing wording for a failure. The app never shows
+  the server's own `message`: the backend speaks ar/en only, and a driver may be
+  reading Urdu, Bengali or Hindi. A new error code is added here in ALL FIVE
+  languages in the same change, or that driver is shown the generic line.
+
+  ⏳ ur / bn / hi are written by the agent and still need a native speaker to
+  read them before launch (CLAUDE.md, glossary).
+-->
+<resources>
+    <string name="error_invalid_credentials">फ़ोन नंबर या कोड ग़लत है।</string>
+    <string name="error_otp_invalid">यह कोड सही नहीं है।</string>
+    <string name="error_otp_expired">कोड की समय-सीमा ख़त्म हो गई। नया कोड लें।</string>
+    <string name="error_too_many_attempts">बहुत ज़्यादा कोशिशें। थोड़ा रुककर दोबारा कोशिश करें।</string>
+    <string name="error_invalid_invite">यह न्योता कोड मान्य नहीं है।</string>
+    <string name="error_invite_already_used">यह न्योता कोड पहले इस्तेमाल हो चुका है।</string>
+    <string name="error_account_inactive">आपका खाता रोक दिया गया है। रेस्टोरेंट से संपर्क करें।</string>
+    <string name="error_no_active_link">अभी तक किसी रेस्टोरेंट ने आपको अपने ड्राइवरों में नहीं जोड़ा।</string>
+    <string name="error_company_inactive">यह रेस्टोरेंट सक्रिय नहीं है।</string>
+    <string name="error_subscription_expired">इस रेस्टोरेंट की सदस्यता ख़त्म हो गई है।</string>
+    <string name="error_feature_not_in_plan">इस रेस्टोरेंट के प्लान में ड्राइवर डिलीवरी शामिल नहीं है।</string>
+    <string name="error_app_update_required">काम जारी रखने के लिए ऐप अपडेट करें।</string>
+    <string name="error_has_active_trip">पहले अपनी मौजूदा ट्रिप पूरी करें।</string>
+    <string name="error_driver_offline">पहले «उपलब्ध» चालू करें।</string>
+    <string name="error_location_permission_required">उपलब्ध होने के लिए लोकेशन अनुमति ज़रूरी है।</string>
+    <string name="error_already_claimed">यह ऑर्डर किसी दूसरे ड्राइवर ने ले लिया।</string>
+    <string name="error_offer_expired">इस ऑफ़र की समय-सीमा ख़त्म हो गई।</string>
+    <string name="error_too_many_active_orders">आपके पास पहले से एक ऑर्डर है।</string>
+    <string name="error_order_not_ready">ऑर्डर अभी तैयार नहीं है।</string>
+    <string name="error_order_cancelled">यह ऑर्डर रद्द कर दिया गया।</string>
+    <string name="error_not_your_order">यह ऑर्डर आपका नहीं है।</string>
+    <string name="error_cash_limit_exceeded">आपके पास नक़द तय सीमा से ज़्यादा है। पहले रेस्टोरेंट से हिसाब कर लें।</string>
+    <string name="error_branch_closed">शाखा बंद है।</string>
+    <string name="error_validation_failed">आपने जो भरा है उसे देख लें।</string>
+    <string name="error_rate_limited">बहुत ज़्यादा अनुरोध। थोड़ा रुकें।</string>
+    <string name="error_server_error">हमारी तरफ़ कुछ गड़बड़ हुई। दोबारा कोशिश करें।</string>
+    <string name="error_network_unavailable">इंटरनेट कनेक्शन नहीं है।</string>
+    <string name="error_unknown">कुछ ग़लत हो गया। दोबारा कोशिश करें।</string>
+    <string name="action_retry">दोबारा कोशिश करें</string>
+</resources>

@@ -205,6 +205,7 @@ class BackendContractMirrorTest {
             violations,
         )
         mirror("AppVersionDto", AppVersionDto.serializer().descriptor, "AppVersion", violations)
+        mirror("BrandingDto", BrandingDto.serializer().descriptor, "Branding", violations)
         mirror("LocationPointDto", LocationPointDto.serializer().descriptor, "LocationPoint", violations)
         mirror("BranchDto", BranchDto.serializer().descriptor, "Branch", violations)
         mirror("OrderItemDto", OrderItemDto.serializer().descriptor, "OrderItem", violations)

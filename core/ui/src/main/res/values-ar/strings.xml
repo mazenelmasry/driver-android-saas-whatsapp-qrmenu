@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  🔴 These are the ONLY driver-facing wording for a failure. The app never shows
+  the server's own `message`: the backend speaks ar/en only, and a driver may be
+  reading Urdu, Bengali or Hindi. A new error code is added here in ALL FIVE
+  languages in the same change, or that driver is shown the generic line.
+
+  ⏳ ur / bn / hi are written by the agent and still need a native speaker to
+  read them before launch (CLAUDE.md, glossary).
+-->
+<resources>
+    <string name="error_invalid_credentials">رقم الجوال أو الرمز غير صحيح.</string>
+    <string name="error_otp_invalid">الرمز غير صحيح.</string>
+    <string name="error_otp_expired">انتهت صلاحية الرمز. اطلب رمزاً جديداً.</string>
+    <string name="error_too_many_attempts">محاولات كثيرة. انتظر قليلاً ثم حاول.</string>
+    <string name="error_invalid_invite">كود الدعوة غير صالح.</string>
+    <string name="error_invite_already_used">كود الدعوة مستخدم من قبل.</string>
+    <string name="error_account_inactive">تم إيقاف حسابك. تواصل مع المطعم.</string>
+    <string name="error_no_active_link">لا يوجد مطعم أضافك لقائمة سائقيه بعد.</string>
+    <string name="error_company_inactive">هذا المطعم غير نشط.</string>
+    <string name="error_subscription_expired">انتهى اشتراك هذا المطعم.</string>
+    <string name="error_feature_not_in_plan">باقة هذا المطعم لا تشمل توصيل السائقين.</string>
+    <string name="error_app_update_required">حدّث التطبيق لتتمكن من العمل.</string>
+    <string name="error_has_active_trip">أنهِ رحلتك الحالية أولاً.</string>
+    <string name="error_driver_offline">فعّل «متاح» أولاً.</string>
+    <string name="error_location_permission_required">صلاحية الموقع مطلوبة لتصبح متاحاً.</string>
+    <string name="error_already_claimed">سائق آخر أخذ هذا الطلب.</string>
+    <string name="error_offer_expired">انتهت مهلة هذا العرض.</string>
+    <string name="error_too_many_active_orders">لديك طلب بالفعل.</string>
+    <string name="error_order_not_ready">الطلب ليس جاهزاً بعد.</string>
+    <string name="error_order_cancelled">تم إلغاء هذا الطلب.</string>
+    <string name="error_not_your_order">هذا الطلب ليس لك.</string>
+    <string name="error_cash_limit_exceeded">النقد الذى بحوزتك تجاوز الحد. سوِّ مع المطعم أولاً.</string>
+    <string name="error_branch_closed">الفرع مغلق.</string>
+    <string name="error_validation_failed">راجع ما أدخلته.</string>
+    <string name="error_rate_limited">طلبات كثيرة. انتظر قليلاً.</string>
+    <string name="error_server_error">حدث خطأ لدينا. حاول مرة أخرى.</string>
+    <string name="error_network_unavailable">لا يوجد اتصال بالإنترنت.</string>
+    <string name="error_unknown">حدث خطأ ما. حاول مرة أخرى.</string>
+    <string name="action_retry">حاول مرة أخرى</string>
+</resources>

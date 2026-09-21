@@ -83,6 +83,35 @@ object Stroke {
 object ControlSize {
     /** The filled dot that marks a chosen row. */
     val selectionDot = 24.dp
+
+    /**
+     * The dialling-code button beside the phone field. Fixed width so the number
+     * field does not resize as the code changes from +20 to +966 — a field that
+     * jumps while a thumb is travelling towards it is a field that gets mistyped.
+     */
+    val dialCode = 96.dp
+
+    /** The spinner shown INSIDE a primary button while its press is in flight. */
+    val buttonSpinner = 24.dp
+    val buttonSpinnerStroke = 2.dp
+
+    /**
+     * The platform logo on the sign-in screen — height only; the aspect ratio is
+     * the logo's own. Kept small on purpose: this screen's job is the two fields
+     * and the button, and a wordmark that dominates it pushes the work below the
+     * fold on a short phone.
+     */
+    val platformLogo = 44.dp
+
+    /**
+     * One cell of a code field. Taller than the 56dp floor because a six-cell
+     * row on a narrow phone makes each cell only about 48dp WIDE — the height
+     * is what keeps the tap area honest.
+     */
+    val digitCell = 64.dp
+
+    /** The dot drawn in place of a digit while a code is masked. */
+    val maskDot = 12.dp
 }
 
 /**

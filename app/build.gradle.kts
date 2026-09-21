@@ -155,5 +155,6 @@ dependencies {
     implementation(project(":core:network"))
     implementation(project(":core:common"))
     implementation(project(":feature:onboarding"))
+    implementation(project(":feature:auth"))
     debugImplementation(libs.compose.ui.tooling)
 }
