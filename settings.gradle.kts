@@ -31,7 +31,7 @@ include(":app")
 // Core modules — added as each is scaffolded (CLAUDE.md § بنية المشروع).
 // include(":core:common")
 // include(":core:model")
-// include(":core:designsystem")
+include(":core:designsystem")
 // include(":core:ui")
 // include(":core:network")
 // include(":core:database")
