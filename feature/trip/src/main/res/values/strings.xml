@@ -80,7 +80,7 @@
     <string name="trip_delivery_code_hint">Ask the customer to read the 4-digit code from their order page</string>
     <string name="trip_delivery_code_required">Enter the code the customer gives you</string>
     <string name="trip_delivery_already_paid">Paid online — nothing to collect</string>
-    <string name="trip_delivery_hold_to_confirm">Hold to confirm delivery</string>
+    <string name="trip_delivery_confirm">Confirm delivery</string>
     <string name="trip_delivery_cancel">Back</string>
 
     <string name="trip_delivered_title">Delivered</string>

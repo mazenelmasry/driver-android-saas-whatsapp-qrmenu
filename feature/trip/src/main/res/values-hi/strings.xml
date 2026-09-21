@@ -71,7 +71,7 @@
     <string name="trip_delivery_code_hint">ग्राहक से कहें कि वह अपने ऑर्डर पेज से ४ अंकों का कोड पढ़कर बताए</string>
     <string name="trip_delivery_code_required">ग्राहक द्वारा दिया गया कोड दर्ज करें</string>
     <string name="trip_delivery_already_paid">ऑनलाइन भुगतान किया गया — वसूलने के लिए कुछ नहीं</string>
-    <string name="trip_delivery_hold_to_confirm">पुष्टि के लिए दबाए रखें</string>
+    <string name="trip_delivery_confirm">डिलीवरी की पुष्टि करें</string>
     <string name="trip_delivery_cancel">वापस</string>
 
     <string name="trip_delivered_title">पहुँचा दिया गया</string>

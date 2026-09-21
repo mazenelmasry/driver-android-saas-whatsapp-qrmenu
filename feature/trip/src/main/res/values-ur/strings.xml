@@ -71,7 +71,7 @@
     <string name="trip_delivery_code_hint">گاہک سے کہیں کہ اپنے آرڈر پیج سے ٤ ہندسوں کا کوڈ پڑھ کر بتائے</string>
     <string name="trip_delivery_code_required">گاہک کا دیا ہوا کوڈ درج کریں</string>
     <string name="trip_delivery_already_paid">آن لائن ادا شدہ — وصول کرنے کے لیے کچھ نہیں</string>
-    <string name="trip_delivery_hold_to_confirm">تصدیق کے لیے دبائے رکھیں</string>
+    <string name="trip_delivery_confirm">ڈیلیوری کی تصدیق کریں</string>
     <string name="trip_delivery_cancel">واپس</string>
 
     <string name="trip_delivered_title">پہنچا دیا گیا</string>

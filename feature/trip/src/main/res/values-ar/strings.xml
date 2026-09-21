@@ -72,7 +72,7 @@
     <string name="trip_delivery_code_hint">اطلب من العميل قراءة الرمز المكوَّن من ٤ أرقام من صفحة طلبه</string>
     <string name="trip_delivery_code_required">أدخل الرمز الذى يعطيك إياه العميل</string>
     <string name="trip_delivery_already_paid">مدفوع أونلاين — لا يوجد ما تحصّله</string>
-    <string name="trip_delivery_hold_to_confirm">اضغط مطوّلاً لتأكيد التسليم</string>
+    <string name="trip_delivery_confirm">تأكيد التسليم</string>
     <string name="trip_delivery_cancel">رجوع</string>
 
     <string name="trip_delivered_title">تم التسليم</string>

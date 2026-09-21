@@ -71,7 +71,7 @@
     <string name="trip_delivery_code_hint">গ্রাহককে তাদের অর্ডার পৃষ্ঠা থেকে ৪-সংখ্যার কোড পড়তে বলুন</string>
     <string name="trip_delivery_code_required">গ্রাহক আপনাকে যে কোডটি দেয় তা লিখুন</string>
     <string name="trip_delivery_already_paid">অনলাইনে পরিশোধিত — সংগ্রহ করার কিছু নেই</string>
-    <string name="trip_delivery_hold_to_confirm">নিশ্চিত করতে চেপে ধরুন</string>
+    <string name="trip_delivery_confirm">ডেলিভারি নিশ্চিত করুন</string>
     <string name="trip_delivery_cancel">ফিরে যান</string>
 
     <string name="trip_delivered_title">পৌঁছে দেওয়া হয়েছে</string>

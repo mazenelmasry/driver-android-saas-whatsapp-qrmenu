@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
@@ -644,7 +645,18 @@ private fun DeliverySheet(
     val haptics = LocalHapticFeedback.current
 
     Box(
-        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.6f)),
+        // 🔴 `imePadding()` belongs on THIS box, not on the column inside the
+        // sheet. `enableEdgeToEdge()` means the window never resizes for the
+        // keyboard, so a full-screen box still spans the area the keyboard
+        // now covers — and a sheet anchored to ITS bottom sits underneath.
+        // Shrinking the box by the IME inset is what lifts the sheet to rest
+        // on top of the keyboard. Padding the inner column only moved content
+        // around inside a sheet that was still in the wrong place, which is
+        // exactly what the first attempt at this did.
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.6f))
+            .imePadding(),
         contentAlignment = Alignment.BottomCenter,
     ) {
         Surface(
@@ -652,7 +664,21 @@ private fun DeliverySheet(
             color = MaterialTheme.colorScheme.surface,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Column(modifier = Modifier.padding(Spacing.lg), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            // 🔴 `enableEdgeToEdge()` in MainActivity means the manifest's
+            // `adjustResize` never applies — the window no longer fits system
+            // windows, so the keyboard is OUR inset to handle. Without
+            // `imePadding()` the numeric keypad covered the code cells, the
+            // hint telling the driver to ask for them, and the confirm button:
+            // a driver at a door typing blind into something they cannot see,
+            // unable to reach the one button that finishes the delivery.
+            // Scrolling as well, because a short phone in landscape still runs
+            // out of room once the sheet is pushed up.
+            Column(
+                modifier = Modifier
+                    .padding(Spacing.lg)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+            ) {
                 Text(
                     text = stringResource(R.string.trip_delivery_sheet_title),
                     style = MaterialTheme.typography.titleLarge,
@@ -747,25 +773,23 @@ private fun DeliverySheet(
                     DriverErrorBanner(error = sheet.error)
                 }
 
-                // 🔴 A LONG PRESS, not a tap (CLAUDE.md / driver-ui-standards):
-                // `combinedClickable`'s `onLongClick` is the confirming gesture;
-                // a plain `onClick` does nothing but explain why, so a driver who
-                // taps once is told to hold rather than nothing happening at all.
+                // A plain tap, by the project owner's decision (2026-09-21):
+                // nothing on this screen should be harder than it has to be for
+                // someone working one-handed at a door.
+                //
+                // The long press it replaced existed to stop an accidental tap
+                // delivering an order — and the delivery code now does that job
+                // properly. A driver cannot complete a coded delivery without
+                // four digits only the customer has, so a stray touch reaches a
+                // server that refuses it. The gesture was guarding a door the
+                // code already locks.
                 Button(
-                    onClick = {},
+                    onClick = onConfirm,
                     enabled = blockReason == null && !sheet.isSubmitting,
                     shape = RoundedCornerShape(Radius.card),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = TouchTarget.primaryPhysical)
-                        .combinedClickable(
-                            enabled = blockReason == null && !sheet.isSubmitting,
-                            onClick = {},
-                            onLongClick = {
-                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                                onConfirm()
-                            },
-                        ),
+                        .heightIn(min = TouchTarget.primaryPhysical),
                 ) {
                     if (sheet.isSubmitting) {
                         CircularProgressIndicator(
@@ -774,7 +798,11 @@ private fun DeliverySheet(
                             color = MaterialTheme.colorScheme.onPrimary,
                         )
                     } else {
-                        Text(text = stringResource(R.string.trip_delivery_hold_to_confirm), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = stringResource(R.string.trip_delivery_confirm),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                        )
                     }
                 }
 
@@ -801,7 +829,18 @@ private fun IssueSheet(
     onSubmit: () -> Unit,
 ) {
     Box(
-        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.6f)),
+        // 🔴 `imePadding()` belongs on THIS box, not on the column inside the
+        // sheet. `enableEdgeToEdge()` means the window never resizes for the
+        // keyboard, so a full-screen box still spans the area the keyboard
+        // now covers — and a sheet anchored to ITS bottom sits underneath.
+        // Shrinking the box by the IME inset is what lifts the sheet to rest
+        // on top of the keyboard. Padding the inner column only moved content
+        // around inside a sheet that was still in the wrong place, which is
+        // exactly what the first attempt at this did.
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.6f))
+            .imePadding(),
         contentAlignment = Alignment.BottomCenter,
     ) {
         Surface(
@@ -810,7 +849,11 @@ private fun IssueSheet(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Column(
-                modifier = Modifier.padding(Spacing.lg).verticalScroll(rememberScrollState()),
+                // Same reason as the delivery sheet above: the note field
+                // summons a keyboard this sheet would otherwise sit under.
+                modifier = Modifier
+                    .padding(Spacing.lg)
+                    .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(Spacing.sm),
             ) {
                 Text(text = stringResource(R.string.trip_issue_sheet_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
@@ -884,7 +927,18 @@ private fun IssueSheet(
 @Composable
 private fun IssueReportedOverlay(onDismiss: () -> Unit) {
     Box(
-        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.6f)),
+        // 🔴 `imePadding()` belongs on THIS box, not on the column inside the
+        // sheet. `enableEdgeToEdge()` means the window never resizes for the
+        // keyboard, so a full-screen box still spans the area the keyboard
+        // now covers — and a sheet anchored to ITS bottom sits underneath.
+        // Shrinking the box by the IME inset is what lifts the sheet to rest
+        // on top of the keyboard. Padding the inner column only moved content
+        // around inside a sheet that was still in the wrong place, which is
+        // exactly what the first attempt at this did.
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.6f))
+            .imePadding(),
         contentAlignment = Alignment.BottomCenter,
     ) {
         Surface(

@@ -1,6 +1,7 @@
 package app.qrmenu.driver.orders
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -123,7 +124,12 @@ fun AssignedOrderCard(
     val ready = readinessState(summary.expectedReadyAt, summary.readyAt, Instant.now()) is Readiness.Ready
     val alreadyPickedUp = summary.pickedUpAt != null
 
-    OrderCardShell(modifier = modifier, isMine = true) {
+    // 🔴 The whole card opens the trip, not just the button. The button is
+    // correctly disabled once the order is picked up — and wiring the only
+    // way into the trip screen to it meant a driver MID-DELIVERY, holding the
+    // food, had no route back to "سلّمت" at all. The action a card offers may
+    // run out; the card is how you reach the thing itself.
+    OrderCardShell(modifier = modifier, isMine = true, onClick = onOpenTrip) {
         OrderCardHeader(
             companyName = summary.companyName,
             branchName = summary.branchName,
@@ -190,10 +196,13 @@ fun AssignedOrderCard(
 private fun OrderCardShell(
     modifier: Modifier = Modifier,
     isMine: Boolean,
+    onClick: (() -> Unit)? = null,
     content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit,
 ) {
     Surface(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
         shape = RoundedCornerShape(Radius.card),
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(Stroke.hairline, MaterialTheme.colorScheme.outlineVariant),
