@@ -1,0 +1,18 @@
+# Gradle / build
+.gradle/
+build/
+**/build/
+.kotlin/
+# Local machine config (never commit)
+local.properties
+*.jks
+*.keystore
+# IDE
+.idea/
+*.iml
+.DS_Store
+# Session artefacts
+_screenshots/
+docs/audits/
+# Untracked scratch
+*.log
