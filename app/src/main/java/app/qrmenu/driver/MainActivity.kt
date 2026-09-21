@@ -17,7 +17,6 @@ import app.qrmenu.driver.common.locale.SupportedLocales
 import app.qrmenu.driver.datastore.AppLocaleStore
 import app.qrmenu.driver.datastore.TokenStore
 import app.qrmenu.driver.designsystem.theme.DriverTheme
-import app.qrmenu.driver.home.HomeRoute
 import app.qrmenu.driver.onboarding.language.LanguageRoute
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -101,7 +100,7 @@ private fun DriverApp(tokenStore: TokenStore) {
 
         redeemingInvite -> RedeemInviteFlow(onRedeemed = { redeemingInvite = false })
 
-        else -> HomeRoute(
+        else -> SignedInScreen(
             onSignedOut = { signedIn = false },
             onEnterInviteCode = { redeemingInvite = true },
         )

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="location_notification_channel_name">مقام کی شراکت</string>
+    <string name="location_notification_title">آپ کا مقام شیئر کیا جا رہا ہے</string>
+    <string name="location_notification_body">آپ دستیاب ہیں، اس لیے قریبی ریستوران آپ کا مقام دیکھ سکتے ہیں۔ ایپ کھولنے کے لیے تھپتھپائیں۔</string>
+
+    <string name="location_rationale_title">ہمیں پس منظر میں آپ کا مقام کیوں چاہیے</string>
+    <string name="location_rationale_body">جب تک آپ دستیاب ہیں، ہم آپ کا مقام ٹریک کرتے ہیں تاکہ ریستوران قریبی آرڈرز آپ کو دے سکیں اور گاہک آپ کا سفر نقشے پر دیکھ سکیں — چاہے ایپ کھلی نہ ہو۔ جب آپ دستیاب نہ ہوں ہم آپ کو بالکل ٹریک نہیں کرتے۔</string>
+    <string name="location_rationale_continue">جاری رکھیں</string>
+
+    <string name="location_foreground_only_banner">پس منظر کا مقام بند ہے — سفر صرف ایپ کھلی ہونے پر اپ ڈیٹ ہوں گے۔ درست کرنے کے لیے تھپتھپائیں۔</string>
+    <string name="location_open_settings">ترتیبات کھولیں</string>
+
+    <string name="battery_guide_title">اسکرین بند ہونے پر بھی آرڈرز موصول کرتے رہیں</string>
+    <string name="battery_guide_intro">کچھ فون بیٹری بچانے کے لیے پس منظر میں چلنے والی ایپس بند کر دیتے ہیں۔ کوئی آرڈر مس نہ کرنے کے لیے یہ مراحل مکمل کریں۔</string>
+    <string name="battery_guide_open_system_dialog">پس منظر میں سرگرمی کی اجازت دیں</string>
+    <string name="battery_guide_open_manufacturer_settings">%1$s کی ترتیبات کھولیں</string>
+    <string name="battery_guide_done">مکمل</string>
+
+    <string name="battery_manufacturer_xiaomi">شیاؤمی / ریڈمی / پوکو</string>
+    <string name="battery_guide_xiaomi_step1">سیکیورٹی ایپ کھولیں ← اجازتیں ← آٹو اسٹارٹ، اور اس ایپ کو آن کریں۔</string>
+    <string name="battery_guide_xiaomi_step2">ترتیبات ← ایپس ← ایپس کا انتظام ← یہ ایپ ← بیٹری سیور میں جائیں، اور \"کوئی پابندی نہیں\" منتخب کریں۔</string>
+    <string name="battery_guide_xiaomi_step3">ترتیبات ← ایپس ← اجازتیں ← دیگر اجازتیں میں جائیں، اور \"پس منظر میں چلتے وقت پاپ اپ ونڈوز دکھائیں\" فعال کریں۔</string>
+
+    <string name="battery_manufacturer_oppo">اوپو / ریئل می</string>
+    <string name="battery_guide_oppo_step1">ترتیبات ← بیٹری ← یہ ایپ میں جائیں، اور \"سلیپ ٹائم آپٹیمائزیشن\" بند کریں۔</string>
+    <string name="battery_guide_oppo_step2">ترتیبات ← ایپ مینجمنٹ ← یہ ایپ میں جائیں، \"آٹو اسٹارٹ کی اجازت دیں\" اور \"پس منظر میں چلنے کی اجازت دیں\" فعال کریں۔</string>
+
+    <string name="battery_manufacturer_vivo">ویوو / آئی کیو او</string>
+    <string name="battery_guide_vivo_step1">i Manager ← ایپ مینجر ← آٹو اسٹارٹ کھولیں، اور اس ایپ کو آن کریں۔</string>
+    <string name="battery_guide_vivo_step2">ترتیبات ← بیٹری ← پس منظر پاور استعمال کا انتظام میں جائیں، اور اس ایپ کو پس منظر میں چلنے کی اجازت دیں۔</string>
+
+    <string name="battery_manufacturer_huawei">ہواوے</string>
+    <string name="battery_guide_huawei_step1">ترتیبات ← بیٹری ← ایپ لانچ ← یہ ایپ میں جائیں، \"دستی طور پر منظم کریں\" منتخب کریں، پھر آٹو لانچ، سیکنڈری لانچ اور پس منظر میں چلانا آن کریں۔</string>
+    <string name="battery_guide_huawei_step2">ترتیبات ← ایپس ← یہ ایپ ← بیٹری میں جائیں، اور \"غیر محدود\" منتخب کریں۔</string>
+    <string name="battery_guide_huawei_step3">حالیہ ایپس کی فہرست میں اس ایپ کو لاک کریں تاکہ نظام اسے بند نہ کرے۔</string>
+
+    <string name="battery_manufacturer_honor">آنر</string>
+    <string name="battery_guide_honor_step1">ترتیبات ← بیٹری ← ایپ لانچ ← یہ ایپ میں جائیں، اور تینوں سوئچز کے ساتھ \"دستی طور پر منظم کریں\" فعال کریں۔</string>
+    <string name="battery_guide_honor_step2">حالیہ ایپس کی فہرست میں اس ایپ کو لاک کریں تاکہ نظام اسے بند نہ کرے۔</string>
+
+    <string name="battery_manufacturer_samsung">سام سنگ</string>
+    <string name="battery_guide_samsung_step1">ترتیبات ← ایپس ← یہ ایپ ← بیٹری میں جائیں، اور \"غیر محدود\" منتخب کریں۔</string>
+    <string name="battery_guide_samsung_step2">ترتیبات ← بیٹری اور ڈیوائس کیئر ← بیٹری ← پس منظر استعمال کی حدود میں جائیں، اور اس ایپ کو \"سوئی ہوئی ایپس\" سے ہٹا دیں۔</string>
+
+    <string name="battery_manufacturer_generic">آپ کا فون</string>
+    <string name="battery_guide_generic_step1">نیچے دیے گئے بٹن سے اس ایپ کو پس منظر میں چلنے کی اجازت دیں۔</string>
+</resources>

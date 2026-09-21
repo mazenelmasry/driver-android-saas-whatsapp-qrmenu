@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="location_notification_channel_name">Location sharing</string>
+    <string name="location_notification_title">Sharing your location</string>
+    <string name="location_notification_body">You\'re available, so nearby restaurants can see where you are. Tap to open the app.</string>
+
+    <string name="location_rationale_title">Why we need your location in the background</string>
+    <string name="location_rationale_body">While you\'re available, we track your location so restaurants can assign you nearby orders and customers can see your trip on the map — even when the app isn\'t open. We never track you while you\'re unavailable.</string>
+    <string name="location_rationale_continue">Continue</string>
+
+    <string name="location_foreground_only_banner">Background location is off — trips only update while the app is open. Tap to fix this.</string>
+    <string name="location_open_settings">Open settings</string>
+
+    <string name="battery_guide_title">Keep receiving orders while your screen is off</string>
+    <string name="battery_guide_intro">Some phone makers stop apps running in the background to save power. Follow these steps so you don\'t miss an order.</string>
+    <string name="battery_guide_open_system_dialog">Allow background activity</string>
+    <string name="battery_guide_open_manufacturer_settings">Open %1$s settings</string>
+    <string name="battery_guide_done">Done</string>
+
+    <string name="battery_manufacturer_xiaomi">Xiaomi / Redmi / POCO</string>
+    <string name="battery_guide_xiaomi_step1">Open Security app → Permissions → Autostart, and turn this app ON.</string>
+    <string name="battery_guide_xiaomi_step2">Go to Settings → Apps → Manage apps → this app → Battery saver, and choose \"No restrictions\".</string>
+    <string name="battery_guide_xiaomi_step3">Go to Settings → Apps → Permissions → Other permissions, and enable \"Display pop-up windows while running in background\".</string>
+
+    <string name="battery_manufacturer_oppo">OPPO / Realme</string>
+    <string name="battery_guide_oppo_step1">Go to Settings → Battery → this app, and turn off \"Sleep-time optimisation\".</string>
+    <string name="battery_guide_oppo_step2">Go to Settings → App management → this app → turn on \"Allow auto-start\" and \"Allow background running\".</string>
+
+    <string name="battery_manufacturer_vivo">vivo / iQOO</string>
+    <string name="battery_guide_vivo_step1">Go to i Manager → App manager → Autostart, and turn this app ON.</string>
+    <string name="battery_guide_vivo_step2">Go to Settings → Battery → Background power consumption management, and allow this app to run in the background.</string>
+
+    <string name="battery_manufacturer_huawei">Huawei</string>
+    <string name="battery_guide_huawei_step1">Go to Settings → Battery → App launch → this app, and switch it to \"Manage manually\", then turn ON Auto-launch, Secondary launch and Run in background.</string>
+    <string name="battery_guide_huawei_step2">Go to Settings → Apps → this app → Battery, and choose \"Unrestricted\".</string>
+    <string name="battery_guide_huawei_step3">Lock this app in your recent-apps list so the system doesn\'t close it.</string>
+
+    <string name="battery_manufacturer_honor">HONOR</string>
+    <string name="battery_guide_honor_step1">Go to Settings → Battery → App launch → this app, and turn on \"Manage manually\" with all three switches enabled.</string>
+    <string name="battery_guide_honor_step2">Lock this app in your recent-apps list so the system doesn\'t close it.</string>
+
+    <string name="battery_manufacturer_samsung">Samsung</string>
+    <string name="battery_guide_samsung_step1">Go to Settings → Apps → this app → Battery, and choose \"Unrestricted\".</string>
+    <string name="battery_guide_samsung_step2">Go to Settings → Battery and device care → Battery → Background usage limits, and remove this app from \"Sleeping apps\" / \"Deep sleeping apps\".</string>
+
+    <string name="battery_manufacturer_generic">Your phone</string>
+    <string name="battery_guide_generic_step1">Allow this app to run in the background using the button below.</string>
+</resources>

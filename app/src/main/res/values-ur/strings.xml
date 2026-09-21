@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tab_availability">دستیاب</string>
+    <string name="tab_restaurants">میرے ریستوران</string>
+    <string name="permission_location_blocked_title">لوکیشن بند ہے</string>
+    <string name="permission_location_blocked_body">آرڈر آپ کی قربت کے حساب سے دیے جاتے ہیں، اس کے بغیر کچھ نہیں پہنچے گا۔</string>
+    <string name="permission_location_partial_title">صرف ایپ کھلی ہو تو اجازت ہے</string>
+    <string name="permission_location_partial_body">یہ اس طرح کام کرتا ہے۔ لیکن اگر فون دیر تک بند رہے تو آرڈر آنا رک سکتے ہیں۔</string>
+    <string name="permission_location_action">ترتیبات</string>
+</resources>

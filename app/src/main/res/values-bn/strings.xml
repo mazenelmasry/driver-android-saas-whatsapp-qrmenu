@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tab_availability">উপলব্ধ</string>
+    <string name="tab_restaurants">আমার রেস্তোরাঁ</string>
+    <string name="permission_location_blocked_title">লোকেশন বন্ধ</string>
+    <string name="permission_location_blocked_body">আপনি কত কাছে তার ভিত্তিতে অর্ডার দেওয়া হয়, তাই এটি ছাড়া কিছুই পৌঁছাবে না।</string>
+    <string name="permission_location_partial_title">শুধু অ্যাপ খোলা থাকলে অনুমতি</string>
+    <string name="permission_location_partial_body">এভাবেই কাজ করে। তবে ফোন দীর্ঘক্ষণ ঘুমিয়ে থাকলে অর্ডার আসা বন্ধ হতে পারে।</string>
+    <string name="permission_location_action">সেটিংস</string>
+</resources>

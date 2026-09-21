@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="location_notification_channel_name">مشاركة الموقع</string>
+    <string name="location_notification_title">جارٍ مشاركة موقعك</string>
+    <string name="location_notification_body">أنت متاح الآن، لذا يستطيع المطاعم القريبة رؤية موقعك. اضغط لفتح التطبيق.</string>
+
+    <string name="location_rationale_title">لماذا نحتاج موقعك فى الخلفية</string>
+    <string name="location_rationale_body">أثناء توفّرك، نتتبّع موقعك ليستطيع المطاعم إسناد طلبات قريبة لك ويرى العملاء رحلتك على الخريطة — حتى لو كان التطبيق مغلقاً. لا نتتبّعك إطلاقاً وأنت غير متاح.</string>
+    <string name="location_rationale_continue">متابعة</string>
+
+    <string name="location_foreground_only_banner">موقع الخلفية مُعطَّل — تتحدّث الرحلات فقط والتطبيق مفتوح. اضغط للتصحيح.</string>
+    <string name="location_open_settings">فتح الإعدادات</string>
+
+    <string name="battery_guide_title">استمرّ فى استقبال الطلبات وشاشتك مطفأة</string>
+    <string name="battery_guide_intro">بعض الأجهزة توقف عمل التطبيقات فى الخلفية لتوفير البطارية. اتّبع هذه الخطوات حتى لا يفوتك طلب.</string>
+    <string name="battery_guide_open_system_dialog">السماح بالعمل فى الخلفية</string>
+    <string name="battery_guide_open_manufacturer_settings">فتح إعدادات %1$s</string>
+    <string name="battery_guide_done">تمّ</string>
+
+    <string name="battery_manufacturer_xiaomi">شاومى / ريدمى / بوكو</string>
+    <string name="battery_guide_xiaomi_step1">افتح تطبيق الأمان ← الأذونات ← بدء التشغيل التلقائى، وفعّله لهذا التطبيق.</string>
+    <string name="battery_guide_xiaomi_step2">اذهب إلى الإعدادات ← التطبيقات ← إدارة التطبيقات ← هذا التطبيق ← توفير البطارية، واختر «بلا قيود».</string>
+    <string name="battery_guide_xiaomi_step3">اذهب إلى الإعدادات ← التطبيقات ← الأذونات ← أذونات أخرى، وفعّل «إظهار نوافذ منبثقة أثناء العمل فى الخلفية».</string>
+
+    <string name="battery_manufacturer_oppo">أوبو / ريلمى</string>
+    <string name="battery_guide_oppo_step1">اذهب إلى الإعدادات ← البطارية ← هذا التطبيق، وأوقف «تحسين وقت السكون».</string>
+    <string name="battery_guide_oppo_step2">اذهب إلى الإعدادات ← إدارة التطبيقات ← هذا التطبيق ← فعّل «السماح بالتشغيل التلقائى» و«السماح بالعمل فى الخلفية».</string>
+
+    <string name="battery_manufacturer_vivo">فيفو / آى كيو أو</string>
+    <string name="battery_guide_vivo_step1">افتح i Manager ← إدارة التطبيقات ← بدء التشغيل التلقائى، وفعّله لهذا التطبيق.</string>
+    <string name="battery_guide_vivo_step2">اذهب إلى الإعدادات ← البطارية ← إدارة استهلاك الطاقة فى الخلفية، واسمح لهذا التطبيق بالعمل فى الخلفية.</string>
+
+    <string name="battery_manufacturer_huawei">هواوى</string>
+    <string name="battery_guide_huawei_step1">اذهب إلى الإعدادات ← البطارية ← تشغيل التطبيقات ← هذا التطبيق، وحوّله لـ«إدارة يدوية» مع تفعيل التشغيل التلقائى والتشغيل الثانوى والعمل فى الخلفية.</string>
+    <string name="battery_guide_huawei_step2">اذهب إلى الإعدادات ← التطبيقات ← هذا التطبيق ← البطارية، واختر «بلا قيود».</string>
+    <string name="battery_guide_huawei_step3">اقفل هذا التطبيق فى قائمة التطبيقات الأخيرة حتى لا يغلقه النظام.</string>
+
+    <string name="battery_manufacturer_honor">هونر</string>
+    <string name="battery_guide_honor_step1">اذهب إلى الإعدادات ← البطارية ← تشغيل التطبيقات ← هذا التطبيق، وفعّل «إدارة يدوية» بكل الخيارات الثلاثة.</string>
+    <string name="battery_guide_honor_step2">اقفل هذا التطبيق فى قائمة التطبيقات الأخيرة حتى لا يغلقه النظام.</string>
+
+    <string name="battery_manufacturer_samsung">سامسونج</string>
+    <string name="battery_guide_samsung_step1">اذهب إلى الإعدادات ← التطبيقات ← هذا التطبيق ← البطارية، واختر «بلا قيود».</string>
+    <string name="battery_guide_samsung_step2">اذهب إلى الإعدادات ← البطارية والعناية بالجهاز ← البطارية ← حدود استخدام الخلفية، وأخرج هذا التطبيق من «التطبيقات النائمة».</string>
+
+    <string name="battery_manufacturer_generic">جهازك</string>
+    <string name="battery_guide_generic_step1">اسمح لهذا التطبيق بالعمل فى الخلفية عبر الزرّ أدناه.</string>
+</resources>

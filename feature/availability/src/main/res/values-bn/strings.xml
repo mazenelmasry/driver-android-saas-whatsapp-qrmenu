@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ⏳ agent-written, needs a native speaker before launch (CLAUDE.md, glossary). -->
+<resources>
+    <string name="availability_title">উপলব্ধতা</string>
+
+    <string name="availability_switch_online">উপলব্ধ</string>
+    <string name="availability_switch_offline">অনুপলব্ধ</string>
+    <string name="availability_switch_pending">নিশ্চিত করা হচ্ছে…</string>
+
+    <string name="availability_online_since">%1$s ধরে উপলব্ধ</string>
+
+    <string name="availability_connection_lost">সংযোগ বিচ্ছিন্ন</string>
+    <string name="availability_connection_lost_body">সংযোগ পুনরুদ্ধার না হলে সার্ভার কয়েক মিনিটের মধ্যে আপনাকে অফলাইন করে দেবে।</string>
+
+    <string name="availability_reason_offline">আপনি অফলাইনে আছেন। অর্ডার পেতে উপলব্ধ করুন।</string>
+    <string name="availability_reason_no_active_link">এখনও কোনো রেস্তোরাঁ আপনাকে সক্রিয় করেনি।</string>
+    <string name="availability_reason_all_branches_closed">আপনার সংযুক্ত সব শাখা এখন বন্ধ।</string>
+    <string name="availability_reason_outside_radius">আপনি আপনার সংযুক্ত প্রতিটি শাখার ডেলিভারি পরিসীমার বাইরে আছেন।</string>
+    <string name="availability_reason_location_unknown">আপনার অবস্থান এখনও জানা নেই — এটি জানা না পর্যন্ত অর্ডার মেলানো যাবে না।</string>
+    <string name="availability_reason_has_active_trip">আপনার হাতে একটি অর্ডার আছে। এটি শেষ না হওয়া পর্যন্ত নতুন অফার আসবে না।</string>
+    <string name="availability_reason_nothing_pending">আপনি প্রস্তুত — শুধু এখন আপনার জন্য কোনো অর্ডার নেই।</string>
+    <string name="availability_reason_unknown">এখন কোনো অর্ডার নেই।</string>
+
+    <string name="availability_branches_heading">আপনার সংযুক্ত শাখা</string>
+    <string name="availability_branch_open">খোলা</string>
+    <string name="availability_branch_closed">বন্ধ</string>
+</resources>

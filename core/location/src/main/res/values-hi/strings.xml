@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="location_notification_channel_name">लोकेशन शेयरिंग</string>
+    <string name="location_notification_title">आपकी लोकेशन शेयर की जा रही है</string>
+    <string name="location_notification_body">आप उपलब्ध हैं, इसलिए आस-पास के रेस्टोरेंट आपकी लोकेशन देख सकते हैं। ऐप खोलने के लिए टैप करें।</string>
+
+    <string name="location_rationale_title">बैकग्राउंड में लोकेशन क्यों चाहिए</string>
+    <string name="location_rationale_body">जब तक आप उपलब्ध हैं, हम आपकी लोकेशन ट्रैक करते हैं ताकि रेस्टोरेंट पास के ऑर्डर दे सकें और ग्राहक मैप पर आपकी ट्रिप देख सकें — भले ही ऐप खुला न हो। जब आप उपलब्ध नहीं होते, हम आपको बिल्कुल ट्रैक नहीं करते।</string>
+    <string name="location_rationale_continue">जारी रखें</string>
+
+    <string name="location_foreground_only_banner">बैकग्राउंड लोकेशन बंद है — ट्रिप केवल ऐप खुला होने पर अपडेट होंगी। ठीक करने के लिए टैप करें।</string>
+    <string name="location_open_settings">सेटिंग्स खोलें</string>
+
+    <string name="battery_guide_title">स्क्रीन बंद होने पर भी ऑर्डर मिलते रहें</string>
+    <string name="battery_guide_intro">कुछ फ़ोन बैटरी बचाने के लिए बैकग्राउंड में चल रहे ऐप बंद कर देते हैं। कोई ऑर्डर न छूटे इसके लिए ये स्टेप्स फॉलो करें।</string>
+    <string name="battery_guide_open_system_dialog">बैकग्राउंड गतिविधि की अनुमति दें</string>
+    <string name="battery_guide_open_manufacturer_settings">%1$s सेटिंग्स खोलें</string>
+    <string name="battery_guide_done">पूर्ण</string>
+
+    <string name="battery_manufacturer_xiaomi">श्याओमी / रेडमी / पोको</string>
+    <string name="battery_guide_xiaomi_step1">सिक्योरिटी ऐप खोलें ← अनुमतियाँ ← ऑटोस्टार्ट, और इस ऐप के लिए इसे चालू करें।</string>
+    <string name="battery_guide_xiaomi_step2">सेटिंग्स ← ऐप्स ← ऐप्स मैनेज करें ← यह ऐप ← बैटरी सेवर पर जाएँ, और \"कोई प्रतिबंध नहीं\" चुनें।</string>
+    <string name="battery_guide_xiaomi_step3">सेटिंग्स ← ऐप्स ← अनुमतियाँ ← अन्य अनुमतियाँ पर जाएँ, और \"बैकग्राउंड में चलते समय पॉप-अप विंडो दिखाएँ\" चालू करें।</string>
+
+    <string name="battery_manufacturer_oppo">ओप्पो / रियलमी</string>
+    <string name="battery_guide_oppo_step1">सेटिंग्स ← बैटरी ← यह ऐप पर जाएँ, और \"स्लीप-टाइम ऑप्टिमाइज़ेशन\" बंद करें।</string>
+    <string name="battery_guide_oppo_step2">सेटिंग्स ← ऐप मैनेजमेंट ← यह ऐप पर जाएँ, \"ऑटो-स्टार्ट की अनुमति दें\" और \"बैकग्राउंड में चलने की अनुमति दें\" चालू करें।</string>
+
+    <string name="battery_manufacturer_vivo">वीवो / आईक्यूओ</string>
+    <string name="battery_guide_vivo_step1">i Manager ← ऐप मैनेजर ← ऑटोस्टार्ट खोलें, और इस ऐप के लिए इसे चालू करें।</string>
+    <string name="battery_guide_vivo_step2">सेटिंग्स ← बैटरी ← बैकग्राउंड पावर उपयोग प्रबंधन पर जाएँ, और इस ऐप को बैकग्राउंड में चलने की अनुमति दें।</string>
+
+    <string name="battery_manufacturer_huawei">हुआवेई</string>
+    <string name="battery_guide_huawei_step1">सेटिंग्स ← बैटरी ← ऐप लॉन्च ← यह ऐप पर जाएँ, \"मैन्युअल रूप से प्रबंधित करें\" चुनें, फिर ऑटो-लॉन्च, सेकेंडरी लॉन्च और बैकग्राउंड में चलाना चालू करें।</string>
+    <string name="battery_guide_huawei_step2">सेटिंग्स ← ऐप्स ← यह ऐप ← बैटरी पर जाएँ, और \"अप्रतिबंधित\" चुनें।</string>
+    <string name="battery_guide_huawei_step3">हाल के ऐप्स की सूची में इस ऐप को लॉक करें ताकि सिस्टम इसे बंद न करे।</string>
+
+    <string name="battery_manufacturer_honor">ऑनर</string>
+    <string name="battery_guide_honor_step1">सेटिंग्स ← बैटरी ← ऐप लॉन्च ← यह ऐप पर जाएँ, और तीनों स्विच के साथ \"मैन्युअल रूप से प्रबंधित करें\" चालू करें।</string>
+    <string name="battery_guide_honor_step2">हाल के ऐप्स की सूची में इस ऐप को लॉक करें ताकि सिस्टम इसे बंद न करे।</string>
+
+    <string name="battery_manufacturer_samsung">सैमसंग</string>
+    <string name="battery_guide_samsung_step1">सेटिंग्स ← ऐप्स ← यह ऐप ← बैटरी पर जाएँ, और \"अप्रतिबंधित\" चुनें।</string>
+    <string name="battery_guide_samsung_step2">सेटिंग्स ← बैटरी और डिवाइस केयर ← बैटरी ← बैकग्राउंड उपयोग सीमाएँ पर जाएँ, और इस ऐप को \"स्लीपिंग ऐप्स\" से हटाएँ।</string>
+
+    <string name="battery_manufacturer_generic">आपका फ़ोन</string>
+    <string name="battery_guide_generic_step1">नीचे दिए गए बटन से इस ऐप को बैकग्राउंड में चलने की अनुमति दें।</string>
+</resources>

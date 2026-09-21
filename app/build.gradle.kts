@@ -203,5 +203,14 @@ dependencies {
     implementation(project(":feature:onboarding"))
     implementation(project(":feature:auth"))
     implementation(project(":feature:home"))
+    implementation(project(":feature:availability"))
+    // :app now hosts composables that resolve their own ViewModels (the tab
+    // scaffold). Feature modules get this from the convention plugin; :app is
+    // an application module and does not.
+    implementation(libs.hilt.navigation.compose)
+    // The foreground service lives here. :app must carry it on the classpath
+    // or the manifest's <service> entry resolves to nothing at merge time and
+    // Hilt never generates its component.
+    implementation(project(":core:location"))
     debugImplementation(libs.compose.ui.tooling)
 }
