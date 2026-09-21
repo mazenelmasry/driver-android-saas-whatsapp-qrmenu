@@ -1,6 +1,9 @@
 package app.qrmenu.driver.auth.di
 
 import android.content.Context
+import app.qrmenu.driver.auth.phone.DriverPhoneVerifier
+import app.qrmenu.driver.auth.phone.FirebaseDriverPhoneVerifier
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -22,4 +25,18 @@ object PhoneModule {
     @Singleton
     fun providePhoneNumberUtil(@ApplicationContext context: Context): PhoneNumberUtil =
         PhoneNumberUtil.createInstance(context)
+}
+
+/**
+ * A separate `abstract class` module: Hilt's `@Binds` needs an abstract
+ * function, which an `object` (used above for the `@Provides` factory) cannot
+ * declare.
+ */
+@Module
+@InstallIn(SingletonComponent::class)
+abstract class PhoneVerifierModule {
+
+    @Binds
+    @Singleton
+    abstract fun bindDriverPhoneVerifier(impl: FirebaseDriverPhoneVerifier): DriverPhoneVerifier
 }

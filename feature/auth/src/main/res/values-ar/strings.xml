@@ -37,4 +37,11 @@
     <string name="login_first_time">أول مرة؟ اطلب رمز التحقق</string>
     <string name="login_first_time_needs_phone">أدخل رقم جوالك أولاً.</string>
     <string name="login_phone_invalid">الرقم لا يبدو صحيحاً للدولة المختارة.</string>
+    <string name="otp_auto_verifying">جارٍ التحقق من رقمك تلقائياً…</string>
+    <string name="otp_firebase_unavailable">التحقّق بالجوال غير متاح فى هذه النسخة بعد.</string>
+    <string name="invite_title">أدخل رمز الدعوة</string>
+    <string name="invite_subtitle">رقمك مؤكَّد، لكن لم يضفك أى مطعم بعد. أدخل الرمز المكوَّن من ٦ أحرف الذى أعطاك إياه المطعم.</string>
+    <string name="invite_code_placeholder">XXXXXX</string>
+    <string name="invite_code_counter">%1$d من %2$d أحرف</string>
+    <string name="invite_submit">متابعة</string>
 </resources>

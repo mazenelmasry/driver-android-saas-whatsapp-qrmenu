@@ -37,4 +37,11 @@
     <string name="login_first_time">पहली बार? सत्यापन कोड मंगाएँ</string>
     <string name="login_first_time_needs_phone">पहले अपना फ़ोन नंबर डालें।</string>
     <string name="login_phone_invalid">चुने गए देश के लिए यह सही नंबर नहीं लगता।</string>
+    <string name="otp_auto_verifying">आपका नंबर अपने आप पक्का किया जा रहा है…</string>
+    <string name="otp_firebase_unavailable">फ़ोन सत्यापन अभी इस वर्शन में उपलब्ध नहीं है।</string>
+    <string name="invite_title">अपना आमंत्रण कोड डालें</string>
+    <string name="invite_subtitle">आपका नंबर पक्का हो गया है, पर अभी किसी रेस्टोरेंट ने आपको नहीं जोड़ा है। रेस्टोरेंट का दिया ६ अक्षर का कोड डालें।</string>
+    <string name="invite_code_placeholder">XXXXXX</string>
+    <string name="invite_code_counter">%2$d में से %1$d अक्षर</string>
+    <string name="invite_submit">जारी रखें</string>
 </resources>

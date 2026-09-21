@@ -74,6 +74,15 @@ internal fun OtpScreen(
     onChangeNumber: () -> Unit,
     resendInSeconds: Int,
     isSubmitting: Boolean,
+    /**
+     * Android resolved the SMS by itself (auto-retrieval / Play Services
+     * instant verification) and the backend call is in flight — the screen
+     * shows "confirming automatically" instead of a code field with nothing
+     * left to type.
+     */
+    isAutoVerifying: Boolean,
+    /** This build has no Firebase project wired in (see `DriverPhoneVerifier`). */
+    isFirebaseUnavailable: Boolean,
     error: DriverApiError?,
 ) {
     Scaffold { insets ->
@@ -106,92 +115,144 @@ internal fun OtpScreen(
 
             Spacer(Modifier.height(Spacing.xl))
 
-            DigitCellsField(
-                value = code,
-                onValueChange = { typed ->
-                    onCodeChange(typed)
-                    // Six digits can only mean one thing. Making the driver
-                    // reach for a button after the last one is a step that
-                    // exists for no reason.
-                    if (typed.length == OTP_LENGTH) onVerify()
-                },
-                length = OTP_LENGTH,
-                enabled = !isSubmitting,
-                isMasked = false,
-                // 🔴 Only a rejection OF THE CODE turns the cells red. A dropped
-                // connection is not the driver mistyping, and painting all six
-                // cells red for it tells them to re-read digits that were
-                // correct — while the banner right below already says what
-                // actually happened.
-                isError = error.isAboutTheCode(),
-                onDone = onVerify,
-            )
+            if (isFirebaseUnavailable) {
+                // 🔴 Not a retryable error: no amount of tapping "try again"
+                // will ever send an SMS on a build with no Firebase project
+                // (taaj, today). A generic red banner with a retry button here
+                // would send the driver into a loop that can never succeed.
+                Text(
+                    text = stringResource(R.string.otp_firebase_unavailable),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                    textAlign = TextAlign.Center,
+                )
+            } else if (isAutoVerifying) {
+                // The code cells never appear at all in this path — showing
+                // them empty for a moment before whisking the driver away
+                // reads as a glitch, not as "this happened for you".
+                AutoVerifyingIndicator()
+            } else {
+                DigitCellsField(
+                    value = code,
+                    onValueChange = { typed ->
+                        onCodeChange(typed)
+                        // Six digits can only mean one thing. Making the driver
+                        // reach for a button after the last one is a step that
+                        // exists for no reason.
+                        if (typed.length == OTP_LENGTH) onVerify()
+                    },
+                    length = OTP_LENGTH,
+                    enabled = !isSubmitting,
+                    isMasked = false,
+                    // 🔴 Only a rejection OF THE CODE turns the cells red. A
+                    // dropped connection is not the driver mistyping, and
+                    // painting all six cells red for it tells them to re-read
+                    // digits that were correct — while the banner right below
+                    // already says what actually happened.
+                    isError = error.isAboutTheCode(),
+                    onDone = onVerify,
+                )
+            }
 
-            if (error != null) {
+            if (error != null && !isFirebaseUnavailable) {
                 Spacer(Modifier.height(Spacing.md))
                 DriverErrorBanner(error = error, onRetry = onVerify)
             }
 
-            Spacer(Modifier.height(Spacing.lg))
+            if (!isFirebaseUnavailable && !isAutoVerifying) {
+                Spacer(Modifier.height(Spacing.lg))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TextButton(
+                        onClick = onChangeNumber,
+                        enabled = !isSubmitting,
+                        modifier = Modifier.heightIn(min = TouchTarget.compact),
+                    ) {
+                        Text(stringResource(R.string.otp_change_number))
+                    }
+
+                    if (resendInSeconds > 0) {
+                        // A countdown rather than a disabled button with no
+                        // explanation: an SMS that has not arrived yet is the
+                        // most likely reason a driver is stuck here, and
+                        // "wait 27s" is the answer.
+                        Text(
+                            text = stringResource(R.string.otp_resend_in, resendInSeconds),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    } else {
+                        TextButton(
+                            onClick = onResend,
+                            enabled = !isSubmitting,
+                            modifier = Modifier.heightIn(min = TouchTarget.compact),
+                        ) {
+                            Text(stringResource(R.string.otp_resend))
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(Spacing.xl))
+
+                Button(
+                    onClick = onVerify,
+                    enabled = !isSubmitting && code.length == OTP_LENGTH,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = TouchTarget.primary),
+                    shape = RoundedCornerShape(Radius.card),
+                ) {
+                    if (isSubmitting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(ControlSize.buttonSpinner),
+                            strokeWidth = ControlSize.buttonSpinnerStroke,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(R.string.otp_verify),
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                    }
+                }
+            } else if (isFirebaseUnavailable) {
+                Spacer(Modifier.height(Spacing.lg))
                 TextButton(
                     onClick = onChangeNumber,
-                    enabled = !isSubmitting,
                     modifier = Modifier.heightIn(min = TouchTarget.compact),
                 ) {
                     Text(stringResource(R.string.otp_change_number))
                 }
-
-                if (resendInSeconds > 0) {
-                    // A countdown rather than a disabled button with no
-                    // explanation: an SMS that has not arrived yet is the most
-                    // likely reason a driver is stuck here, and "wait 27s" is
-                    // the answer.
-                    Text(
-                        text = stringResource(R.string.otp_resend_in, resendInSeconds),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                } else {
-                    TextButton(
-                        onClick = onResend,
-                        enabled = !isSubmitting,
-                        modifier = Modifier.heightIn(min = TouchTarget.compact),
-                    ) {
-                        Text(stringResource(R.string.otp_resend))
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(Spacing.xl))
-
-            Button(
-                onClick = onVerify,
-                enabled = !isSubmitting && code.length == OTP_LENGTH,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = TouchTarget.primary),
-                shape = RoundedCornerShape(Radius.card),
-            ) {
-                if (isSubmitting) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(ControlSize.buttonSpinner),
-                        strokeWidth = ControlSize.buttonSpinnerStroke,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                    )
-                } else {
-                    Text(
-                        text = stringResource(R.string.otp_verify),
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                }
             }
         }
+    }
+}
+
+/**
+ * Shown only during [OtpUiState.isAutoVerifying][app.qrmenu.driver.auth.OtpUiState] —
+ * a brief, self-explaining wait, not the generic spinner the app otherwise
+ * forbids mid-screen: the sentence next to it says exactly what is happening
+ * and why nothing needs typing.
+ */
+@Composable
+private fun AutoVerifyingIndicator() {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        CircularProgressIndicator(
+            modifier = Modifier.size(ControlSize.buttonSpinner * 2),
+            strokeWidth = ControlSize.buttonSpinnerStroke,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Spacer(Modifier.height(Spacing.md))
+        Text(
+            text = stringResource(R.string.otp_auto_verifying),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
@@ -218,6 +279,48 @@ private fun OtpScreenPreview() {
             onChangeNumber = {},
             resendInSeconds = 27,
             isSubmitting = false,
+            isAutoVerifying = false,
+            isFirebaseUnavailable = false,
+            error = null,
+        )
+    }
+}
+
+@Preview(name = "auto-verifying", locale = "ar", showBackground = true)
+@Composable
+private fun OtpScreenAutoVerifyingPreview() {
+    DriverTheme {
+        OtpScreen(
+            phone = "+966501234567",
+            code = "",
+            onCodeChange = {},
+            onVerify = {},
+            onResend = {},
+            onChangeNumber = {},
+            resendInSeconds = 0,
+            isSubmitting = true,
+            isAutoVerifying = true,
+            isFirebaseUnavailable = false,
+            error = null,
+        )
+    }
+}
+
+@Preview(name = "firebase unavailable", locale = "ar", showBackground = true)
+@Composable
+private fun OtpScreenFirebaseUnavailablePreview() {
+    DriverTheme {
+        OtpScreen(
+            phone = "+966501234567",
+            code = "",
+            onCodeChange = {},
+            onVerify = {},
+            onResend = {},
+            onChangeNumber = {},
+            resendInSeconds = 0,
+            isSubmitting = false,
+            isAutoVerifying = false,
+            isFirebaseUnavailable = true,
             error = null,
         )
     }

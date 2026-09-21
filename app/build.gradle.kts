@@ -202,5 +202,6 @@ dependencies {
     implementation(project(":core:common"))
     implementation(project(":feature:onboarding"))
     implementation(project(":feature:auth"))
+    implementation(project(":feature:home"))
     debugImplementation(libs.compose.ui.tooling)
 }

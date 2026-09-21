@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ⏳ still needs a native speaker before launch (CLAUDE.md, glossary).
+-->
+<resources>
+    <string name="home_greeting">স্বাগতম, %1$s</string>
+    <string name="home_sign_out">সাইন আউট</string>
+    <string name="home_branches">শাখা: %1$s</string>
+    <string name="home_list_separator">, </string>
+    <string name="home_status_active">সক্রিয়</string>
+    <string name="home_status_invited">সক্রিয় হওয়ার অপেক্ষায়</string>
+    <string name="home_status_invited_hint">এই রেস্তোরাঁ এখনও আপনাকে সক্রিয় করেনি। যতক্ষণ না তারা করে, ততক্ষণ এখান থেকে কোনো অর্ডার আসবে না।</string>
+    <string name="home_status_suspended">বন্ধ করা হয়েছে</string>
+    <string name="home_status_suspended_hint">এই রেস্তোরাঁ আপনাকে বন্ধ করে দিয়েছে। কারণ জানতে তাদের সাথে যোগাযোগ করুন।</string>
+    <string name="home_empty_title">এখনো কোনো রেস্তোরাঁ নেই</string>
+    <string name="home_empty_body">এখনো কোনো রেস্তোরাঁ আপনাকে আমন্ত্রণ জানায়নি। তাদের সাথে কাজ শুরু করতে রেস্তোরাঁর কাছে আমন্ত্রণ কোড চান।</string>
+    <string name="home_empty_action">আমন্ত্রণ কোড লিখুন</string>
+</resources>

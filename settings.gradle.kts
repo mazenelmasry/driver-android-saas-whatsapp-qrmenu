@@ -44,6 +44,7 @@ include(":core:datastore")
 // Feature modules
 include(":feature:auth")
 include(":feature:onboarding")
+include(":feature:home")
 // include(":feature:availability")
 // include(":feature:trip")
 // include(":feature:ledger")

@@ -53,16 +53,22 @@ import coil3.compose.AsyncImage
 import java.util.Locale
 
 /**
- * Screen 2 — signing in with a phone number and the 4-digit secret code
- * (decision 17).
+ * Screen 2 — signing in with a phone number and a PASSWORD (decision 17, as
+ * amended by the project owner on 2026-09-21).
  *
- * There is no e-mail and no password anywhere in this app: a driver is invited
- * by a restaurant and identified by their PHONE, because that is the one thing
- * they were reached on and the one thing they will not mistype from memory.
+ * There is no e-mail: a driver is invited by a restaurant and identified by
+ * their PHONE, the one thing they were reached on and will not mistype from
+ * memory.
+ *
+ * The password is deliberately NOT the six digits that arrive by SMS. Those
+ * are a CODE, typed once per device into open cells; this is a PASSWORD, typed
+ * from memory for months into one masked field with an eye. Confusing the two
+ * names is what produced the earlier four-digit design — the shape follows the
+ * name, so the names are kept apart.
  */
 @Composable
 fun LoginRoute(
-    onSignedIn: () -> Unit,
+    onSignedIn: (hasRestaurants: Boolean) -> Unit,
     /**
      * Carries the number the driver already typed, so the OTP screen does not
      * ask for it a second time — and so a driver who cannot remember their

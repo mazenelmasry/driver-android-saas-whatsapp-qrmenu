@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ⏳ still needs a native speaker before launch (CLAUDE.md, glossary).
+-->
+<resources>
+    <string name="home_greeting">خوش آمدید، %1$s</string>
+    <string name="home_sign_out">سائن آؤٹ</string>
+    <string name="home_branches">برانچز: %1$s</string>
+    <string name="home_list_separator">، </string>
+    <string name="home_status_active">فعال</string>
+    <string name="home_status_invited">فعال ہونے کا انتظار</string>
+    <string name="home_status_invited_hint">اس ریستوران نے ابھی تک آپ کو فعال نہیں کیا۔ جب تک ایسا نہیں ہوتا، آپ کو اس سے کوئی آرڈر نہیں ملے گا۔</string>
+    <string name="home_status_suspended">روک دیا گیا</string>
+    <string name="home_status_suspended_hint">اس ریستوران نے آپ کو روک دیا ہے۔ وجہ جاننے کے لیے ان سے رابطہ کریں۔</string>
+    <string name="home_empty_title">ابھی کوئی ریستوران نہیں</string>
+    <string name="home_empty_body">ابھی تک کسی ریستوران نے آپ کو دعوت نہیں دی۔ اس کے ساتھ کام شروع کرنے کے لیے ریستوران سے دعوتی کوڈ مانگیں۔</string>
+    <string name="home_empty_action">دعوتی کوڈ درج کریں</string>
+</resources>

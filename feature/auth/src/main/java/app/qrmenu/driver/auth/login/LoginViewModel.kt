@@ -3,6 +3,8 @@ package app.qrmenu.driver.auth.login
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.qrmenu.driver.common.session.TokenExpiry
+import app.qrmenu.driver.datastore.TokenStore
 import app.qrmenu.driver.network.api.AuthApi
 import app.qrmenu.driver.network.dto.BrandingDto
 import app.qrmenu.driver.network.errors.DriverApiError
@@ -67,6 +69,7 @@ class LoginViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val authApi: AuthApi,
     private val phoneNumberUtil: PhoneNumberUtil,
+    private val tokenStore: TokenStore,
 ) : ViewModel() {
 
     private val regions = DialingRegions(phoneNumberUtil)
@@ -159,7 +162,7 @@ class LoginViewModel @Inject constructor(
      * mobile data — and, more importantly, before it burns one of the five
      * attempts a minute the login limiter allows.
      */
-    fun submit(deviceName: String, appVersionCode: Int, onSuccess: () -> Unit) {
+    fun submit(deviceName: String, appVersionCode: Int, onSuccess: (hasRestaurants: Boolean) -> Unit) {
         val current = _state.value
         val region = current.region ?: return
         if (current.isSubmitting) return
@@ -191,11 +194,22 @@ class LoginViewModel @Inject constructor(
                         appVersion = appVersionCode,
                     ),
                 )
-            }.onSuccess {
-                // Saving the session and routing onward lands with the OTP and
-                // restaurant-picker screens; this commit is the screen itself.
+            }.onSuccess { response ->
+                // 🔴 Wrapped in NonCancellable — a save that a navigation event
+                // is free to cut short is exactly how the previous project
+                // (CLAUDE.md's pitfall list) lost a just-completed sign-in.
+                kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
+                    tokenStore.save(
+                        token = response.token,
+                        driverId = response.driver.id,
+                        driverName = response.driver.name,
+                        phone = response.driver.phone,
+                        deviceName = deviceName,
+                        expiresAtMillis = TokenExpiry.parseExpiresAt(response.expiresAt),
+                    )
+                }
                 _state.update { it.copy(isSubmitting = false) }
-                onSuccess()
+                onSuccess(response.restaurants.isNotEmpty())
             }.onFailure { thrown ->
                 _state.update { it.copy(isSubmitting = false, error = thrown.toDriverApiError()) }
             }

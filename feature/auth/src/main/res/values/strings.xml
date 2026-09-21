@@ -37,4 +37,11 @@
     <string name="login_first_time">First time? Request a verification code</string>
     <string name="login_first_time_needs_phone">Enter your phone number first.</string>
     <string name="login_phone_invalid">This does not look like a valid number for the selected country.</string>
+    <string name="otp_auto_verifying">Confirming your number automatically…</string>
+    <string name="otp_firebase_unavailable">Phone verification is not available on this build yet.</string>
+    <string name="invite_title">Enter your invite code</string>
+    <string name="invite_subtitle">Your number is confirmed, but no restaurant has added you yet. Enter the 6-character code the restaurant gave you.</string>
+    <string name="invite_code_placeholder">XXXXXX</string>
+    <string name="invite_code_counter">%1$d of %2$d characters</string>
+    <string name="invite_submit">Continue</string>
 </resources>

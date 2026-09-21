@@ -5,31 +5,28 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.platform.LocalContext
+import app.qrmenu.driver.auth.AuthFlow
+import app.qrmenu.driver.auth.RedeemInviteFlow
 import app.qrmenu.driver.common.locale.SupportedLocales
 import app.qrmenu.driver.datastore.AppLocaleStore
+import app.qrmenu.driver.datastore.TokenStore
 import app.qrmenu.driver.designsystem.theme.DriverTheme
-import app.qrmenu.driver.designsystem.theme.Spacing
-import app.qrmenu.driver.auth.AuthFlow
+import app.qrmenu.driver.home.HomeRoute
 import app.qrmenu.driver.onboarding.language.LanguageRoute
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var tokenStore: TokenStore
 
     /**
      * Applies the stored language before any view is inflated.
@@ -49,25 +46,28 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             DriverTheme {
-                DriverApp()
+                DriverApp(tokenStore)
             }
         }
     }
 }
 
 /**
- * Phase-0 entry point.
+ * What the app shows, and in what order it decides.
  *
- * There is deliberately no `NavHost` yet: a navigation graph with one real
- * destination is scaffolding that has to be rewritten the moment login lands,
- * and it would hide which screen actually decides what comes first. That
- * decision is here and is explicit — the language picker runs until a choice
- * exists (decision 9), and nothing else can run before it.
+ * There is deliberately still no `NavHost`: three top-level states with one
+ * decision each is a `when`, and a navigation graph would spread that decision
+ * across four files without adding a destination anyone can reach.
+ *
+ * 1. The language picker runs until a choice exists (decision 9). Nothing can
+ *    run before it — a driver who cannot read the screen cannot sign in on it.
+ * 2. Then sign-in, unless a session was already stored.
+ * 3. Then home.
  */
 @Composable
-private fun DriverApp() {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    var languageChosen by remember {
+private fun DriverApp(tokenStore: TokenStore) {
+    val context = LocalContext.current
+    var languageChosen by rememberSaveable {
         mutableStateOf(AppLocaleStore.readLanguage(context) != null)
     }
 
@@ -82,40 +82,29 @@ private fun DriverApp() {
                 (context as? ComponentActivity)?.recreate()
             },
         )
-    } else {
-        // The whole sign-in flow (phone + password, SMS confirmation, choosing a
-        // password) lives in :feature:auth. What comes after it — the restaurant
-        // picker and the home screen — is not built yet, so success lands on the
-        // placeholder.
-        var signedIn by remember { mutableStateOf(false) }
-        if (signedIn) ScaffoldPlaceholder() else AuthFlow(onSignedIn = { signedIn = true })
+        return
     }
-}
 
-/**
- * Phase-0 placeholder for everything after the language picker. Replaced by the
- * login screen next.
- */
-@Composable
-private fun ScaffoldPlaceholder() {
-    Scaffold { insets ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(insets)
-                .padding(Spacing.xl),
-            verticalArrangement = Arrangement.spacedBy(Spacing.xs, Alignment.CenterVertically),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                text = stringResource(R.string.app_name),
-                style = MaterialTheme.typography.headlineMedium,
-            )
-            Text(
-                text = BuildConfig.API_BASE_URL,
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        }
+    // 🔴 Read ONCE, at launch — not as a live flow off the token.
+    //
+    // `verify-otp` signs the driver in so that choosing a password is an
+    // authenticated call; a token therefore exists in the MIDDLE of the sign-in
+    // flow, before that flow has finished. Driving this screen off the token
+    // would throw the driver onto home half-way through, with no password set.
+    // What "skip sign-in" actually means is "a session survived from a previous
+    // run", and that is what this reads.
+    var signedIn by rememberSaveable { mutableStateOf(tokenStore.hasValidSession()) }
+    var redeemingInvite by rememberSaveable { mutableStateOf(false) }
+
+    when {
+        !signedIn -> AuthFlow(onSignedIn = { signedIn = true })
+
+        redeemingInvite -> RedeemInviteFlow(onRedeemed = { redeemingInvite = false })
+
+        else -> HomeRoute(
+            onSignedOut = { signedIn = false },
+            onEnterInviteCode = { redeemingInvite = true },
+        )
     }
 }
 

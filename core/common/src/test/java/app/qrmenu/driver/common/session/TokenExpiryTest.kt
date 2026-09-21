@@ -65,4 +65,31 @@ class TokenExpiryTest {
     fun `the documented lifetime is thirty days`() {
         assertEquals(30L, TokenExpiry.LIFETIME_DAYS)
     }
+
+    @Test
+    fun `an offset iso-8601 string parses to the correct instant`() {
+        // 2026-10-21T12:00:00+03:00 == 2026-10-21T09:00:00Z
+        val expected = java.time.Instant.parse("2026-10-21T09:00:00Z").toEpochMilli()
+        assertEquals(expected, TokenExpiry.parseExpiresAt("2026-10-21T12:00:00+03:00"))
+    }
+
+    @Test
+    fun `a zulu iso-8601 string parses`() {
+        val expected = java.time.Instant.parse("2026-10-21T09:00:00Z").toEpochMilli()
+        assertEquals(expected, TokenExpiry.parseExpiresAt("2026-10-21T09:00:00Z"))
+    }
+
+    /** No value at all, per the API contract — must not throw, must not sign anyone out. */
+    @Test
+    fun `a null or blank value parses to null`() {
+        assertNull(TokenExpiry.parseExpiresAt(null))
+        assertNull(TokenExpiry.parseExpiresAt(""))
+    }
+
+    /** An unparseable value degrades to "unknown", not a crash — see the doc on isExpired. */
+    @Test
+    fun `an unparseable value parses to null rather than throwing`() {
+        assertNull(TokenExpiry.parseExpiresAt("not-a-date"))
+        assertNull(TokenExpiry.parseExpiresAt("2026-10-21")) // no offset: not this contract's shape
+    }
 }

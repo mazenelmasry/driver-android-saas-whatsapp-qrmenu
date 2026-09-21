@@ -1,5 +1,8 @@
 package app.qrmenu.driver.common.session
 
+import java.time.OffsetDateTime
+import java.time.format.DateTimeParseException
+
 /**
  * When a driver session token is spent.
  *
@@ -64,5 +67,24 @@ object TokenExpiry {
         val remaining = expiresAtMillis - nowMillis
 
         return if (remaining <= 0) 0 else remaining / (24 * 60 * 60 * 1000L)
+    }
+
+    /**
+     * Reads the contract's `expires_at` — ISO-8601 WITH a UTC offset (e.g.
+     * `2026-10-21T12:00:00+03:00`), never a bare `Z`-less local time.
+     *
+     * Null or unparseable both return `null`, which [isExpired] already treats
+     * as "no expiry known ⇒ alive" (see its doc) — a server that sent a value
+     * this build cannot read must not be able to sign a driver out of a working
+     * session; a genuinely dead token still comes back as 401 and is cleared
+     * then.
+     */
+    fun parseExpiresAt(iso: String?): Long? {
+        if (iso.isNullOrBlank()) return null
+        return try {
+            OffsetDateTime.parse(iso).toInstant().toEpochMilli()
+        } catch (_: DateTimeParseException) {
+            null
+        }
     }
 }
