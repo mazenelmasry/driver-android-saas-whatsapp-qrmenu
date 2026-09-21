@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Pre-Compose window theme. Kept minimal: the real theme is DriverTheme
+         (core:designsystem, Material 3). This only paints the window before the
+         first frame so the launch does not flash white/black. -->
+    <style name="Theme.Driver.Starting" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/driver_brand_surface</item>
+        <item name="android:statusBarColor">@color/driver_brand_surface</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>

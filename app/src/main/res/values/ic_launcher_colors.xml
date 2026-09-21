@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ⏳ PLACEHOLDER icon colour. The real icon (platform logo + delivery badge)
+     is pending — CLAUDE.md § ما يحتاجه صاحب المشروع، بند ٨. -->
+<resources>
+    <color name="ic_launcher_background">#C2410C</color>
+</resources>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Pre-first-frame window background. Uses the brand paper colour so the launch
+     never flashes a colour that belongs to no brand. The colour itself is
+     defined per flavor in driver_brand_colors.xml. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/driver_brand_surface" />
+</layer-list>

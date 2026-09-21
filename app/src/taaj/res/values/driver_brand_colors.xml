@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- taaj brand colours — the single place this brand's palette is set.
+     Mirrors the taaj landing page theme. Surfaces are derived by lerping
+     between `surface` (paper) and `ink` in DriverTheme, so every container
+     role belongs to the brand. -->
+<resources>
+    <color name="driver_brand_primary">#C2410C</color>
+    <color name="driver_brand_on_primary">#FFFFFF</color>
+    <color name="driver_brand_primary_container">#FFE7D1</color>
+    <color name="driver_brand_on_primary_container">#6B2A09</color>
+    <color name="driver_brand_secondary">#D97706</color>
+    <color name="driver_brand_secondary_container">#FEF0C7</color>
+    <color name="driver_brand_on_secondary_container">#6B3A06</color>
+    <color name="driver_brand_surface">#FBF8F3</color>
+    <color name="driver_brand_ink">#211D17</color>
+</resources>
