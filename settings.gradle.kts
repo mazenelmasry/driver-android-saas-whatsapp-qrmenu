@@ -29,13 +29,13 @@ rootProject.name = "qrmenu-driver"
 include(":app")
 
 // Core modules — added as each is scaffolded (CLAUDE.md § بنية المشروع).
-// include(":core:common")
+include(":core:common")
 // include(":core:model")
 include(":core:designsystem")
 // include(":core:ui")
 // include(":core:network")
 // include(":core:database")
-// include(":core:datastore")
+include(":core:datastore")
 // include(":core:location")
 // include(":core:sync")
 // include(":core:notifications")
