@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Android 13+ runtime permission to post any notification at all. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- The offer alarm (OfferAlarm) drives the device vibrator directly,
+         independently of the notification's own default vibration pattern. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- Android 14+ (API 34) restricts full-screen-intent notifications to
+         apps the user has explicitly granted this for (calling-style apps
+         get it by default; everyone else must request it and can be
+         denied). Declaring it is what makes the permission requestable —
+         it does NOT grant it. FullScreenIntentEligibility is the code path
+         that checks whether it was actually granted and falls back to a
+         heads-up notification when it wasn't. -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+
+</manifest>

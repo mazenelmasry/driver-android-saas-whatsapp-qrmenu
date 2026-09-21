@@ -204,6 +204,7 @@ dependencies {
     implementation(project(":feature:auth"))
     implementation(project(":feature:availability"))
     implementation(project(":feature:orders"))
+    implementation(project(":feature:trip"))
     implementation(project(":feature:notifications"))
     implementation(project(":feature:account"))
     implementation(project(":feature:wallet"))
@@ -215,5 +216,6 @@ dependencies {
     // or the manifest's <service> entry resolves to nothing at merge time and
     // Hilt never generates its component.
     implementation(project(":core:location"))
+    implementation(project(":core:notifications"))
     debugImplementation(libs.compose.ui.tooling)
 }

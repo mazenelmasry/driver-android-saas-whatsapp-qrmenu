@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notif_channel_offers_name">Delivery offers</string>
+    <string name="notif_channel_offers_description">A new trip is offered to you. This channel bypasses Do Not Disturb so you don\'t miss it.</string>
+
+    <string name="notif_channel_general_name">General</string>
+    <string name="notif_channel_general_description">Payouts, account updates and other messages that aren\'t a time-boxed offer.</string>
+
+    <string name="notif_health_notifications_disabled">Notifications are turned off</string>
+    <string name="notif_health_offer_channel_disabled">Offer notifications are turned off</string>
+    <string name="notif_health_full_screen_intent_not_granted">Full-screen offer alerts aren\'t allowed</string>
+    <string name="notif_health_dnd_bypass_not_granted">Offers won\'t ring during Do Not Disturb</string>
+</resources>

@@ -16,6 +16,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -37,6 +38,7 @@ import app.qrmenu.driver.location.permission.rememberLocationPermissionFlow
 import app.qrmenu.driver.location.upload.LocationConnectivityState
 import app.qrmenu.driver.network.dto.AvailabilityContextDto
 import app.qrmenu.driver.orders.OrdersRoute
+import app.qrmenu.driver.trip.OfferRoute
 import app.qrmenu.driver.wallet.WalletRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -62,12 +64,18 @@ import kotlinx.coroutines.flow.stateIn
  * narrow for the thumb this app is designed around.
  *
  * Deliberately still a `when` over a saved tab rather than a `NavHost`: nothing
- * here is deep-linked or takes arguments yet, and the bar IS the navigation. It
- * becomes a graph the day a notification has to open one of these directly,
- * which is the week the offer screen lands.
+ * here is deep-linked or takes arguments yet, and the bar IS the navigation.
+ * The offer screen, which landed this week, did NOT change that: it is not a
+ * destination the driver navigates to — it seizes the screen and hands it
+ * back. It becomes a graph the day a notification tap has to open one of
+ * these directly, which is the FCM receiver's week.
  */
 @Composable
-fun SignedInScreen(onSignedOut: () -> Unit, onEnterInviteCode: () -> Unit) {
+fun SignedInScreen(
+    onSignedOut: () -> Unit,
+    onEnterInviteCode: () -> Unit,
+    pendingOfferViewModel: PendingOfferViewModel = hiltViewModel(),
+) {
     var tab by rememberSaveable { mutableStateOf(SignedInTab.Availability) }
 
     // The "why is المتاحة empty" context (decision 47) is owned by
@@ -87,6 +95,29 @@ fun SignedInScreen(onSignedOut: () -> Unit, onEnterInviteCode: () -> Unit) {
 
     if (showingNotifications) {
         NotificationCenterRoute(onBack = { showingNotifications = false })
+        return
+    }
+
+    // 🔴 The offer outranks everything, including the notification centre
+    // above it: a live offer is 45 seconds of the driver's income and the
+    // ONLY screen in this app that is allowed to interrupt. It is layered
+    // over the tabs rather than being a destination, so answering it returns
+    // the driver exactly where they were — a driver who loses their place
+    // every time an offer arrives stops trusting the app.
+    val pendingOffer by pendingOfferViewModel.pending.collectAsState()
+
+    pendingOffer?.let { offer ->
+        OfferRoute(
+            orderId = offer.orderId,
+            // Both endings stop the ringing. Accepting is not "success and
+            // the alarm sorts itself out" — the alarm is deliberately
+            // insistent, so every exit has to switch it off explicitly.
+            onAccepted = {
+                pendingOfferViewModel.dismiss()
+                tab = SignedInTab.Orders
+            },
+            onResolved = { pendingOfferViewModel.dismiss() },
+        )
         return
     }
 

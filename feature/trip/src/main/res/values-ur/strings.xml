@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ⏳ machine draft — needs a native speaker before launch (CLAUDE.md, glossary). -->
+<resources>
+    <string name="trip_offer_title">نیا آرڈر</string>
+
+    <string name="trip_offer_seconds_left">%1$s سیکنڈ باقی</string>
+
+    <string name="trip_offer_fee_label">آپ کی کمائی</string>
+    <string name="trip_offer_cash_to_collect">وصول کریں %1$s</string>
+    <string name="trip_offer_paid_online">آن لائن ادا شدہ</string>
+    <string name="trip_offer_items_count">%1$d اشیاء</string>
+
+    <string name="trip_offer_accept">قبول کریں</string>
+    <string name="trip_offer_decline">مسترد کریں</string>
+
+    <string name="trip_decline_sheet_title">کیوں مسترد کر رہے ہیں؟</string>
+    <string name="trip_decline_reason_too_far">بہت دور</string>
+    <string name="trip_decline_reason_vehicle_problem">گاڑی میں مسئلہ</string>
+    <string name="trip_decline_reason_restaurant_issue">ریسٹورنٹ کا مسئلہ</string>
+    <string name="trip_decline_reason_low_pay">اجرت کم ہے</string>
+    <string name="trip_decline_reason_other">دیگر</string>
+    <string name="trip_decline_sheet_cancel">واپس</string>
+
+    <string name="trip_outcome_already_claimed_title">پہلے ہی لے لیا گیا</string>
+    <string name="trip_outcome_already_claimed_body">کسی اور ڈرائیور نے آپ سے پہلے لے لیا۔ مزید آفرز آ رہی ہیں۔</string>
+    <string name="trip_outcome_expired_title">آفر ختم ہو گئی</string>
+    <string name="trip_outcome_expired_body">آپ نے وقت پر جواب نہیں دیا — یہ کسی اور ڈرائیور کو دے دیا گیا۔</string>
+    <string name="trip_outcome_order_cancelled_title">آرڈر منسوخ</string>
+    <string name="trip_outcome_order_cancelled_body">ریسٹورنٹ نے یہ آرڈر منسوخ کر دیا۔</string>
+    <string name="trip_outcome_too_many_active_orders_title">آپ کے پاس پہلے ہی ایک ٹرپ ہے</string>
+    <string name="trip_outcome_too_many_active_orders_body">نیا آرڈر لینے سے پہلے اپنا موجودہ ٹرپ مکمل کریں۔</string>
+    <string name="trip_outcome_cash_limit_exceeded_title">نقد کی حد پوری ہو گئی</string>
+    <string name="trip_outcome_cash_limit_exceeded_body">نقد آرڈرز دوبارہ لینے کے لیے ریسٹورنٹ سے اپنا حساب صاف کریں۔</string>
+    <string name="trip_outcome_declined_title">مسترد کر دیا گیا</string>
+    <string name="trip_outcome_declined_body">یہ آرڈر دوبارہ آپ کو پیش نہیں کیا جائے گا۔</string>
+
+    <string name="trip_outcome_close">بند کریں</string>
+</resources>

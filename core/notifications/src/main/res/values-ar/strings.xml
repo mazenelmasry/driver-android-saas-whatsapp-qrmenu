@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notif_channel_offers_name">عروض التوصيل</string>
+    <string name="notif_channel_offers_description">طلب توصيل جديد مُقدَّم لك. هذه القناة تتجاوز «عدم الإزعاج» حتى لا يفوتك.</string>
+
+    <string name="notif_channel_general_name">عام</string>
+    <string name="notif_channel_general_description">المستحقات وتحديثات الحساب وغيرها من الرسائل التى ليست عرضاً محدَّد المهلة.</string>
+
+    <string name="notif_health_notifications_disabled">الإشعارات مُعطَّلة</string>
+    <string name="notif_health_offer_channel_disabled">إشعارات العروض مُعطَّلة</string>
+    <string name="notif_health_full_screen_intent_not_granted">لا يُسمح بتنبيه العرض بشاشة كاملة</string>
+    <string name="notif_health_dnd_bypass_not_granted">العروض لن تُصدر صوتاً أثناء «عدم الإزعاج»</string>
+</resources>

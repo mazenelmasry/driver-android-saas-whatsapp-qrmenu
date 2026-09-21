@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ⏳ ur / bn / hi are written by the agent and still need a native speaker before
+  launch (CLAUDE.md, glossary). ar / en are final.
+-->
+<resources>
+    <string name="trip_offer_title">New order</string>
+
+    <!-- Glossary: offer = "عرض" (CLAUDE.md § مسرد المصطلحات). Kept singular-agnostic
+         on purpose (a countdown reads "N s left" every second regardless of N). -->
+    <string name="trip_offer_seconds_left">%1$s s left</string>
+
+    <string name="trip_offer_fee_label">You earn</string>
+    <string name="trip_offer_cash_to_collect">Collect %1$s</string>
+    <string name="trip_offer_paid_online">Paid online</string>
+    <string name="trip_offer_items_count">%1$d items</string>
+
+    <!-- Glossary: accept = "قبول" (CLAUDE.md § مسرد المصطلحات). -->
+    <string name="trip_offer_accept">Accept</string>
+    <string name="trip_offer_decline">Decline</string>
+
+    <string name="trip_decline_sheet_title">Why decline?</string>
+    <string name="trip_decline_reason_too_far">Too far</string>
+    <string name="trip_decline_reason_vehicle_problem">Vehicle problem</string>
+    <string name="trip_decline_reason_restaurant_issue">Restaurant issue</string>
+    <string name="trip_decline_reason_low_pay">Fee too low</string>
+    <string name="trip_decline_reason_other">Other</string>
+    <string name="trip_decline_sheet_cancel">Back</string>
+
+    <!-- Terminal outcomes — each is a normal end to this screen, not a fault of the driver's. -->
+    <string name="trip_outcome_already_claimed_title">Already claimed</string>
+    <string name="trip_outcome_already_claimed_body">Another driver got there first. More offers are on the way.</string>
+    <string name="trip_outcome_expired_title">Offer expired</string>
+    <string name="trip_outcome_expired_body">You did not answer in time — it went to another driver.</string>
+    <string name="trip_outcome_order_cancelled_title">Order cancelled</string>
+    <string name="trip_outcome_order_cancelled_body">The restaurant cancelled this order.</string>
+    <string name="trip_outcome_too_many_active_orders_title">You already have a trip</string>
+    <string name="trip_outcome_too_many_active_orders_body">Finish your current trip before taking another.</string>
+    <string name="trip_outcome_cash_limit_exceeded_title">Cash limit reached</string>
+    <string name="trip_outcome_cash_limit_exceeded_body">Settle your cash with the restaurant to take cash orders again.</string>
+    <string name="trip_outcome_declined_title">Declined</string>
+    <string name="trip_outcome_declined_body">This order will not be offered to you again.</string>
+
+    <string name="trip_outcome_close">Close</string>
+</resources>

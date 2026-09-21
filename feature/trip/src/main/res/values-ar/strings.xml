@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="trip_offer_title">طلب جديد</string>
+
+    <string name="trip_offer_seconds_left">متبقٍ %1$s ث</string>
+
+    <string name="trip_offer_fee_label">أجرتك</string>
+    <string name="trip_offer_cash_to_collect">تحصيل %1$s</string>
+    <string name="trip_offer_paid_online">مدفوع أونلاين</string>
+    <string name="trip_offer_items_count">%1$d صنف</string>
+
+    <string name="trip_offer_accept">قبول</string>
+    <string name="trip_offer_decline">رفض</string>
+
+    <string name="trip_decline_sheet_title">سبب الرفض؟</string>
+    <string name="trip_decline_reason_too_far">بعيد جداً</string>
+    <string name="trip_decline_reason_vehicle_problem">مشكلة فى المركبة</string>
+    <string name="trip_decline_reason_restaurant_issue">مشكلة فى المطعم</string>
+    <string name="trip_decline_reason_low_pay">الأجر منخفض</string>
+    <string name="trip_decline_reason_other">أخرى</string>
+    <string name="trip_decline_sheet_cancel">رجوع</string>
+
+    <string name="trip_outcome_already_claimed_title">سُبقت إليه</string>
+    <string name="trip_outcome_already_claimed_body">أخذه سائق آخر قبلك — عروض أخرى فى طريقها إليك.</string>
+    <string name="trip_outcome_expired_title">انتهت مهلة العرض</string>
+    <string name="trip_outcome_expired_body">لم تُجب فى الوقت المحدَّد — ذهب لسائق آخر.</string>
+    <string name="trip_outcome_order_cancelled_title">أُلغى الطلب</string>
+    <string name="trip_outcome_order_cancelled_body">ألغى المطعم هذا الطلب.</string>
+    <string name="trip_outcome_too_many_active_orders_title">لديك طلب قائم بالفعل</string>
+    <string name="trip_outcome_too_many_active_orders_body">أنهِ رحلتك الحالية أولاً لتتمكّن من قبول طلب جديد.</string>
+    <string name="trip_outcome_cash_limit_exceeded_title">بلغت سقف النقد</string>
+    <string name="trip_outcome_cash_limit_exceeded_body">سوِّ رصيدك النقدى مع المطعم لتستقبل طلبات نقدية من جديد.</string>
+    <string name="trip_outcome_declined_title">تم الرفض</string>
+    <string name="trip_outcome_declined_body">لن يُعرض عليك هذا الطلب مجدداً.</string>
+
+    <string name="trip_outcome_close">إغلاق</string>
+</resources>

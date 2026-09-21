@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ⏳ machine draft — needs a native speaker before launch (CLAUDE.md, glossary). -->
+<resources>
+    <string name="trip_offer_title">নতুন অর্ডার</string>
+
+    <string name="trip_offer_seconds_left">%1$s সেকেন্ড বাকি</string>
+
+    <string name="trip_offer_fee_label">আপনার আয়</string>
+    <string name="trip_offer_cash_to_collect">সংগ্রহ %1$s</string>
+    <string name="trip_offer_paid_online">অনলাইনে পরিশোধিত</string>
+    <string name="trip_offer_items_count">%1$d আইটেম</string>
+
+    <string name="trip_offer_accept">গ্রহণ করুন</string>
+    <string name="trip_offer_decline">প্রত্যাখ্যান করুন</string>
+
+    <string name="trip_decline_sheet_title">কেন প্রত্যাখ্যান করছেন?</string>
+    <string name="trip_decline_reason_too_far">অনেক দূরে</string>
+    <string name="trip_decline_reason_vehicle_problem">যানবাহনের সমস্যা</string>
+    <string name="trip_decline_reason_restaurant_issue">রেস্তোরাঁর সমস্যা</string>
+    <string name="trip_decline_reason_low_pay">পারিশ্রমিক কম</string>
+    <string name="trip_decline_reason_other">অন্যান্য</string>
+    <string name="trip_decline_sheet_cancel">ফিরে যান</string>
+
+    <string name="trip_outcome_already_claimed_title">ইতিমধ্যে নেওয়া হয়েছে</string>
+    <string name="trip_outcome_already_claimed_body">অন্য একজন ড্রাইভার আপনার আগে এটি নিয়ে নিয়েছেন। আরও অফার আসছে।</string>
+    <string name="trip_outcome_expired_title">অফারের মেয়াদ শেষ</string>
+    <string name="trip_outcome_expired_body">আপনি সময়মতো উত্তর দেননি — এটি অন্য ড্রাইভারকে দেওয়া হয়েছে।</string>
+    <string name="trip_outcome_order_cancelled_title">অর্ডার বাতিল</string>
+    <string name="trip_outcome_order_cancelled_body">রেস্তোরাঁ এই অর্ডারটি বাতিল করেছে।</string>
+    <string name="trip_outcome_too_many_active_orders_title">আপনার ইতিমধ্যে একটি ট্রিপ আছে</string>
+    <string name="trip_outcome_too_many_active_orders_body">নতুন অর্ডার নেওয়ার আগে আপনার বর্তমান ট্রিপ শেষ করুন।</string>
+    <string name="trip_outcome_cash_limit_exceeded_title">নগদ সীমা পূর্ণ</string>
+    <string name="trip_outcome_cash_limit_exceeded_body">নগদ অর্ডার আবার নিতে রেস্তোরাঁর সাথে হিসাব মিটিয়ে নিন।</string>
+    <string name="trip_outcome_declined_title">প্রত্যাখ্যাত হয়েছে</string>
+    <string name="trip_outcome_declined_body">এই অর্ডারটি আপনাকে আর দেওয়া হবে না।</string>
+
+    <string name="trip_outcome_close">বন্ধ করুন</string>
+</resources>
