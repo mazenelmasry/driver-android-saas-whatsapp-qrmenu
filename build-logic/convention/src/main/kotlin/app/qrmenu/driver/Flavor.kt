@@ -64,7 +64,7 @@ internal fun Project.resolveDebugBaseUrl(): String {
 }
 
 /**
- * Registers the brand product flavors and wires API_BASE_URL / APP_VERSION into BuildConfig
+ * Registers the brand product flavors and wires API_BASE_URL / APP_VERSION_* into BuildConfig
  * for every Android module. Retrofit reads core:network's BuildConfig (NetworkModule).
  *  - release  -> the flavor's production domain
  *  - debug    -> a local dev URL from an untracked source (build type overrides the flavor value)
@@ -97,7 +97,11 @@ internal fun Project.configureFlavors(
                         applicationIdSuffix = driverFlavor.applicationIdSuffix
                     }
                     buildConfigField("String", "API_BASE_URL", "\"${driverFlavor.releaseBaseUrl}\"")
-                    buildConfigField("String", "APP_VERSION", "\"0.1.0-${driverFlavor.name}\"")
+                    // The version is NOT flavour-specific: both brands ship the same
+                    // build, and the updater compares the integer CODE (never the name
+                    // string). See DriverVersion.
+                    buildConfigField("int", "APP_VERSION_CODE", "${DriverVersion.CODE}")
+                    buildConfigField("String", "APP_VERSION_NAME", "\"${DriverVersion.NAME}\"")
                     buildConfigField("String", "PRIVACY_POLICY_URL", "\"${driverFlavor.privacyPolicyUrl}\"")
                 }
             }

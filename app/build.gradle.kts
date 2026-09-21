@@ -15,9 +15,12 @@ android {
     defaultConfig {
         applicationId = "app.qrmenu.driver"
         // CLAUDE.md § ترقيم الإصدارات — versionCode = MAJOR*10000 + MINOR*100 + PATCH.
-        // The self-updater compares this INTEGER, never the name string.
-        versionCode = 10000
-        versionName = "1.0.0"
+        // The self-updater compares this INTEGER, never the name string. Both
+        // come from app.qrmenu.driver.DriverVersion in build-logic, which also
+        // feeds BuildConfig.APP_VERSION_CODE — the number the CLIENT reports to
+        // the server must be the same number the installer stamps.
+        versionCode = app.qrmenu.driver.DriverVersion.CODE
+        versionName = app.qrmenu.driver.DriverVersion.NAME
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -146,5 +149,9 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(project(":core:designsystem"))
     implementation(project(":core:datastore"))
+    // Included so the Hilt graph is actually VALIDATED in a component: a module
+    // that only compiles on its own proves nothing about whether its bindings
+    // resolve. No screen consumes it yet.
+    implementation(project(":core:network"))
     debugImplementation(libs.compose.ui.tooling)
 }
