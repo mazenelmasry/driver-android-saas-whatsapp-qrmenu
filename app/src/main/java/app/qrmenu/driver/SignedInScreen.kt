@@ -2,6 +2,7 @@ package app.qrmenu.driver
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -32,6 +33,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.qrmenu.driver.availability.AvailabilityRoute
 import app.qrmenu.driver.account.AccountRoute
+import app.qrmenu.driver.health.NotificationHealthBanner
+import app.qrmenu.driver.health.RequestNotificationPermissionOnce
 import app.qrmenu.driver.notifications.NotificationCenterRoute
 import app.qrmenu.driver.location.DriverLocationService
 import app.qrmenu.driver.location.permission.LocationPermissionStep
@@ -80,6 +83,13 @@ fun SignedInScreen(
     pendingOfferViewModel: PendingOfferViewModel = hiltViewModel(),
 ) {
     var tab by rememberSaveable { mutableStateOf(SignedInTab.Availability) }
+
+    // Fires at most once per app run (CLAUDE.md §🔔) — placed unconditionally
+    // here, ABOVE every early `return` below, because `SignedInScreen` itself
+    // never leaves composition while the driver is signed in (see the class
+    // doc), so this is reached exactly once per sign-in regardless of which
+    // overlay (offer, trip, notification centre) is showing when it fires.
+    RequestNotificationPermissionOnce()
 
     // The "why is المتاحة empty" context (decision 47) is owned by
     // `:feature:orders`'s `OrdersRoute`, but `AvailabilityRoute`'s existing
@@ -187,29 +197,38 @@ fun SignedInScreen(
             }
         },
     ) { insets ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(bottom = insets.calculateBottomPadding()),
         ) {
-            when (tab) {
-                SignedInTab.Availability -> AvailabilityTab(
-                    noOrdersContext = noOrdersContext,
-                    onOpenNotifications = { showingNotifications = true },
-                )
-                SignedInTab.Orders -> OrdersRoute(
-                    // The way back into a trip the driver is already holding.
-                    onOpenTrip = { activeTripId = it },
-                    noOrdersContextOut = { noOrdersContext.value = it },
-                    onOpenNotifications = { showingNotifications = true },
-                )
-                SignedInTab.Wallet -> WalletRoute(
-                    onOpenNotifications = { showingNotifications = true },
-                )
-                SignedInTab.Account -> AccountRoute(
-                    onSignedOut = onSignedOut,
-                    onEnterInviteCode = onEnterInviteCode,
-                )
+            // 🔴 Shown above whichever tab is on screen, on ALL four — a
+            // driver spends their entire shift on this bar, most of it on
+            // متاح waiting for the exact alert this is warning them might
+            // never arrive. Anchoring it to one tab would hide it the moment
+            // they switch away from it.
+            NotificationHealthBanner()
+
+            Box(modifier = Modifier.weight(1f)) {
+                when (tab) {
+                    SignedInTab.Availability -> AvailabilityTab(
+                        noOrdersContext = noOrdersContext,
+                        onOpenNotifications = { showingNotifications = true },
+                    )
+                    SignedInTab.Orders -> OrdersRoute(
+                        // The way back into a trip the driver is already holding.
+                        onOpenTrip = { activeTripId = it },
+                        noOrdersContextOut = { noOrdersContext.value = it },
+                        onOpenNotifications = { showingNotifications = true },
+                    )
+                    SignedInTab.Wallet -> WalletRoute(
+                        onOpenNotifications = { showingNotifications = true },
+                    )
+                    SignedInTab.Account -> AccountRoute(
+                        onSignedOut = onSignedOut,
+                        onEnterInviteCode = onEnterInviteCode,
+                    )
+                }
             }
         }
     }

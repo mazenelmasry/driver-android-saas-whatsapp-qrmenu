@@ -67,7 +67,7 @@ class OfferViewModelTest {
         driverFee = 8.0,
         company = OrderCompanyDto(name = "Lauren"),
         branch = BranchDto(id = 1, name = "Al Olaya"),
-        offer = OfferDto(expiresAt = expiresAt.toString(), wave = 1),
+        offer = OfferDto(id = 9001, expiresAt = expiresAt.toString(), wave = 1),
     )
 
     private fun assigned(id: Long = 1): DriverOrderDto = DriverOrderDto(
@@ -162,6 +162,47 @@ class OfferViewModelTest {
     }
 
     // ── accept maps a 409's CODE, never its message ─────────────────────
+
+    /**
+     * 🔴 Reproduces a DEAD SCREEN seen on the S25: a push arrived for an offer
+     * the server no longer held, the GET came back `not_your_order`, and the
+     * driver was left on an otherwise empty screen holding one red banner —
+     * no retry (the code is terminal, so the banner offers none) and no way
+     * back. A stale push must close itself, never strand the driver.
+     */
+    @Test
+    fun `a stale push whose offer is gone closes the screen instead of stranding the driver`() = runTest(dispatcher) {
+        coEvery { orderApi.order(1) } throws httpError(403, """{"code":"not_your_order","message":"..."}""")
+
+        val model = viewModel()
+        model.start(1)
+        dispatcher.scheduler.runCurrent()
+
+        assertEquals(OfferPhase.Resolved(OfferOutcome.Expired), model.state.value.phase)
+    }
+
+    /**
+     * The terminal codes are answers, not load failures — each must resolve on
+     * the LOAD path too, not only when the driver taps accept.
+     */
+    @Test
+    fun `a terminal code on the GET resolves its own outcome rather than a load error`() = runTest(dispatcher) {
+        val cases = listOf(
+            "already_claimed" to OfferOutcome.AlreadyClaimed,
+            "offer_expired" to OfferOutcome.Expired,
+            "order_cancelled" to OfferOutcome.OrderCancelled,
+        )
+
+        cases.forEach { (code, expected) ->
+            coEvery { orderApi.order(1) } throws httpError(409, """{"code":"$code","message":"..."}""")
+
+            val model = viewModel()
+            model.start(1)
+            dispatcher.scheduler.runCurrent()
+
+            assertEquals(OfferPhase.Resolved(expected), model.state.value.phase)
+        }
+    }
 
     @Test
     fun `already_claimed resolves the screen as AlreadyClaimed, not a generic error banner`() = runTest(dispatcher) {

@@ -7,6 +7,15 @@
     <string name="permission_location_partial_title">مسموح أثناء فتح التطبيق فقط</string>
     <string name="permission_location_partial_body">يعمل بهذه الطريقة. لكن إن نام جوالك مدة طويلة فقد تتوقف الطلبات عنك.</string>
     <string name="permission_location_action">الإعدادات</string>
+    <string name="notification_health_disabled_title">الإشعارات مغلقة</string>
+    <string name="notification_health_disabled_body">لن يصلك أى عرض توصيل حتى تُعيد تشغيلها — لا شىء آخر فى التطبيق يقدر يوقظ جوالك.</string>
+    <string name="notification_health_channel_title">تنبيه العروض مكتوم</string>
+    <string name="notification_health_channel_body">الإشعارات شغّالة، لكن تنبيه العروض نفسه مُطفأ من إعدادات جوالك.</string>
+    <string name="notification_health_dnd_title">قد يصل بصمت أثناء وضع عدم الإزعاج</string>
+    <string name="notification_health_dnd_body">العروض تصلك الآن، لكن لو كان جوالك على وضع عدم الإزعاج فقد يصل العرض بصمت وتفوّتك فرصة.</string>
+    <string name="notification_health_action">الإعدادات</string>
+    <string name="offer_notification_title">عرض توصيل جديد</string>
+    <string name="offer_notification_body">افتح التطبيق لقبوله قبل أن تنتهي مدته.</string>
     <string name="tab_wallet">المحفظة</string>
     <string name="tab_account">حسابى</string>
 </resources>

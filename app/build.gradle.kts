@@ -194,6 +194,7 @@ dependencies {
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
     implementation(project(":core:designsystem"))
+    implementation(project(":core:push"))
     implementation(project(":core:datastore"))
     // Included so the Hilt graph is actually VALIDATED in a component: a module
     // that only compiles on its own proves nothing about whether its bindings
@@ -218,4 +219,8 @@ dependencies {
     implementation(project(":core:location"))
     implementation(project(":core:notifications"))
     debugImplementation(libs.compose.ui.tooling)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.mockk)
 }

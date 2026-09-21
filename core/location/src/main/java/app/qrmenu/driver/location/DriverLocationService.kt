@@ -175,7 +175,7 @@ class DriverLocationService : Service() {
             )
         }
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_menu_mylocation)
+            .setSmallIcon(R.drawable.ic_notification_location)
             .setContentTitle(getString(R.string.location_notification_title))
             .setContentText(getString(R.string.location_notification_body))
             .setOngoing(true)

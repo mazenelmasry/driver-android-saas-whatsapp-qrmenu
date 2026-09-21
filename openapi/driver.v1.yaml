@@ -317,6 +317,63 @@ paths:
     post:
       tags: [auth]
       summary: Revoke this device's token
+      description: >
+        Also clears the device's FCM registration token server-side, so the
+        phone stops receiving this driver's offers the moment they sign out.
+      responses:
+        '200': { $ref: '#/components/responses/Accepted' }
+
+  /driver/device-token:
+    post:
+      tags: [auth]
+      summary: Register this device's FCM registration token
+      description: >
+        Called after sign-in and again on every `onNewToken` — an FCM
+        registration token is rotated by the OS (restore to a new phone, app
+        data cleared, long inactivity) with no warning, and a stale one is
+        accepted by FCM and silently delivered nowhere. Registering is
+        idempotent: sending the same token twice is a no-op.
+
+
+        🔴 Registering STEALS the token from any other driver that still holds
+        it. The registration token belongs to the PHONE, not to the account, so
+        when driver B signs in on a phone driver A used, A's row must stop
+        pointing at it — otherwise A keeps receiving B's offers, which is a
+        tenant leak that no amount of logging out fixes, because a driver who
+        uninstalls or force-stops the app never calls `logout` at all.
+
+
+        `logout` clears this server-side as well, so a clean sign-out needs no
+        separate call.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [device_token]
+              properties:
+                device_token:
+                  type: string
+                  maxLength: 4096
+                  description: >
+                    The FCM registration token as the SDK returned it, verbatim.
+                    Never a Firebase ID token — this one is not a credential and
+                    proves nothing; the session token in the header is what
+                    identifies the driver.
+      responses:
+        '200': { $ref: '#/components/responses/Accepted' }
+        '422': { $ref: '#/components/responses/Error' }
+
+    delete:
+      tags: [auth]
+      summary: Stop pushing to this device
+      description: >
+        For the case a session outlives its push registration — notifications
+        revoked in system settings, or Google Play services unavailable — so the
+        driver falls back to the polling arm cleanly instead of the server
+        pushing into a void. Clearing a token that is already gone succeeds.
       responses:
         '200': { $ref: '#/components/responses/Accepted' }
 
@@ -1046,8 +1103,18 @@ components:
     Offer:
       type: object
       additionalProperties: false
-      required: [expires_at]
+      required: [id, expires_at]
       properties:
+        id:
+          type: integer
+          format: int64
+          description: >
+            The offer row's id — the ONE identifier both delivery arms share.
+            The push data message carries `offer_id` and this poll response
+            carries the same number, so the app can tell "the offer I am
+            already ringing for" from "a new wave of the same order" without
+            guessing. Without it the two arms have no common key and a driver
+            gets rung twice for one order.
         expires_at:
           type: string
           format: date-time

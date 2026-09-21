@@ -107,6 +107,14 @@ data class DeliveryAddressDto(
 @Serializable
 data class OfferDto(
     /**
+     * The offer row's id — the ONE identifier the two delivery arms share.
+     * The FCM data message carries it as `offer_id` and this poll response
+     * carries the same number, so `OfferGate` can tell "the offer already
+     * ringing" from "a new wave of the same order". Without it the arms have
+     * no common key and the driver gets rung twice for one order.
+     */
+    val id: Long,
+    /**
      * 45 seconds from DISPATCH (decision 29). The countdown runs to this
      * instant, not to 45s from whenever the push happened to arrive — otherwise
      * a delayed notification silently extends every offer.

@@ -13,6 +13,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
+import app.qrmenu.driver.offers.DeviceTokenViewModel
 import app.qrmenu.driver.auth.AuthFlow
 import app.qrmenu.driver.auth.RedeemInviteFlow
 import app.qrmenu.driver.common.locale.SupportedLocales
@@ -110,6 +112,23 @@ private fun DriverApp(tokenStore: TokenStore) {
     // run", and that is what this reads.
     var signedIn by rememberSaveable { mutableStateOf(tokenStore.hasValidSession()) }
     var redeemingInvite by rememberSaveable { mutableStateOf(false) }
+
+    // Scoped to the Activity (created before the sign-in gate below, so it is
+    // the SAME instance across the signed-out ↔ signed-in transition) rather
+    // than to whichever screen happens to be on display.
+    val deviceTokenViewModel: DeviceTokenViewModel = hiltViewModel()
+    LaunchedEffect(signedIn) {
+        if (signedIn) {
+            // Covers BOTH a fresh sign-in and a cold start that read an
+            // existing session into `signedIn`'s initial value above —
+            // `DriverApplication` already tried this once at process start,
+            // but that attempt cannot register a token FCM had not yet
+            // handed this process, and this is idempotent either way.
+            deviceTokenViewModel.registerAfterSignIn()
+        } else {
+            deviceTokenViewModel.forgetAfterSignOut()
+        }
+    }
 
     // The inverse direction IS safe to drive off the token, and is the one
     // that matters: `SessionExpiryInterceptor` clears the store the moment the

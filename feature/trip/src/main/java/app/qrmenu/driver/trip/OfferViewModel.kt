@@ -140,7 +140,31 @@ class OfferViewModel @Inject constructor(
             runCatching { repository.fetch(orderId) }
                 .onSuccess { dto -> onOfferLoaded(dto) }
                 .onFailure { thrown ->
-                    _state.update { it.copy(phase = OfferPhase.LoadFailed(thrown.toDriverApiError())) }
+                    val error = thrown.toDriverApiError()
+                    // 🔴 A TERMINAL code here is not a load failure to retry —
+                    // it is the offer's ANSWER, arriving on the GET instead of
+                    // on the accept. Rendering it as `LoadFailed` left the
+                    // driver on a blank screen holding one red banner with no
+                    // retry and no way out (observed on the S25 when a push
+                    // arrived for an offer the server no longer held).
+                    //
+                    // `not_your_order` is mapped here and NOT in
+                    // [toOfferOutcome]: on the ACTION path it means the
+                    // driver raced and lost, which is already
+                    // `already_claimed`; on the LOAD path it is the only
+                    // answer a stale push can get, and it means exactly
+                    // "this offer is gone" — which is what the outcome
+                    // screen says, with a way back.
+                    val outcome = (error as? DriverApiError.Api)?.code?.let { code ->
+                        code.toOfferOutcome()
+                            ?: OfferOutcome.Expired.takeIf { code == DriverErrorCode.NotYourOrder }
+                    }
+                    _state.update {
+                        it.copy(
+                            phase = outcome?.let(OfferPhase::Resolved)
+                                ?: OfferPhase.LoadFailed(error),
+                        )
+                    }
                 }
         }
     }

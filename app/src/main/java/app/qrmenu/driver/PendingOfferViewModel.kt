@@ -3,52 +3,54 @@ package app.qrmenu.driver
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import app.qrmenu.driver.network.api.OrderApi
 import app.qrmenu.driver.alerts.OfferAlarm
+import app.qrmenu.driver.alerts.OfferNotifier
+import app.qrmenu.driver.network.api.OrderApi
+import app.qrmenu.driver.offers.OfferCoordinator
+import app.qrmenu.driver.offers.OfferGate
+import app.qrmenu.driver.offers.PendingOffer
+import app.qrmenu.driver.offers.parseOfferInstant
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Instant
 import javax.inject.Inject
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
  * Watches for an offer this driver is being held to answer, and hands the
  * offer screen the order id to take over the phone with.
  *
- * 🔴 Polling, not push, is what is wired here on purpose — and it is not a
- * placeholder. The frozen "zero lost offers" architecture names THREE arms:
- * the FCM data message, this 15-second poll from the already-running
- * foreground service, and the ack that re-dispatches when neither arrived.
- * The poll is the arm that works with no Firebase project, no SHA-1
- * fingerprint and no Play Services — which is exactly the state this app is
- * in today, and exactly the state a driver's cheap phone can fall into at
- * any time. Building push first and calling the poll a fallback would have
- * meant nothing on this device could be proven at all.
+ * 🔴 Two arms feed the SAME state, on purpose — this is the frozen "zero
+ * lost offers" architecture (CLAUDE.md), not a poll-then-push migration:
+ *  - [poll], a 15-second safety-net cadence run from here while the app is
+ *    on screen — works with no Firebase project, no SHA-1 fingerprint and
+ *    no Play Services, which is exactly the state the `taaj` brand is in.
+ *  - [app.qrmenu.driver.offers.DriverPushHandler], which can ring the driver
+ *    even while this `ViewModel` does not exist yet (app was dead).
  *
- * When the FCM receiver lands it feeds the SAME [PendingOffer] state, so the
- * screen and the alarm never learn there are two ways in.
+ * Neither arm owns the "is there a pending offer" state directly any more —
+ * both write through [OfferCoordinator] and gate on the SAME [OfferGate], so
+ * a push and a poll racing for the same offer id can never both win, and the
+ * screen never has to know which arm actually rang it.
  *
- * 🔴 No notification is POSTED from here, deliberately: this view model only
- * lives while the app is on screen, and a full-screen notification for a
- * screen that is already in front of the driver is noise. Posting the offer
- * notification belongs to the background path — the foreground location
- * service and the FCM receiver — which is the next piece of integration and
- * is NOT done yet. `:core:notifications` is ready for it.
+ * 🔴 This view model still does not POST a notification for its own poll
+ * hits: it only lives while the app is on screen, and a full-screen
+ * notification for a screen already in front of the driver is noise. Only
+ * the push arm posts one (because it can fire with no screen at all) — see
+ * [dismiss], which cancels it regardless of which arm raised the offer,
+ * since cancelling a notification that was never posted is a harmless no-op.
  */
 @HiltViewModel
 class PendingOfferViewModel @Inject constructor(
     private val orderApi: OrderApi,
     private val alarm: OfferAlarm,
+    private val notifier: OfferNotifier,
+    private val offerGate: OfferGate,
+    private val coordinator: OfferCoordinator,
 ) : ViewModel() {
 
-    private val _pending = MutableStateFlow<PendingOffer?>(null)
-    val pending: StateFlow<PendingOffer?> = _pending.asStateFlow()
-
-    /** Offers already raised, so one poll cycle cannot ring twice for one order. */
-    private val raised = mutableSetOf<Long>()
+    val pending: StateFlow<PendingOffer?> = coordinator.pending
 
     init {
         viewModelScope.launch {
@@ -66,7 +68,9 @@ class PendingOfferViewModel @Inject constructor(
      */
     fun dismiss() {
         alarm.stop()
-        _pending.value = null
+        notifier.cancel(OfferNotifier.OFFER_NOTIFICATION_ID)
+        coordinator.pending.value?.let { offerGate.resolve(it.offerId) }
+        coordinator.clear()
     }
 
     private suspend fun poll() {
@@ -81,16 +85,18 @@ class PendingOfferViewModel @Inject constructor(
         // claimable self-serve order is work on a list, not an interruption
         // that overrides Do Not Disturb.
         val offered = orders.firstOrNull { order ->
-            val expiresAt = order.offer?.expiresAt?.let { runCatching { Instant.parse(it) }.getOrNull() }
+            val expiresAt = order.offer?.expiresAt?.let(::parseOfferInstant)
             expiresAt != null && expiresAt.isAfter(Instant.now())
         } ?: return
 
-        if (!raised.add(offered.id)) {
+        val offerId = offered.offer?.id ?: return
+
+        if (!offerGate.shouldRaise(offerId)) {
             return
         }
 
-        Log.i(TAG, "raising offer for order ${offered.id}")
-        _pending.value = PendingOffer(offered.id)
+        Log.i(TAG, "raising offer $offerId for order ${offered.id}")
+        coordinator.raise(offered.id, offerId)
         runCatching { alarm.start() }.onFailure { Log.w(TAG, "alarm failed", it) }
     }
 
@@ -101,5 +107,3 @@ class PendingOfferViewModel @Inject constructor(
         const val POLL_INTERVAL_MS = 15_000L
     }
 }
-
-data class PendingOffer(val orderId: Long)

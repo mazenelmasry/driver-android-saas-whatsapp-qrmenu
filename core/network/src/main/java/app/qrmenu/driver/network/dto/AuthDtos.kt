@@ -94,6 +94,14 @@ data class RequestOtpRequest(val phone: String)
 @Serializable
 data class SetPasswordRequest(val password: String)
 
+/**
+ * The FCM registration token, verbatim as the SDK returned it. NOT a
+ * credential and not a Firebase ID token: it identifies the PHONE, never the
+ * driver — the session token in the header is what says who is asking.
+ */
+@Serializable
+data class DeviceTokenRequest(@SerialName("device_token") val deviceToken: String)
+
 @Serializable
 data class LoginRequest(
     val phone: String,

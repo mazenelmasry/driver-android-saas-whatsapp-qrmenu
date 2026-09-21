@@ -41,7 +41,7 @@ class OfferNotifier @Inject constructor(
         fullScreenIntent: PendingIntent,
     ) {
         val builder = NotificationCompat.Builder(context, OfferNotificationChannels.CHANNEL_OFFERS)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(R.drawable.ic_notification_offer)
             .setContentTitle(context.getString(titleRes))
             .setContentText(context.getString(bodyRes))
             .setPriority(NotificationCompat.PRIORITY_HIGH)

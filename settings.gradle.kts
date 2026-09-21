@@ -39,6 +39,7 @@ include(":core:datastore")
 include(":core:location")
 // include(":core:sync")
 include(":core:notifications")
+include(":core:push")
 // include(":core:updater")
 
 // Feature modules
