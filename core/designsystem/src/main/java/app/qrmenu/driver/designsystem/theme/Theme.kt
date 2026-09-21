@@ -9,12 +9,16 @@ import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import app.qrmenu.driver.designsystem.R
@@ -149,11 +153,20 @@ private val DriverShapes = Shapes(
     extraLarge = RoundedCornerShape(28.dp),
 )
 
+/**
+ * How much the driver has chosen to scale the whole interface, as a plain
+ * multiplier so `:core:designsystem` stays free of a dependency on the store
+ * that persists it. 1f is the design's own size.
+ */
+val LocalUiScaleFactor = staticCompositionLocalOf { 1f }
+
 @Composable
 fun DriverTheme(
     /** Platform default sent by the backend at login; null = the flavor's palette. */
     accentSeed: Color? = null,
     darkTheme: Boolean = isSystemInDarkTheme(),
+    /** The driver's own size choice — see `UiScaleStore`. */
+    uiScaleFactor: Float = 1f,
     content: @Composable () -> Unit,
 ) {
     val colorScheme = brandColorScheme(accentSeed, darkTheme)
@@ -167,12 +180,28 @@ fun DriverTheme(
         }
     }
 
-    // NOTE: no LocalDensity override. Deviation 1 — the system font scale is
-    // honoured on purpose. If a layout breaks at 200%, fix the layout.
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = DriverTypography,
-        shapes = DriverShapes,
-        content = content,
+    // The driver's size choice scales DENSITY, not just the font scale, so
+    // padding, icons and cards shrink with the words instead of leaving a
+    // small sentence inside a box built for a larger one.
+    //
+    // 🔴 The system font scale is still honoured on top of this (it is carried
+    // through untouched) — an accessibility setting a driver already set on
+    // their phone must not be silently overridden by an app-level preference.
+    val density = LocalDensity.current
+    val scaled = Density(
+        density = density.density * uiScaleFactor,
+        fontScale = density.fontScale,
     )
+
+    CompositionLocalProvider(
+        LocalDensity provides scaled,
+        LocalUiScaleFactor provides uiScaleFactor,
+    ) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = DriverTypography,
+            shapes = DriverShapes,
+            content = content,
+        )
+    }
 }

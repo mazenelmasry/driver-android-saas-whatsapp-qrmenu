@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="tab_availability">उपलब्ध</string>
-    <string name="tab_restaurants">मेरे रेस्तराँ</string>
+    <string name="tab_orders">ऑर्डर</string>
     <string name="permission_location_blocked_title">लोकेशन बंद है</string>
     <string name="permission_location_blocked_body">ऑर्डर आपकी नज़दीकी के आधार पर दिए जाते हैं, इसके बिना कुछ नहीं पहुँचेगा।</string>
     <string name="permission_location_partial_title">केवल ऐप खुला होने पर अनुमति</string>
     <string name="permission_location_partial_body">यह इसी तरह काम करता है। पर फ़ोन लंबे समय तक सोया रहे तो ऑर्डर आना रुक सकता है।</string>
     <string name="permission_location_action">सेटिंग्स</string>
+    <string name="tab_wallet">वॉलेट</string>
+    <string name="tab_account">मेरा खाता</string>
 </resources>

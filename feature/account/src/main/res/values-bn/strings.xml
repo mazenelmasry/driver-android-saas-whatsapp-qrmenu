@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ⏳ Needs a native Bengali speaker review before launch (CLAUDE.md, glossary). -->
+<resources>
+    <string name="account_title">আমার অ্যাকাউন্ট</string>
+
+    <string name="account_greeting">হ্যালো, %1$s</string>
+    <string name="account_sign_out">সাইন আউট</string>
+
+    <string name="account_restaurants_title">আমার রেস্তোরাঁ</string>
+    <string name="account_branches">শাখা: %1$s</string>
+    <string name="account_list_separator">، </string>
+    <string name="account_status_active">সক্রিয়</string>
+    <string name="account_status_invited">সক্রিয় হওয়ার অপেক্ষায়</string>
+    <string name="account_status_invited_hint">এই রেস্তোরাঁ এখনও আপনাকে সক্রিয় করেনি। তারা না করা পর্যন্ত এখান থেকে কোনো অর্ডার আসবে না।</string>
+    <string name="account_status_suspended">বন্ধ করা হয়েছে</string>
+    <string name="account_status_suspended_hint">এই রেস্তোরাঁ আপনাকে বন্ধ করে দিয়েছে। কারণ জানতে তাদের সাথে যোগাযোগ করুন।</string>
+    <string name="account_empty_restaurants_title">এখনও কোনো রেস্তোরাঁ নেই</string>
+    <string name="account_empty_restaurants_body">এখনও কোনো রেস্তোরাঁ আপনাকে আমন্ত্রণ জানায়নি। কাজ শুরু করতে রেস্তোরাঁর কাছে আমন্ত্রণ কোড চান।</string>
+    <string name="account_enter_invite_code">আমন্ত্রণ কোড লিখুন</string>
+
+    <string name="account_language_row_label">ভাষা</string>
+    <string name="account_language_sheet_title">আপনার ভাষা নির্বাচন করুন</string>
+    <string name="account_language_done">সম্পন্ন</string>
+
+    <string name="account_ui_scale_row_label">অ্যাপের আকার</string>
+    <string name="account_ui_scale_small">ছোট</string>
+    <string name="account_ui_scale_default">ডিফল্ট</string>
+    <string name="account_ui_scale_large">বড়</string>
+    <string name="account_ui_scale_largest">সবচেয়ে বড়</string>
+    <string name="account_ui_scale_preview_branch">আল ওলায়া শাখা</string>
+    <string name="account_ui_scale_preview_fee">ফি %1$s</string>
+
+    <string name="account_battery_row_label">ব্যাটারি</string>
+    <string name="account_battery_supporting">ঘুমিয়ে থাকা ফোন অর্ডার গ্রহণ বন্ধ করে দেয়</string>
+
+    <string name="account_sign_out_confirm_title">সাইন আউট করবেন?</string>
+    <string name="account_sign_out_confirm_body">আবার সাইন ইন করতে আপনার ফোন নম্বর প্রয়োজন হবে।</string>
+    <string name="account_sign_out_confirm_confirm">সাইন আউট</string>
+    <string name="account_sign_out_confirm_cancel">বাতিল</string>
+
+    <string name="a11y_account_identity">আপনার অ্যাকাউন্ট</string>
+</resources>

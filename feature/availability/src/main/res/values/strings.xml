@@ -10,20 +10,14 @@
     <string name="availability_switch_online">Available</string>
     <string name="availability_switch_offline">Offline</string>
     <string name="availability_switch_pending">Confirming…</string>
+    <string name="availability_switch_hint_online">Tap to stop receiving orders</string>
+    <string name="availability_switch_hint_offline">Tap to start receiving orders</string>
 
     <string name="availability_online_since">Available for %1$s</string>
 
     <string name="availability_connection_lost">Connection lost</string>
     <string name="availability_connection_lost_body">The server will take you offline in a few minutes if the connection is not restored.</string>
 
-    <string name="availability_reason_offline">You are offline. Go available to start receiving orders.</string>
-    <string name="availability_reason_no_active_link">No restaurant has activated you yet.</string>
-    <string name="availability_reason_all_branches_closed">All your linked branches are closed right now.</string>
-    <string name="availability_reason_outside_radius">You are outside every linked branch\'s delivery radius.</string>
-    <string name="availability_reason_location_unknown">Your location is not known yet — orders cannot be matched to you until it is.</string>
-    <string name="availability_reason_has_active_trip">You have an order in hand. New offers pause until it is finished.</string>
-    <string name="availability_reason_nothing_pending">You are ready — there is simply no order for you yet.</string>
-    <string name="availability_reason_unknown">No orders right now.</string>
 
     <string name="availability_branches_heading">Your linked branches</string>
     <string name="availability_branch_open">Open</string>

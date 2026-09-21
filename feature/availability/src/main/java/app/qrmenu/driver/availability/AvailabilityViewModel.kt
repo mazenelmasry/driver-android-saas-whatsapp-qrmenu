@@ -2,6 +2,8 @@ package app.qrmenu.driver.availability
 
 import app.qrmenu.driver.network.api.AuthApi
 import app.qrmenu.driver.network.api.AvailabilityApi
+import app.qrmenu.driver.network.api.OrderApi
+import app.qrmenu.driver.network.dto.AvailabilityContextDto
 import app.qrmenu.driver.network.dto.AvailabilityRequest
 import app.qrmenu.driver.network.errors.DriverApiError
 import app.qrmenu.driver.network.errors.DriverErrorCode
@@ -45,6 +47,19 @@ data class AvailabilityUiState(
     /** True while a PATCH is in flight. See the class doc — this is what stands in for optimism. */
     val isPending: Boolean = false,
     val error: DriverApiError? = null,
+    /**
+     * Why there is no work right now (decision 47), named — the branches this
+     * driver is linked to, their distance, and whether any of them is even
+     * open.
+     *
+     * 🔴 Fetched by THIS screen, not handed to it by the orders tab. It used
+     * to arrive from there, which meant the explanation a driver needs most —
+     * the one that stops them concluding the app is broken — only appeared if
+     * they had already visited another tab. A screen whose whole job is to
+     * explain something cannot depend on the driver having looked elsewhere
+     * first.
+     */
+    val noOrdersContext: AvailabilityContextDto? = null,
 ) {
     /**
      * `has_active_trip` gets its own truth so the screen can phrase it as "you
@@ -59,6 +74,7 @@ data class AvailabilityUiState(
 class AvailabilityViewModel @Inject constructor(
     private val authApi: AuthApi,
     private val availabilityApi: AvailabilityApi,
+    private val orderApi: OrderApi,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AvailabilityUiState())
@@ -66,6 +82,23 @@ class AvailabilityViewModel @Inject constructor(
 
     init {
         loadInitialState()
+        refreshContext()
+    }
+
+    /**
+     * The "why is nothing coming" feed. Failure is deliberately SILENT: this
+     * is an explanation, not the screen's purpose, and an error banner about
+     * a context call would sit above a switch that works perfectly well.
+     * The driver simply sees no explanation card, which is what they saw
+     * before this existed.
+     */
+    fun refreshContext() {
+        viewModelScope.launch {
+            runCatching { orderApi.available() }
+                .onSuccess { response ->
+                    _state.update { it.copy(noOrdersContext = response.context) }
+                }
+        }
     }
 
     /**
@@ -94,7 +127,10 @@ class AvailabilityViewModel @Inject constructor(
         }
     }
 
-    fun retry() = loadInitialState()
+    fun retry() {
+        loadInitialState()
+        refreshContext()
+    }
 
     /**
      * The tap handler. See the class doc for why this does not flip [isOnline]
@@ -120,6 +156,10 @@ class AvailabilityViewModel @Inject constructor(
                             error = null,
                         )
                     }
+                    // Going off (or back on) changes the answer to "why no
+                    // orders" immediately — re-ask rather than leave the card
+                    // explaining a state that ended a second ago.
+                    refreshContext()
                 }
                 .onFailure { thrown ->
                     // isOnline is untouched — the switch settles back to whatever

@@ -1706,6 +1706,7 @@
                     "payment_method",
                     "payment_status",
                     "total",
+                    "currency",
                     "cash_to_collect",
                     "driver_fee",
                     "company",
@@ -1734,6 +1735,10 @@
                     },
                     "total": {
                         "type": "number"
+                    },
+                    "currency": {
+                        "type": "string",
+                        "description": "The ISO code of the branch's currency. A driver may hold links to restaurants in different countries (the ledger is per driver AND per restaurant for exactly that reason), so the app cannot infer one from the device, the account or the previous order — an amount shown without it is a number the driver cannot act on.\n"
                     },
                     "cash_to_collect": {
                         "type": "number",

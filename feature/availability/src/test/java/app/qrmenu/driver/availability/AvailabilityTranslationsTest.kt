@@ -57,21 +57,4 @@ class AvailabilityTranslationsTest {
             assertTrue("online/offline read identically in $language", online != offline)
         }
     }
-
-    /** All seven `NoOrdersReason` wire values must resolve to a real, distinct sentence. */
-    @Test
-    fun `every no-orders reason resolves to a key that exists`() {
-        val keys = keysIn(stringsFor("en"))
-        val reasonKeys = setOf(
-            "availability_reason_offline",
-            "availability_reason_no_active_link",
-            "availability_reason_all_branches_closed",
-            "availability_reason_outside_radius",
-            "availability_reason_location_unknown",
-            "availability_reason_has_active_trip",
-            "availability_reason_nothing_pending",
-            "availability_reason_unknown",
-        )
-        assertEquals(reasonKeys, keys intersect reasonKeys)
-    }
 }

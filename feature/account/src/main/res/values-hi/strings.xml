@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ⏳ Needs a native Hindi speaker review before launch (CLAUDE.md, glossary). -->
+<resources>
+    <string name="account_title">मेरा खाता</string>
+
+    <string name="account_greeting">नमस्ते, %1$s</string>
+    <string name="account_sign_out">साइन आउट</string>
+
+    <string name="account_restaurants_title">मेरे रेस्तरां</string>
+    <string name="account_branches">शाखाएँ: %1$s</string>
+    <string name="account_list_separator">، </string>
+    <string name="account_status_active">सक्रिय</string>
+    <string name="account_status_invited">सक्रिय होने की प्रतीक्षा में</string>
+    <string name="account_status_invited_hint">इस रेस्तरां ने अभी तक आपको सक्रिय नहीं किया है। जब तक वे ऐसा नहीं करते, यहां से कोई ऑर्डर नहीं आएगा।</string>
+    <string name="account_status_suspended">रोका गया</string>
+    <string name="account_status_suspended_hint">इस रेस्तरां ने आपको रोक दिया है। कारण जानने के लिए उनसे संपर्क करें।</string>
+    <string name="account_empty_restaurants_title">अभी तक कोई रेस्तरां नहीं</string>
+    <string name="account_empty_restaurants_body">अभी तक किसी रेस्तरां ने आपको आमंत्रित नहीं किया है। इसके साथ काम शुरू करने के लिए रेस्तरां से आमंत्रण कोड मांगें।</string>
+    <string name="account_enter_invite_code">आमंत्रण कोड दर्ज करें</string>
+
+    <string name="account_language_row_label">भाषा</string>
+    <string name="account_language_sheet_title">अपनी भाषा चुनें</string>
+    <string name="account_language_done">हो गया</string>
+
+    <string name="account_ui_scale_row_label">ऐप का आकार</string>
+    <string name="account_ui_scale_small">छोटा</string>
+    <string name="account_ui_scale_default">डिफ़ॉल्ट</string>
+    <string name="account_ui_scale_large">बड़ा</string>
+    <string name="account_ui_scale_largest">सबसे बड़ा</string>
+    <string name="account_ui_scale_preview_branch">अल ओलाया शाखा</string>
+    <string name="account_ui_scale_preview_fee">शुल्क %1$s</string>
+
+    <string name="account_battery_row_label">बैटरी</string>
+    <string name="account_battery_supporting">सो रहा फ़ोन ऑर्डर प्राप्त करना बंद कर देता है</string>
+
+    <string name="account_sign_out_confirm_title">साइन आउट करें?</string>
+    <string name="account_sign_out_confirm_body">दोबारा साइन इन करने के लिए आपको अपने फ़ोन नंबर की आवश्यकता होगी।</string>
+    <string name="account_sign_out_confirm_confirm">साइन आउट</string>
+    <string name="account_sign_out_confirm_cancel">रद्द करें</string>
+
+    <string name="a11y_account_identity">आपका खाता</string>
+</resources>

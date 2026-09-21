@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ⏳ ur / bn / hi are written by the agent and still need a native speaker before
+  launch (CLAUDE.md, glossary). ar / en are final.
+-->
+<resources>
+    <string name="account_title">Account</string>
+
+    <string name="account_greeting">Hello, %1$s</string>
+    <string name="account_sign_out">Sign out</string>
+
+    <string name="account_restaurants_title">My restaurants</string>
+    <string name="account_branches">Branches: %1$s</string>
+    <string name="account_list_separator">, </string>
+    <string name="account_status_active">Active</string>
+    <string name="account_status_invited">Waiting to be activated</string>
+    <string name="account_status_invited_hint">This restaurant has not activated you yet. No orders will arrive from it until they do.</string>
+    <string name="account_status_suspended">Stopped</string>
+    <string name="account_status_suspended_hint">This restaurant has stopped you. Contact them to find out why.</string>
+    <string name="account_empty_restaurants_title">No restaurant yet</string>
+    <string name="account_empty_restaurants_body">No restaurant has invited you yet. Ask the restaurant for its invite code to start working with it.</string>
+    <string name="account_enter_invite_code">Enter invite code</string>
+
+    <string name="account_language_row_label">Language</string>
+    <string name="account_language_sheet_title">Choose your language</string>
+    <string name="account_language_done">Done</string>
+
+    <string name="account_ui_scale_row_label">App size</string>
+    <string name="account_ui_scale_small">Small</string>
+    <string name="account_ui_scale_default">Default</string>
+    <string name="account_ui_scale_large">Large</string>
+    <string name="account_ui_scale_largest">Largest</string>
+    <string name="account_ui_scale_preview_branch">Al Olaya branch</string>
+    <string name="account_ui_scale_preview_fee">Fee %1$s</string>
+
+    <string name="account_battery_row_label">Battery</string>
+    <string name="account_battery_supporting">A phone that sleeps stops receiving orders</string>
+
+    <string name="account_sign_out_confirm_title">Sign out?</string>
+    <string name="account_sign_out_confirm_body">You will need your phone number to sign in again.</string>
+    <string name="account_sign_out_confirm_confirm">Sign out</string>
+    <string name="account_sign_out_confirm_cancel">Cancel</string>
+
+    <string name="a11y_account_identity">Your account</string>
+</resources>

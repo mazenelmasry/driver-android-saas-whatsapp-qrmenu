@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="orders_title">الطلبات</string>
+
+    <string name="orders_tab_mine">طلباتى</string>
+    <string name="orders_tab_available">المتاحة</string>
+
+    <string name="orders_mine_empty_title">لا طلب بحوزتك</string>
+    <string name="orders_mine_empty_body">تفقّد تبويب «المتاحة» للعروض.</string>
+
+    <string name="orders_available_branches_heading">فروعك المرتبطة</string>
+
+    <string name="orders_card_items_count">%1$d صنف</string>
+    <string name="orders_card_cash_to_collect">تحصيل %1$s</string>
+    <string name="orders_card_paid_online">مدفوع أونلاين</string>
+    <string name="orders_card_fee_label">أجرتك</string>
+
+    <string name="orders_action_picked_up">استلمت الطلب</string>
+
+    <string name="orders_readiness_counting">جاهز خلال ~%1$s د</string>
+    <string name="orders_readiness_ready">جاهز</string>
+    <string name="orders_readiness_awaiting_kitchen">عند المطبخ — لم يجهز بعد</string>
+
+    <string name="orders_error_retry">أعد المحاولة</string>
+</resources>

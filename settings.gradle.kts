@@ -44,8 +44,13 @@ include(":core:location")
 // Feature modules
 include(":feature:auth")
 include(":feature:onboarding")
-include(":feature:home")
+// :feature:home was replaced by :feature:account (2026-09-21) — its tab
+// merged into «حسابى» rather than standing alone.
 include(":feature:availability")
+include(":feature:orders")
+include(":feature:notifications")
+include(":feature:account")
+include(":feature:wallet")
 // include(":feature:trip")
 // include(":feature:ledger")
 // include(":feature:history")

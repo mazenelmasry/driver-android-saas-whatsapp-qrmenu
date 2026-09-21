@@ -5,20 +5,14 @@
     <string name="availability_switch_online">متاح</string>
     <string name="availability_switch_offline">غير متاح</string>
     <string name="availability_switch_pending">جارٍ التأكيد…</string>
+    <string name="availability_switch_hint_online">اضغط لإيقاف استقبال الطلبات</string>
+    <string name="availability_switch_hint_offline">اضغط لتصبح متاحاً للطلبات</string>
 
     <string name="availability_online_since">متاح منذ %1$s</string>
 
     <string name="availability_connection_lost">الاتصال منقطع</string>
     <string name="availability_connection_lost_body">سيضعك الخادم غير متاح خلال دقائق إن لم يُستعد الاتصال.</string>
 
-    <string name="availability_reason_offline">أنت غير متاح. فعّل «متاح» لتبدأ باستلام الطلبات.</string>
-    <string name="availability_reason_no_active_link">لا يوجد مطعم فعّلك بعد.</string>
-    <string name="availability_reason_all_branches_closed">كل فروعك المرتبطة مغلقة الآن.</string>
-    <string name="availability_reason_outside_radius">أنت خارج نطاق التوصيل لكل فروعك المرتبطة.</string>
-    <string name="availability_reason_location_unknown">موقعك غير معروف بعد — لا يمكن مطابقة طلبات لك حتى يُعرف.</string>
-    <string name="availability_reason_has_active_trip">لديك طلب بحوزتك. العروض الجديدة متوقفة حتى تنهيه.</string>
-    <string name="availability_reason_nothing_pending">أنت جاهز — لا يوجد طلب لك حالياً فقط.</string>
-    <string name="availability_reason_unknown">لا طلبات حالياً.</string>
 
     <string name="availability_branches_heading">فروعك المرتبطة</string>
     <string name="availability_branch_open">مفتوح</string>

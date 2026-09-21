@@ -5,7 +5,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Storefront
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material.icons.filled.TwoWheeler
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -16,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -26,27 +29,37 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.qrmenu.driver.availability.AvailabilityRoute
-import app.qrmenu.driver.home.HomeRoute
+import app.qrmenu.driver.account.AccountRoute
+import app.qrmenu.driver.notifications.NotificationCenterRoute
 import app.qrmenu.driver.location.DriverLocationService
 import app.qrmenu.driver.location.permission.LocationPermissionStep
 import app.qrmenu.driver.location.permission.rememberLocationPermissionFlow
 import app.qrmenu.driver.location.upload.LocationConnectivityState
+import app.qrmenu.driver.network.dto.AvailabilityContextDto
+import app.qrmenu.driver.orders.OrdersRoute
+import app.qrmenu.driver.wallet.WalletRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 /**
- * What a signed-in driver sees.
+ * What a signed-in driver sees: four destinations, in the order a shift uses
+ * them.
  *
- * Two destinations, because there are now genuinely two: the thing a driver
- * DOES (make themselves available and take work) and the thing they REFER to
- * (who they are, and which restaurants they belong to). Earlier there was one
- * real screen and a navigation graph would have been scaffolding; with two it
- * is the plain answer, and the tabs this project still owes — orders, ledger,
- * history — land beside these rather than replacing them.
+ *   متاح      — the switch the whole job hangs on
+ *   الطلبات   — the work itself
+ *   المحفظة   — what the work paid, and what cash is owed back
+ *   حسابى     — who I am, which restaurants, language, size, sign out
+ *
+ * «مطاعمى» is no longer a destination of its own: a list of the driver's
+ * restaurants is something they check when something is wrong, not four times
+ * a shift, and it now lives inside حسابى beside the rest of their identity.
+ * That kept the bar at four — five tabs on a phone is a row of targets too
+ * narrow for the thumb this app is designed around.
  *
  * Deliberately still a `when` over a saved tab rather than a `NavHost`: nothing
  * here is deep-linked or takes arguments yet, and the bar IS the navigation. It
@@ -56,6 +69,26 @@ import kotlinx.coroutines.flow.stateIn
 @Composable
 fun SignedInScreen(onSignedOut: () -> Unit, onEnterInviteCode: () -> Unit) {
     var tab by rememberSaveable { mutableStateOf(SignedInTab.Availability) }
+
+    // The "why is المتاحة empty" context (decision 47) is owned by
+    // `:feature:orders`'s `OrdersRoute`, but `AvailabilityRoute`'s existing
+    // `noOrdersContext` slot needs the SAME value even while the Orders tab is
+    // not the one on screen. A plain `remember`ed flow at this scope — rather
+    // than a new shared ViewModel — is enough: it survives the `when` switching
+    // which composable is visible, because `SignedInScreen` itself never leaves
+    // composition while the driver is signed in.
+    val noOrdersContext = remember { MutableStateFlow<AvailabilityContextDto?>(null) }
+
+    // The notification centre is a full screen layered OVER the tabs rather
+    // than a fifth tab: it is opened from the bell on any screen, read, and
+    // dismissed back to wherever the driver was — a tab would instead take
+    // over the bar and lose their place.
+    var showingNotifications by rememberSaveable { mutableStateOf(false) }
+
+    if (showingNotifications) {
+        NotificationCenterRoute(onBack = { showingNotifications = false })
+        return
+    }
 
     Scaffold(
         bottomBar = {
@@ -77,8 +110,18 @@ fun SignedInScreen(onSignedOut: () -> Unit, onEnterInviteCode: () -> Unit) {
                 .padding(bottom = insets.calculateBottomPadding()),
         ) {
             when (tab) {
-                SignedInTab.Availability -> AvailabilityTab()
-                SignedInTab.Restaurants -> HomeRoute(
+                SignedInTab.Availability -> AvailabilityTab(
+                    noOrdersContext = noOrdersContext,
+                    onOpenNotifications = { showingNotifications = true },
+                )
+                SignedInTab.Orders -> OrdersRoute(
+                    noOrdersContextOut = { noOrdersContext.value = it },
+                    onOpenNotifications = { showingNotifications = true },
+                )
+                SignedInTab.Wallet -> WalletRoute(
+                    onOpenNotifications = { showingNotifications = true },
+                )
+                SignedInTab.Account -> AccountRoute(
                     onSignedOut = onSignedOut,
                     onEnterInviteCode = onEnterInviteCode,
                 )
@@ -89,7 +132,9 @@ fun SignedInScreen(onSignedOut: () -> Unit, onEnterInviteCode: () -> Unit) {
 
 enum class SignedInTab(@StringRes val label: Int, val icon: ImageVector) {
     Availability(R.string.tab_availability, Icons.Filled.TwoWheeler),
-    Restaurants(R.string.tab_restaurants, Icons.Filled.Storefront),
+    Orders(R.string.tab_orders, Icons.Filled.ListAlt),
+    Wallet(R.string.tab_wallet, Icons.Filled.AccountBalanceWallet),
+    Account(R.string.tab_account, Icons.Filled.AccountCircle),
 }
 
 /**
@@ -106,7 +151,11 @@ enum class SignedInTab(@StringRes val label: Int, val icon: ImageVector) {
  * recover from.
  */
 @Composable
-private fun AvailabilityTab(viewModel: LocationWiringViewModel = hiltViewModel()) {
+private fun AvailabilityTab(
+    noOrdersContext: StateFlow<AvailabilityContextDto?>,
+    onOpenNotifications: () -> Unit,
+    viewModel: LocationWiringViewModel = hiltViewModel(),
+) {
     val context = LocalContext.current
     val permissions = rememberLocationPermissionFlow()
 
@@ -127,6 +176,8 @@ private fun AvailabilityTab(viewModel: LocationWiringViewModel = hiltViewModel()
 
     AvailabilityRoute(
         connectionFailing = viewModel.connectionFailing,
+        noOrdersContext = noOrdersContext,
+        onOpenNotifications = onOpenNotifications,
         warningSlot = {
             val state = permissions.state
             if (state.nextStep != LocationPermissionStep.DONE || state.foregroundOnlyLimited) {

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notifications_title">सूचनाएं</string>
+    <string name="notifications_back">वापस</string>
+
+    <string name="notifications_empty_title">अभी कुछ नहीं</string>
+    <string name="notifications_empty_body">जैसे ही कोई ऑर्डर आपको दिया जाएगा, यहाँ बता दिया जाएगा।</string>
+</resources>

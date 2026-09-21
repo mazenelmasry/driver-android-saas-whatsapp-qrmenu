@@ -9,6 +9,7 @@ import app.qrmenu.driver.network.interceptors.AppVersionInterceptor
 import app.qrmenu.driver.network.interceptors.DnsRetryInterceptor
 import app.qrmenu.driver.network.interceptors.DriverAuthInterceptor
 import app.qrmenu.driver.network.interceptors.LocaleInterceptor
+import app.qrmenu.driver.network.interceptors.SessionExpiryInterceptor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -49,6 +50,7 @@ object NetworkModule {
         auth: DriverAuthInterceptor,
         locale: LocaleInterceptor,
         appVersion: AppVersionInterceptor,
+        sessionExpiry: SessionExpiryInterceptor,
     ): OkHttpClient = OkHttpClient.Builder()
         // A phone on mobile data: long enough to survive a lift or a tunnel,
         // short enough that an offer's 45s countdown is not spent waiting.
@@ -61,6 +63,9 @@ object NetworkModule {
         .addInterceptor(auth)
         .addInterceptor(locale)
         .addInterceptor(appVersion)
+        // After `auth`, so it can see whether the request it is judging was
+        // actually signed — an unsigned 401 is an answer, not an expiry.
+        .addInterceptor(sessionExpiry)
         .apply {
             if (BuildConfig.DEBUG) {
                 // `php artisan serve` is single-threaded and garbles response

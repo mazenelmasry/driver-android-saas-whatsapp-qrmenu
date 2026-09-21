@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notifications_title">বিজ্ঞপ্তি</string>
+    <string name="notifications_back">ফিরুন</string>
+
+    <string name="notifications_empty_title">এখনও কিছু নেই</string>
+    <string name="notifications_empty_body">আপনাকে কোনও অর্ডার দেওয়া হলে সঙ্গে সঙ্গে এখানে জানানো হবে।</string>
+</resources>

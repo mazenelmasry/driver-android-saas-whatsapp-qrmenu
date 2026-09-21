@@ -2,6 +2,7 @@ package app.qrmenu.driver.availability
 
 import app.qrmenu.driver.network.api.AuthApi
 import app.qrmenu.driver.network.api.AvailabilityApi
+import app.qrmenu.driver.network.api.OrderApi
 import app.qrmenu.driver.network.dto.AvailabilityRequest
 import app.qrmenu.driver.network.dto.AvailabilityResponse
 import app.qrmenu.driver.network.dto.DriverDto
@@ -37,12 +38,18 @@ class AvailabilityViewModelTest {
 
     private lateinit var authApi: AuthApi
     private lateinit var availabilityApi: AvailabilityApi
+    private lateinit var orderApi: OrderApi
 
     @Before
     fun setUp() {
         Dispatchers.setMain(dispatcher)
         authApi = mockk()
         availabilityApi = mockk()
+        // The "why no orders" context is an explanation this screen fetches
+        // for itself; every test here is about the switch, so it is stubbed to
+        // fail silently — which is exactly how the screen treats it.
+        orderApi = mockk()
+        coEvery { orderApi.available() } throws IOException("no context in these tests")
     }
 
     @After
@@ -62,7 +69,7 @@ class AvailabilityViewModelTest {
         onlineSince = null,
     )
 
-    private fun viewModel(): AvailabilityViewModel = AvailabilityViewModel(authApi, availabilityApi)
+    private fun viewModel(): AvailabilityViewModel = AvailabilityViewModel(authApi, availabilityApi, orderApi)
 
     // ── initial load ─────────────────────────────────────────────────────
 

@@ -31,6 +31,14 @@ data class DriverOrderDto(
     @SerialName("payment_method") val paymentMethod: String,
     @SerialName("payment_status") val paymentStatus: String,
     val total: Double,
+    /**
+     * The BRANCH's currency code, not the device's and not the account's:
+     * one driver may hold links to restaurants in different countries, and
+     * the per-(driver × restaurant) ledger exists for exactly that reason.
+     * Required on the wire — an amount without it is a number the driver
+     * cannot act on.
+     */
+    val currency: String,
     /** 0 for an order already paid online. */
     @SerialName("cash_to_collect") val cashToCollect: Double,
     /**

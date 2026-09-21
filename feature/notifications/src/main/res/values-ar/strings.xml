@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notifications_title">الإشعارات</string>
+    <string name="notifications_back">رجوع</string>
+
+    <string name="notifications_empty_title">لا شىء بعد</string>
+    <string name="notifications_empty_body">سنخبرك هنا لحظة عرض أى طلب عليك.</string>
+</resources>

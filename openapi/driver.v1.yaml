@@ -1045,6 +1045,7 @@ components:
         - payment_method
         - payment_status
         - total
+        - currency
         - cash_to_collect
         - driver_fee
         - company
@@ -1064,6 +1065,14 @@ components:
         payment_method: { type: string }
         payment_status: { type: string }
         total: { type: number }
+        currency:
+          type: string
+          description: >
+            The ISO code of the branch's currency. A driver may hold links to
+            restaurants in different countries (the ledger is per driver AND
+            per restaurant for exactly that reason), so the app cannot infer
+            one from the device, the account or the previous order — an amount
+            shown without it is a number the driver cannot act on.
         cash_to_collect:
           type: number
           description: 0 for an order already paid online.

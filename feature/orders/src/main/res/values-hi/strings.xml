@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ⏳ machine draft — needs a native speaker before launch (CLAUDE.md, glossary). -->
+<resources>
+    <string name="orders_title">ऑर्डर</string>
+
+    <string name="orders_tab_mine">मेरे ऑर्डर</string>
+    <string name="orders_tab_available">उपलब्ध</string>
+
+    <string name="orders_mine_empty_title">हाथ में कोई ऑर्डर नहीं</string>
+    <string name="orders_mine_empty_body">ऑफ़र के लिए उपलब्ध टैब देखें।</string>
+
+    <string name="orders_available_branches_heading">आपकी जुड़ी हुई शाखाएँ</string>
+
+    <string name="orders_card_items_count">%1$d आइटम</string>
+    <string name="orders_card_cash_to_collect">वसूली %1$s</string>
+    <string name="orders_card_paid_online">ऑनलाइन भुगतान</string>
+    <string name="orders_card_fee_label">आपकी कमाई</string>
+
+    <string name="orders_action_picked_up">ऑर्डर ले लिया</string>
+
+    <string name="orders_readiness_counting">लगभग %1$s मिनट में तैयार</string>
+    <string name="orders_readiness_ready">तैयार</string>
+    <string name="orders_readiness_awaiting_kitchen">रसोई में — अभी तैयार नहीं</string>
+
+    <string name="orders_error_retry">फिर से कोशिश करें</string>
+</resources>

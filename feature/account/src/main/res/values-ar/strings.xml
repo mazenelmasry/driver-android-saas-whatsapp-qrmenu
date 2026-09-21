@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="account_title">حسابى</string>
+
+    <string name="account_greeting">مرحباً، %1$s</string>
+    <string name="account_sign_out">تسجيل الخروج</string>
+
+    <string name="account_restaurants_title">مطاعمى</string>
+    <string name="account_branches">الفروع: %1$s</string>
+    <string name="account_list_separator">، </string>
+    <string name="account_status_active">نشط</string>
+    <string name="account_status_invited">فى انتظار التفعيل</string>
+    <string name="account_status_invited_hint">لم يُفعِّلك هذا المطعم بعد. لن تصلك طلبات منه حتى يتم ذلك.</string>
+    <string name="account_status_suspended">موقوف</string>
+    <string name="account_status_suspended_hint">أوقفك هذا المطعم. تواصل معهم لمعرفة السبب.</string>
+    <string name="account_empty_restaurants_title">لا يوجد مطعم بعد</string>
+    <string name="account_empty_restaurants_body">لم يدعُك أى مطعم بعد. اطلب من المطعم كود الدعوة لتبدأ العمل معه.</string>
+    <string name="account_enter_invite_code">إدخال كود الدعوة</string>
+
+    <string name="account_language_row_label">اللغة</string>
+    <string name="account_language_sheet_title">اختر لغتك</string>
+    <string name="account_language_done">تم</string>
+
+    <string name="account_ui_scale_row_label">حجم التطبيق</string>
+    <string name="account_ui_scale_small">صغير</string>
+    <string name="account_ui_scale_default">افتراضى</string>
+    <string name="account_ui_scale_large">كبير</string>
+    <string name="account_ui_scale_largest">أكبر</string>
+    <string name="account_ui_scale_preview_branch">فرع العليا</string>
+    <string name="account_ui_scale_preview_fee">الأجرة %1$s</string>
+
+    <string name="account_battery_row_label">البطارية</string>
+    <string name="account_battery_supporting">الهاتف الذى ينام يتوقف عن استقبال الطلبات</string>
+
+    <string name="account_sign_out_confirm_title">تسجيل الخروج؟</string>
+    <string name="account_sign_out_confirm_body">ستحتاج رقم جوالك لتسجيل الدخول مرة أخرى.</string>
+    <string name="account_sign_out_confirm_confirm">تسجيل الخروج</string>
+    <string name="account_sign_out_confirm_cancel">إلغاء</string>
+
+    <string name="a11y_account_identity">حسابك</string>
+</resources>

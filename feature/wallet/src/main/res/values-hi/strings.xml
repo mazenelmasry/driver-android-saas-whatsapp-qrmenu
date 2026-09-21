@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ⏳ machine draft — needs a native speaker before launch (CLAUDE.md, glossary). -->
+<resources>
+    <string name="wallet_title">वॉलेट</string>
+
+    <string name="wallet_a11y_select_restaurant">%1$s का खाता देखें</string>
+    <string name="wallet_restaurants_empty_title">अभी तक कोई रेस्तरां जुड़ा नहीं</string>
+    <string name="wallet_restaurants_empty_body">किसी रेस्तरां से जुड़ते ही आपका खाता शुरू हो जाएगा।</string>
+
+    <string name="wallet_earned_today_label">आज कमाया</string>
+    <string name="wallet_cash_on_hand_label">आपके पास नकद</string>
+    <string name="wallet_net_label">शुद्ध</string>
+    <string name="wallet_net_owed_to_you">रेस्तरां आपका देनदार है</string>
+    <string name="wallet_net_you_owe">आप रेस्तरां के देनदार हैं</string>
+    <string name="wallet_cash_limit_hint">%2$s की सीमा में से %1$s</string>
+    <string name="wallet_cash_limit_reached">आप नकद सीमा तक पहुँच गए — भुगतान करने तक नए नकद ऑर्डर नहीं दिखाए जाएँगे</string>
+
+    <string name="wallet_book_heading">खाता बही</string>
+    <string name="wallet_book_empty_title">आपकी खाता बही अभी खाली है</string>
+    <string name="wallet_book_empty_body">आपकी खाता बही आपके पहले डिलीवर किए गए ऑर्डर से शुरू होती है।</string>
+
+    <string name="wallet_entry_order_reference">ऑर्डर #%1$s</string>
+    <string name="wallet_entry_type_delivery_fee_earned">डिलीवरी शुल्क</string>
+    <string name="wallet_entry_type_cash_collected">वसूला गया नकद</string>
+    <string name="wallet_entry_type_failed_trip_fee">असफल ट्रिप शुल्क</string>
+    <string name="wallet_entry_type_settlement">निपटान</string>
+    <string name="wallet_entry_type_manual_adjustment">मैन्युअल समायोजन</string>
+    <string name="wallet_entry_type_unknown">प्रविष्टि</string>
+
+    <string name="wallet_settlements_link">निपटान इतिहास</string>
+    <string name="wallet_settlements_title">निपटान इतिहास</string>
+    <string name="wallet_settlements_empty_title">अभी तक कोई निपटान नहीं</string>
+    <string name="wallet_settlements_empty_body">आपका रेस्तरां इसे दर्ज करते ही पहला निपटान यहाँ दिखेगा।</string>
+    <string name="wallet_settlement_to_driver">आपने रेस्तरां से प्राप्त किया</string>
+    <string name="wallet_settlement_from_driver">आपने रेस्तरां को सौंपा</string>
+    <string name="wallet_settlements_back">खाता बही पर वापस</string>
+    <string name="wallet_settlement_period">%1$s – %2$s</string>
+</resources>

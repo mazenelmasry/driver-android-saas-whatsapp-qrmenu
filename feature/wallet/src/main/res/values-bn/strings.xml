@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ⏳ machine draft — needs a native speaker before launch (CLAUDE.md, glossary). -->
+<resources>
+    <string name="wallet_title">ওয়ালেট</string>
+
+    <string name="wallet_a11y_select_restaurant">%1$s এর হিসাব দেখুন</string>
+    <string name="wallet_restaurants_empty_title">এখনও কোনো রেস্তোরাঁ যুক্ত নেই</string>
+    <string name="wallet_restaurants_empty_body">একটি রেস্তোরাঁর সাথে যুক্ত হওয়ার সাথে সাথেই আপনার হিসাব শুরু হবে।</string>
+
+    <string name="wallet_earned_today_label">আজ আয় করেছেন</string>
+    <string name="wallet_cash_on_hand_label">আপনার কাছে নগদ</string>
+    <string name="wallet_net_label">নিট</string>
+    <string name="wallet_net_owed_to_you">রেস্তোরাঁ আপনাকে দেবে</string>
+    <string name="wallet_net_you_owe">আপনি রেস্তোরাঁকে দেবেন</string>
+    <string name="wallet_cash_limit_hint">%2$s সীমার মধ্যে %1$s</string>
+    <string name="wallet_cash_limit_reached">আপনি নগদ সীমায় পৌঁছেছেন — পরিশোধ না করা পর্যন্ত নতুন নগদ অর্ডার দেখানো হবে না</string>
+
+    <string name="wallet_book_heading">হিসাব খাতা</string>
+    <string name="wallet_book_empty_title">আপনার হিসাব খাতা এখন খালি</string>
+    <string name="wallet_book_empty_body">আপনার প্রথম ডেলিভারি করা অর্ডার থেকে হিসাব খাতা শুরু হয়।</string>
+
+    <string name="wallet_entry_order_reference">অর্ডার #%1$s</string>
+    <string name="wallet_entry_type_delivery_fee_earned">ডেলিভারি ফি</string>
+    <string name="wallet_entry_type_cash_collected">সংগৃহীত নগদ</string>
+    <string name="wallet_entry_type_failed_trip_fee">ব্যর্থ ট্রিপ ফি</string>
+    <string name="wallet_entry_type_settlement">নিষ্পত্তি</string>
+    <string name="wallet_entry_type_manual_adjustment">ম্যানুয়াল সমন্বয়</string>
+    <string name="wallet_entry_type_unknown">এন্ট্রি</string>
+
+    <string name="wallet_settlements_link">নিষ্পত্তির ইতিহাস</string>
+    <string name="wallet_settlements_title">নিষ্পত্তির ইতিহাস</string>
+    <string name="wallet_settlements_empty_title">এখনও কোনো নিষ্পত্তি নেই</string>
+    <string name="wallet_settlements_empty_body">আপনার রেস্তোরাঁ এটি লিপিবদ্ধ করলে প্রথম নিষ্পত্তি এখানে দেখা যাবে।</string>
+    <string name="wallet_settlement_to_driver">আপনি রেস্তোরাঁ থেকে পেয়েছেন</string>
+    <string name="wallet_settlement_from_driver">আপনি রেস্তোরাঁকে দিয়েছেন</string>
+    <string name="wallet_settlements_back">হিসাব খাতায় ফিরুন</string>
+    <string name="wallet_settlement_period">%1$s – %2$s</string>
+</resources>

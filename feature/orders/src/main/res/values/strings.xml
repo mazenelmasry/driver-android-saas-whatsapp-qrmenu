@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ⏳ ur / bn / hi are written by the agent and still need a native speaker before
+  launch (CLAUDE.md, glossary). ar / en are final.
+-->
+<resources>
+    <string name="orders_title">Orders</string>
+
+    <string name="orders_tab_mine">My orders</string>
+    <string name="orders_tab_available">Available</string>
+
+    <!-- "طلباتى" — the driver\'s own active trip. -->
+    <string name="orders_mine_empty_title">No order in hand</string>
+    <string name="orders_mine_empty_body">Check the Available tab for offers.</string>
+
+    <!-- "المتاحة" — decision-47 reasons are rendered from :feature:availability's
+         NoOrdersReason; this heading only introduces the branch list. -->
+    <string name="orders_available_branches_heading">Your linked branches</string>
+
+    <string name="orders_card_items_count">%1$d items</string>
+    <string name="orders_card_cash_to_collect">Collect %1$s</string>
+    <string name="orders_card_paid_online">Paid online</string>
+    <string name="orders_card_fee_label">You earn</string>
+
+    <!-- Glossary: picked up = "استلمت الطلب" (CLAUDE.md § مسرد المصطلحات). -->
+    <string name="orders_action_picked_up">Picked up</string>
+
+    <!-- The "جاهز خلال ~N د" countdown. -->
+    <string name="orders_readiness_counting">Ready in ~%1$s min</string>
+    <string name="orders_readiness_ready">Ready</string>
+    <string name="orders_readiness_awaiting_kitchen">With the kitchen — not ready yet</string>
+
+    <string name="orders_error_retry">Try again</string>
+</resources>

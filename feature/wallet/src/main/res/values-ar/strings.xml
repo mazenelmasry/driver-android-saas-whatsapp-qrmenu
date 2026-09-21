@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="wallet_title">المحفظة</string>
+
+    <!-- Restaurant switcher -->
+    <string name="wallet_a11y_select_restaurant">عرض دفتر %1$s</string>
+    <string name="wallet_restaurants_empty_title">لا مطعم مرتبط بعد</string>
+    <string name="wallet_restaurants_empty_body">دفترك يبدأ فور ارتباطك بأول مطعم.</string>
+
+    <!-- The three figures -->
+    <string name="wallet_earned_today_label">كسبتَ اليوم</string>
+    <string name="wallet_cash_on_hand_label">بحوزتك نقداً</string>
+    <string name="wallet_net_label">الصافى</string>
+    <string name="wallet_net_owed_to_you">المطعم يدين لك</string>
+    <string name="wallet_net_you_owe">تورّد للمطعم</string>
+    <string name="wallet_cash_limit_hint">%1$s من الحد الأقصى %2$s</string>
+    <string name="wallet_cash_limit_reached">بلغتَ الحد الأقصى — لن تُعرض عليك طلبات نقدية جديدة حتى تورّد</string>
+
+    <!-- The book -->
+    <string name="wallet_book_heading">دفتر الحساب</string>
+    <string name="wallet_book_empty_title">دفترك فارغ الآن</string>
+    <string name="wallet_book_empty_body">يبدأ دفترك مع أول طلب تُسلِّمه.</string>
+
+    <string name="wallet_entry_order_reference">طلب #%1$s</string>
+    <string name="wallet_entry_type_delivery_fee_earned">أجر توصيلة</string>
+    <string name="wallet_entry_type_cash_collected">نقد محصَّل</string>
+    <string name="wallet_entry_type_failed_trip_fee">أجر رحلة فاشلة</string>
+    <string name="wallet_entry_type_settlement">تسوية</string>
+    <string name="wallet_entry_type_manual_adjustment">تعديل يدوى</string>
+    <string name="wallet_entry_type_unknown">قيد</string>
+
+    <!-- Settlements -->
+    <string name="wallet_settlements_link">سجلّ التسويات</string>
+    <string name="wallet_settlements_title">سجلّ التسويات</string>
+    <string name="wallet_settlements_empty_title">لا تسويات بعد</string>
+    <string name="wallet_settlements_empty_body">أول تسوية تظهر هنا بعد أن يوثّقها مطعمك.</string>
+    <string name="wallet_settlement_to_driver">استلمتَ من المطعم</string>
+    <string name="wallet_settlement_from_driver">ورّدتَ للمطعم</string>
+    <string name="wallet_settlements_back">رجوع لدفتر الحساب</string>
+    <string name="wallet_settlement_period">%1$s – %2$s</string>
+</resources>

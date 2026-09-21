@@ -38,4 +38,14 @@
     <string name="error_network_unavailable">No internet connection.</string>
     <string name="error_unknown">Something went wrong. Try again.</string>
     <string name="action_retry">Try again</string>
+
+    <string name="availability_reason_offline">You are offline. Go available to start receiving orders.</string>
+    <string name="availability_reason_no_active_link">No restaurant has activated you yet.</string>
+    <string name="availability_reason_all_branches_closed">All your linked branches are closed right now.</string>
+    <string name="availability_reason_outside_radius">You are outside every linked branch\'s delivery radius.</string>
+    <string name="availability_reason_location_unknown">Your location is not known yet — orders cannot be matched to you until it is.</string>
+    <string name="availability_reason_has_active_trip">You have an order in hand. New offers pause until it is finished.</string>
+    <string name="availability_reason_nothing_pending">You are ready — there is simply no order for you yet.</string>
+    <string name="availability_reason_unknown">No orders right now.</string>
+    <string name="a11y_open_notifications">Notifications</string>
 </resources>

@@ -7,6 +7,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
@@ -62,6 +63,20 @@ object TouchTarget {
     /** Low-frequency secondary controls only (a settings row, a chip). Never a
      *  trip action, never the offer accept/decline pair. */
     val compact = 48.dp
+
+    /**
+     * [primary], corrected for the driver's chosen UI scale so it stays 64dp
+     * of ACTUAL GLASS whatever the setting says.
+     *
+     * 🔴 Use this — not [primary] — for every trip action. The size control
+     * scales density, so a plain `64.dp` at the "small" setting would land at
+     * roughly 56dp of real screen, quietly undoing the one number CLAUDE.md
+     * freezes: a gloved thumb in a moving car cannot reliably hit less.
+     */
+    val primaryPhysical: Dp
+        @Composable
+        @ReadOnlyComposable
+        get() = primary / LocalUiScaleFactor.current
 }
 
 /**
@@ -77,6 +92,14 @@ object Stroke {
 
     /** A selected outline — thick enough to read at a glance in sunlight. */
     val selected = 2.dp
+
+    /**
+     * The colour strip down the leading edge of a card that is ABOUT the
+     * driver right now (the trip in their hand). It is what lets a glance,
+     * at arm's length in a moving car, separate "mine" from "on offer"
+     * before any word is read.
+     */
+    val accentBar = 4.dp
 }
 
 /** Fixed sizes for small decorative controls (not touch targets — see [TouchTarget]). */
@@ -112,6 +135,19 @@ object ControlSize {
 
     /** The dot drawn in place of a digit while a code is masked. */
     val maskDot = 12.dp
+
+    /**
+     * The round restaurant mark on an order card. Big enough to be the thing
+     * the eye lands on first when scanning a list of otherwise similar cards,
+     * small enough to leave the branch name the widest element on the row.
+     */
+    val orderAvatar = 44.dp
+
+    /** A small leading glyph inside a chip or a secondary row. */
+    val inlineIcon = 16.dp
+
+    /** The status dot inside a readiness pill. */
+    val statusDot = 8.dp
 }
 
 /**

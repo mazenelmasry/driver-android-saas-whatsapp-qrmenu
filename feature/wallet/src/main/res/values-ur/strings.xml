@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ⏳ machine draft — needs a native speaker before launch (CLAUDE.md, glossary). -->
+<resources>
+    <string name="wallet_title">بٹوہ</string>
+
+    <string name="wallet_a11y_select_restaurant">%1$s کا کھاتا دیکھیں</string>
+    <string name="wallet_restaurants_empty_title">ابھی تک کوئی ریسٹورنٹ منسلک نہیں</string>
+    <string name="wallet_restaurants_empty_body">جیسے ہی آپ کسی ریسٹورنٹ سے منسلک ہوں گے، آپ کا کھاتا شروع ہو جائے گا۔</string>
+
+    <string name="wallet_earned_today_label">آج کمایا</string>
+    <string name="wallet_cash_on_hand_label">آپ کے پاس نقدی</string>
+    <string name="wallet_net_label">خالص</string>
+    <string name="wallet_net_owed_to_you">ریسٹورنٹ آپ کا مقروض ہے</string>
+    <string name="wallet_net_you_owe">آپ ریسٹورنٹ کے مقروض ہیں</string>
+    <string name="wallet_cash_limit_hint">%2$s کی حد میں سے %1$s</string>
+    <string name="wallet_cash_limit_reached">آپ نقدی کی حد تک پہنچ گئے — جب تک ادائیگی نہ کریں نئے نقدی آرڈرز نہیں دکھائے جائیں گے</string>
+
+    <string name="wallet_book_heading">کھاتا</string>
+    <string name="wallet_book_empty_title">آپ کا کھاتا ابھی خالی ہے</string>
+    <string name="wallet_book_empty_body">آپ کا کھاتا پہلے ڈیلیور کیے گئے آرڈر سے شروع ہوتا ہے۔</string>
+
+    <string name="wallet_entry_order_reference">آرڈر #%1$s</string>
+    <string name="wallet_entry_type_delivery_fee_earned">ڈیلیوری فیس</string>
+    <string name="wallet_entry_type_cash_collected">وصول شدہ نقدی</string>
+    <string name="wallet_entry_type_failed_trip_fee">ناکام ٹرپ فیس</string>
+    <string name="wallet_entry_type_settlement">تصفیہ</string>
+    <string name="wallet_entry_type_manual_adjustment">دستی ایڈجسٹمنٹ</string>
+    <string name="wallet_entry_type_unknown">اندراج</string>
+
+    <string name="wallet_settlements_link">تصفیوں کی تاریخ</string>
+    <string name="wallet_settlements_title">تصفیوں کی تاریخ</string>
+    <string name="wallet_settlements_empty_title">ابھی تک کوئی تصفیہ نہیں</string>
+    <string name="wallet_settlements_empty_body">آپ کا پہلا تصفیہ یہاں ظاہر ہوگا جب آپ کا ریسٹورنٹ اسے درج کرے گا۔</string>
+    <string name="wallet_settlement_to_driver">آپ نے ریسٹورنٹ سے وصول کیا</string>
+    <string name="wallet_settlement_from_driver">آپ نے ریسٹورنٹ کو ادا کیا</string>
+    <string name="wallet_settlements_back">کھاتے پر واپس</string>
+    <string name="wallet_settlement_period">%1$s – %2$s</string>
+</resources>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ⏳ Needs a native Urdu speaker review before launch (CLAUDE.md, glossary). -->
+<resources>
+    <string name="account_title">میرا اکاؤنٹ</string>
+
+    <string name="account_greeting">ہیلو، %1$s</string>
+    <string name="account_sign_out">سائن آؤٹ</string>
+
+    <string name="account_restaurants_title">میرے ریستوران</string>
+    <string name="account_branches">شاخیں: %1$s</string>
+    <string name="account_list_separator">، </string>
+    <string name="account_status_active">فعال</string>
+    <string name="account_status_invited">فعال ہونے کا انتظار</string>
+    <string name="account_status_invited_hint">اس ریستوران نے ابھی آپ کو فعال نہیں کیا۔ جب تک وہ ایسا نہیں کرتے، اس سے کوئی آرڈر نہیں آئے گا۔</string>
+    <string name="account_status_suspended">روک دیا گیا</string>
+    <string name="account_status_suspended_hint">اس ریستوران نے آپ کو روک دیا ہے۔ وجہ جاننے کے لیے ان سے رابطہ کریں۔</string>
+    <string name="account_empty_restaurants_title">ابھی کوئی ریستوران نہیں</string>
+    <string name="account_empty_restaurants_body">ابھی کسی ریستوران نے آپ کو مدعو نہیں کیا۔ اس کے ساتھ کام شروع کرنے کے لیے ریستوران سے انوائٹ کوڈ مانگیں۔</string>
+    <string name="account_enter_invite_code">انوائٹ کوڈ درج کریں</string>
+
+    <string name="account_language_row_label">زبان</string>
+    <string name="account_language_sheet_title">اپنی زبان منتخب کریں</string>
+    <string name="account_language_done">مکمل</string>
+
+    <string name="account_ui_scale_row_label">ایپ کا سائز</string>
+    <string name="account_ui_scale_small">چھوٹا</string>
+    <string name="account_ui_scale_default">ڈیفالٹ</string>
+    <string name="account_ui_scale_large">بڑا</string>
+    <string name="account_ui_scale_largest">سب سے بڑا</string>
+    <string name="account_ui_scale_preview_branch">العليا شاخ</string>
+    <string name="account_ui_scale_preview_fee">فیس %1$s</string>
+
+    <string name="account_battery_row_label">بیٹری</string>
+    <string name="account_battery_supporting">سو جانے والا فون آرڈر وصول کرنا بند کر دیتا ہے</string>
+
+    <string name="account_sign_out_confirm_title">سائن آؤٹ کریں؟</string>
+    <string name="account_sign_out_confirm_body">دوبارہ سائن ان کرنے کے لیے آپ کو اپنا فون نمبر درکار ہوگا۔</string>
+    <string name="account_sign_out_confirm_confirm">سائن آؤٹ</string>
+    <string name="account_sign_out_confirm_cancel">منسوخ کریں</string>
+
+    <string name="a11y_account_identity">آپ کا اکاؤنٹ</string>
+</resources>

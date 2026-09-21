@@ -38,24 +38,31 @@ val DriverFontFamily: FontFamily = FontFamily(
 /**
  * Type scale.
  *
- * Deliberately a step larger than the POS scale at the body/title end: this is
- * read one-handed, sometimes gloved, often in sunlight, and the amount to
- * collect has to be legible at a glance from a car seat.
+ * 🔴 Reduced a step at the body/title/label end (2026-09-21, project owner):
+ * the earlier scale was set larger than POS's on the reasoning that a driver
+ * reads one-handed in sunlight — true, but carried too far it produced screens
+ * where three facts filled a phone and everything looked enlarged rather than
+ * designed. The legibility argument is now served by the per-driver scale
+ * control (`UiScaleStore`) instead of by a default nobody can turn down.
+ *
+ * The one exception is the money line: a card's amount still steps UP, because
+ * it is the single value a driver reads from a car seat at arm's length. That
+ * is done at the call site (`headlineSmall`), not by inflating the whole ramp.
  */
 val DriverTypography = Typography(
     displayLarge = TextStyle(fontFamily = DriverFontFamily, fontWeight = FontWeight.Bold, fontSize = 57.sp),
     displayMedium = TextStyle(fontFamily = DriverFontFamily, fontWeight = FontWeight.Bold, fontSize = 45.sp),
     displaySmall = TextStyle(fontFamily = DriverFontFamily, fontWeight = FontWeight.Bold, fontSize = 36.sp),
-    headlineLarge = TextStyle(fontFamily = DriverFontFamily, fontWeight = FontWeight.Bold, fontSize = 32.sp),
-    headlineMedium = TextStyle(fontFamily = DriverFontFamily, fontWeight = FontWeight.Bold, fontSize = 28.sp),
-    headlineSmall = TextStyle(fontFamily = DriverFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 24.sp),
-    titleLarge = TextStyle(fontFamily = DriverFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 22.sp),
-    titleMedium = TextStyle(fontFamily = DriverFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 18.sp),
-    titleSmall = TextStyle(fontFamily = DriverFontFamily, fontWeight = FontWeight.Medium, fontSize = 15.sp),
-    bodyLarge = TextStyle(fontFamily = DriverFontFamily, fontWeight = FontWeight.Normal, fontSize = 17.sp),
-    bodyMedium = TextStyle(fontFamily = DriverFontFamily, fontWeight = FontWeight.Normal, fontSize = 15.sp),
-    bodySmall = TextStyle(fontFamily = DriverFontFamily, fontWeight = FontWeight.Normal, fontSize = 13.sp),
-    labelLarge = TextStyle(fontFamily = DriverFontFamily, fontWeight = FontWeight.Medium, fontSize = 15.sp),
-    labelMedium = TextStyle(fontFamily = DriverFontFamily, fontWeight = FontWeight.Medium, fontSize = 13.sp),
-    labelSmall = TextStyle(fontFamily = DriverFontFamily, fontWeight = FontWeight.Medium, fontSize = 11.sp),
+    headlineLarge = TextStyle(fontFamily = DriverFontFamily, fontWeight = FontWeight.Bold, fontSize = 28.sp),
+    headlineMedium = TextStyle(fontFamily = DriverFontFamily, fontWeight = FontWeight.Bold, fontSize = 24.sp),
+    headlineSmall = TextStyle(fontFamily = DriverFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 22.sp),
+    titleLarge = TextStyle(fontFamily = DriverFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 20.sp),
+    titleMedium = TextStyle(fontFamily = DriverFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 16.sp),
+    titleSmall = TextStyle(fontFamily = DriverFontFamily, fontWeight = FontWeight.Medium, fontSize = 14.sp),
+    bodyLarge = TextStyle(fontFamily = DriverFontFamily, fontWeight = FontWeight.Normal, fontSize = 15.sp),
+    bodyMedium = TextStyle(fontFamily = DriverFontFamily, fontWeight = FontWeight.Normal, fontSize = 14.sp),
+    bodySmall = TextStyle(fontFamily = DriverFontFamily, fontWeight = FontWeight.Normal, fontSize = 12.sp),
+    labelLarge = TextStyle(fontFamily = DriverFontFamily, fontWeight = FontWeight.Medium, fontSize = 13.sp),
+    labelMedium = TextStyle(fontFamily = DriverFontFamily, fontWeight = FontWeight.Medium, fontSize = 12.sp),
+    labelSmall = TextStyle(fontFamily = DriverFontFamily, fontWeight = FontWeight.Medium, fontSize = 10.sp),
 )

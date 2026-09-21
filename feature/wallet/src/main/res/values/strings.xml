@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="wallet_title">Wallet</string>
+
+    <!-- Restaurant switcher -->
+    <string name="wallet_a11y_select_restaurant">View %1$s\'s book</string>
+    <string name="wallet_restaurants_empty_title">No restaurant linked yet</string>
+    <string name="wallet_restaurants_empty_body">Your book starts the moment you\'re linked to a restaurant.</string>
+
+    <!-- The three figures -->
+    <string name="wallet_earned_today_label">Earned today</string>
+    <string name="wallet_cash_on_hand_label">Cash on hand</string>
+    <string name="wallet_net_label">Net</string>
+    <string name="wallet_net_owed_to_you">The restaurant owes you</string>
+    <string name="wallet_net_you_owe">You owe the restaurant</string>
+    <string name="wallet_cash_limit_hint">%1$s of the %2$s limit</string>
+    <string name="wallet_cash_limit_reached">You\'ve hit the cash limit — no new cash orders until you settle up</string>
+
+    <!-- The book -->
+    <string name="wallet_book_heading">Ledger</string>
+    <string name="wallet_book_empty_title">Your book is empty right now</string>
+    <string name="wallet_book_empty_body">Your book starts with the first order you deliver.</string>
+
+    <string name="wallet_entry_order_reference">Order #%1$s</string>
+    <string name="wallet_entry_type_delivery_fee_earned">Delivery fee</string>
+    <string name="wallet_entry_type_cash_collected">Cash collected</string>
+    <string name="wallet_entry_type_failed_trip_fee">Failed trip fee</string>
+    <string name="wallet_entry_type_settlement">Settlement</string>
+    <string name="wallet_entry_type_manual_adjustment">Manual adjustment</string>
+    <string name="wallet_entry_type_unknown">Entry</string>
+
+    <!-- Settlements -->
+    <string name="wallet_settlements_link">Settlement history</string>
+    <string name="wallet_settlements_title">Settlement history</string>
+    <string name="wallet_settlements_empty_title">No settlements yet</string>
+    <string name="wallet_settlements_empty_body">Your first settlement will show up here once your restaurant records it.</string>
+    <string name="wallet_settlement_to_driver">You received from the restaurant</string>
+    <string name="wallet_settlement_from_driver">You handed over to the restaurant</string>
+    <string name="wallet_settlements_back">Back to ledger</string>
+    <string name="wallet_settlement_period">%1$s – %2$s</string>
+</resources>

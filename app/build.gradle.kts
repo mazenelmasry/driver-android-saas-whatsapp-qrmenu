@@ -202,8 +202,11 @@ dependencies {
     implementation(project(":core:common"))
     implementation(project(":feature:onboarding"))
     implementation(project(":feature:auth"))
-    implementation(project(":feature:home"))
     implementation(project(":feature:availability"))
+    implementation(project(":feature:orders"))
+    implementation(project(":feature:notifications"))
+    implementation(project(":feature:account"))
+    implementation(project(":feature:wallet"))
     // :app now hosts composables that resolve their own ViewModels (the tab
     // scaffold). Feature modules get this from the convention plugin; :app is
     // an application module and does not.

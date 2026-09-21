@@ -6,20 +6,14 @@
     <string name="availability_switch_online">دستیاب</string>
     <string name="availability_switch_offline">دستیاب نہیں</string>
     <string name="availability_switch_pending">تصدیق ہو رہی ہے…</string>
+    <string name="availability_switch_hint_online">آرڈرز بند کرنے کے لیے دبائیں</string>
+    <string name="availability_switch_hint_offline">آرڈرز وصول کرنے کے لیے دبائیں</string>
 
     <string name="availability_online_since">%1$s سے دستیاب</string>
 
     <string name="availability_connection_lost">کنکشن منقطع</string>
     <string name="availability_connection_lost_body">اگر کنکشن بحال نہ ہوا تو سرور چند منٹوں میں آپ کو نامعلوم دستیاب کر دے گا۔</string>
 
-    <string name="availability_reason_offline">آپ دستیاب نہیں ہیں۔ آرڈرز حاصل کرنے کے لیے دستیاب ہو جائیں۔</string>
-    <string name="availability_reason_no_active_link">ابھی تک کسی ریستوران نے آپ کو فعال نہیں کیا۔</string>
-    <string name="availability_reason_all_branches_closed">آپ کی تمام منسلک شاخیں فی الحال بند ہیں۔</string>
-    <string name="availability_reason_outside_radius">آپ اپنی تمام منسلک شاخوں کی ڈیلیوری حد سے باہر ہیں۔</string>
-    <string name="availability_reason_location_unknown">آپ کا مقام ابھی معلوم نہیں — جب تک معلوم نہ ہو آرڈرز آپ سے نہیں ملائے جا سکتے۔</string>
-    <string name="availability_reason_has_active_trip">آپ کے پاس ایک آرڈر موجود ہے۔ نئے آفرز اس کے ختم ہونے تک رکے رہیں گے۔</string>
-    <string name="availability_reason_nothing_pending">آپ تیار ہیں — بس فی الحال آپ کے لیے کوئی آرڈر نہیں ہے۔</string>
-    <string name="availability_reason_unknown">فی الحال کوئی آرڈر نہیں۔</string>
 
     <string name="availability_branches_heading">آپ کی منسلک شاخیں</string>
     <string name="availability_branch_open">کھلا</string>

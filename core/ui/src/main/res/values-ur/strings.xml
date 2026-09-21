@@ -38,4 +38,14 @@
     <string name="error_network_unavailable">انٹرنیٹ کنکشن نہیں ہے۔</string>
     <string name="error_unknown">کچھ غلط ہو گیا۔ دوبارہ کوشش کریں۔</string>
     <string name="action_retry">دوبارہ کوشش کریں</string>
+
+    <string name="availability_reason_offline">آپ دستیاب نہیں ہیں۔ آرڈرز حاصل کرنے کے لیے دستیاب ہو جائیں۔</string>
+    <string name="availability_reason_no_active_link">ابھی تک کسی ریستوران نے آپ کو فعال نہیں کیا۔</string>
+    <string name="availability_reason_all_branches_closed">آپ کی تمام منسلک شاخیں فی الحال بند ہیں۔</string>
+    <string name="availability_reason_outside_radius">آپ اپنی تمام منسلک شاخوں کی ڈیلیوری حد سے باہر ہیں۔</string>
+    <string name="availability_reason_location_unknown">آپ کا مقام ابھی معلوم نہیں — جب تک معلوم نہ ہو آرڈرز آپ سے نہیں ملائے جا سکتے۔</string>
+    <string name="availability_reason_has_active_trip">آپ کے پاس ایک آرڈر موجود ہے۔ نئے آفرز اس کے ختم ہونے تک رکے رہیں گے۔</string>
+    <string name="availability_reason_nothing_pending">آپ تیار ہیں — بس فی الحال آپ کے لیے کوئی آرڈر نہیں ہے۔</string>
+    <string name="availability_reason_unknown">فی الحال کوئی آرڈر نہیں۔</string>
+    <string name="a11y_open_notifications">اطلاعات</string>
 </resources>

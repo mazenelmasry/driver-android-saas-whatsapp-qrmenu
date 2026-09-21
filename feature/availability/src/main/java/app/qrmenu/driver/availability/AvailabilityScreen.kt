@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -51,8 +52,11 @@ import app.qrmenu.driver.designsystem.theme.DriverTheme
 import app.qrmenu.driver.designsystem.theme.Motion
 import app.qrmenu.driver.designsystem.theme.Radius
 import app.qrmenu.driver.designsystem.theme.Spacing
+import app.qrmenu.driver.ui.components.DriverScreenScaffold
 import app.qrmenu.driver.designsystem.theme.TouchTarget
 import app.qrmenu.driver.network.dto.AvailabilityContextDto
+import app.qrmenu.driver.ui.orders.messageResource
+import app.qrmenu.driver.ui.orders.noOrdersReason
 import app.qrmenu.driver.network.dto.ContextBranchDto
 import app.qrmenu.driver.network.errors.DriverApiError
 import app.qrmenu.driver.network.errors.DriverErrorCode
@@ -97,11 +101,17 @@ fun AvailabilityRoute(
     onGoOnline: () -> Unit = {},
     /** Called once the server has CONFIRMED `is_online = false`. Stops the location service. */
     onGoOffline: () -> Unit = {},
+    /** Opens the notification centre from this screen's bell. Null hides the bell. */
+    onOpenNotifications: (() -> Unit)? = null,
     viewModel: AvailabilityViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val connectionLost by connectionFailing.collectAsStateWithLifecycle()
-    val context by noOrdersContext.collectAsStateWithLifecycle()
+    // The caller's feed still wins when it has something (the orders tab has
+    // a fresher one while it is on screen); this screen's own fetch is what
+    // guarantees there IS one on first open.
+    val pushedContext by noOrdersContext.collectAsStateWithLifecycle()
+    val context = pushedContext ?: state.noOrdersContext
 
     AvailabilityScreen(
         state = state,
@@ -110,6 +120,7 @@ fun AvailabilityRoute(
         warningSlot = warningSlot,
         onRetryLoad = viewModel::retry,
         onToggle = viewModel::onToggle,
+        onOpenNotifications = onOpenNotifications,
     )
 
     // Fires only once a request has SETTLED (never mid-flight, `isPending`
@@ -130,28 +141,25 @@ internal fun AvailabilityScreen(
     warningSlot: @Composable () -> Unit,
     onRetryLoad: () -> Unit,
     onToggle: (Boolean) -> Unit,
+    onOpenNotifications: (() -> Unit)? = null,
 ) {
-    Scaffold { insets ->
+    Scaffold {
+        // The shared frame — same title placement and same bell as every
+        // other destination, so the four tabs read as one app.
+        DriverScreenScaffold(
+            title = stringResource(R.string.availability_title),
+            onOpenNotifications = onOpenNotifications,
+        ) {
         when {
             // First load only — never shown again once anything has arrived,
             // same contract as `:feature:home`'s HomeUiState.isLoading.
-            state.isLoading -> AvailabilityLoadingSkeleton(modifier = Modifier.padding(insets))
+            state.isLoading -> AvailabilityLoadingSkeleton()
 
             else -> LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(insets),
-                contentPadding = PaddingValues(horizontal = Spacing.lg, vertical = Spacing.lg),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(horizontal = Spacing.lg, vertical = Spacing.md),
                 verticalArrangement = Arrangement.spacedBy(Spacing.md),
             ) {
-                item {
-                    Text(
-                        text = stringResource(R.string.availability_title),
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
-
                 // Connection lost is its OWN banner, distinct from
                 // DriverErrorBanner: this is not a request that failed, it is
                 // the heartbeat the switch depends on going silent, and the
@@ -185,6 +193,7 @@ internal fun AvailabilityScreen(
                     item { NoOrdersReasonCard(context = context) }
                 }
             }
+        }
         }
     }
 }
@@ -270,7 +279,11 @@ private fun AvailabilitySwitch(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(TouchTarget.primary * 2)
+            // heightIn, not height: a fixed box left the content stranded at
+            // the top with a hand-sized patch of empty colour beneath it. The
+            // card is now as tall as it needs to be, with a floor so it still
+            // reads as the biggest target on the screen.
+            .heightIn(min = TouchTarget.primary * 2)
             .clip(RoundedCornerShape(Radius.card))
             .background(container)
             // Disabled while pending — a second tap mid-flight must not queue a
@@ -279,7 +292,7 @@ private fun AvailabilitySwitch(
             .clickable(enabled = !isPending) { onToggle(!isOnline) }
             .padding(Spacing.lg),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+        verticalArrangement = Arrangement.spacedBy(Spacing.xs, Alignment.CenterVertically),
     ) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
@@ -309,8 +322,25 @@ private fun AvailabilitySwitch(
         if (isOnline && !isPending && onlineSince != null) {
             ElapsedSince(isoInstant = onlineSince, color = content)
         }
+
+        // Says what the tap DOES, not what the state IS. A driver who has just
+        // installed the app looks at a coloured card reading "غير متاح" and
+        // has no way to know the card itself is the switch.
+        if (!isPending) {
+            Text(
+                text = stringResource(
+                    if (isOnline) R.string.availability_switch_hint_online
+                    else R.string.availability_switch_hint_offline,
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = content.copy(alpha = HINT_ALPHA),
+            )
+        }
     }
 }
+
+/** Quiet enough to sit under the state without competing with it. */
+private const val HINT_ALPHA = 0.75f
 
 /**
  * A live-ticking `HH:MM:SS`, Latin-digit and direction-isolated ([ltr]) so it

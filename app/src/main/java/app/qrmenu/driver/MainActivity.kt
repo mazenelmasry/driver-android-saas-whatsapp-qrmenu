@@ -6,6 +6,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -16,6 +18,7 @@ import app.qrmenu.driver.auth.RedeemInviteFlow
 import app.qrmenu.driver.common.locale.SupportedLocales
 import app.qrmenu.driver.datastore.AppLocaleStore
 import app.qrmenu.driver.datastore.TokenStore
+import app.qrmenu.driver.datastore.UiScaleStore
 import app.qrmenu.driver.designsystem.theme.DriverTheme
 import app.qrmenu.driver.onboarding.language.LanguageRoute
 import dagger.hilt.android.AndroidEntryPoint
@@ -26,6 +29,14 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var tokenStore: TokenStore
+
+    /**
+     * The driver's own size choice. Held here rather than inside a screen
+     * because it has to wrap [DriverTheme] — a size setting that only takes
+     * effect on the screen that sets it is not a size setting.
+     */
+    @Inject
+    lateinit var uiScaleStore: UiScaleStore
 
     /**
      * Applies the stored language before any view is inflated.
@@ -44,7 +55,12 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         setContent {
-            DriverTheme {
+            // `collectAsState` with the store's own current value as the seed:
+            // the first frame must already be drawn at the chosen size, or the
+            // app visibly resizes itself on every launch.
+            val uiScale by uiScaleStore.scale.collectAsState(initial = uiScaleStore.current())
+
+            DriverTheme(uiScaleFactor = uiScale.factor) {
                 DriverApp(tokenStore)
             }
         }
@@ -94,6 +110,19 @@ private fun DriverApp(tokenStore: TokenStore) {
     // run", and that is what this reads.
     var signedIn by rememberSaveable { mutableStateOf(tokenStore.hasValidSession()) }
     var redeemingInvite by rememberSaveable { mutableStateOf(false) }
+
+    // The inverse direction IS safe to drive off the token, and is the one
+    // that matters: `SessionExpiryInterceptor` clears the store the moment the
+    // server rejects the session (expired, suspended, signed in on another
+    // phone). Without this the driver would sit on a screen of "something went
+    // wrong" tapping a Try again that can never succeed.
+    val token by tokenStore.token.collectAsState()
+    LaunchedEffect(token, signedIn) {
+        if (signedIn && token.isNullOrBlank()) {
+            signedIn = false
+            redeemingInvite = false
+        }
+    }
 
     when {
         !signedIn -> AuthFlow(onSignedIn = { signedIn = true })
