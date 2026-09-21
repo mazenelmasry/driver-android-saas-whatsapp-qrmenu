@@ -64,6 +64,13 @@ data class DriverOrderDto(
     @SerialName("picked_up_at") val pickedUpAt: String? = null,
     @SerialName("delivered_at") val deliveredAt: String? = null,
     @SerialName("claimed_at") val claimedAt: String? = null,
+    /**
+     * Whether this order carries a customer delivery code — never the code
+     * itself, which the contract keeps off this surface entirely. The default
+     * is `false` so an app talking to a backend that predates the field
+     * behaves exactly as it did before rather than failing to decode.
+     */
+    @SerialName("requires_delivery_code") val requiresDeliveryCode: Boolean = false,
 ) {
     /**
      * True when the server sent the ASSIGNED shape. Read it from [customer]
@@ -187,10 +194,20 @@ data class PickedUpRequest(
  * editable — but a DIFFERENT amount requires a note, because the gap between
  * what the order said and what the driver holds is exactly what the ledger
  * settles. Null for an order already paid.
+ *
+ * 🔴 `deliveryCode` (decision 48) is the four digits the customer reads off
+ * their own order page — the app never knows in advance whether an order
+ * carries one, and never holds an expected value to compare against: the
+ * SERVER decides, with a wrong code answering 422 `delivery_code_mismatch`
+ * and a missing-but-required one answering 422 `delivery_code_required`. Null
+ * is the correct value for an order created before the code existed, one the
+ * restaurant has waived, or simply the app's first attempt before it has ever
+ * been told a code is needed.
  */
 @Serializable
 data class DeliveredRequest(
     @SerialName("cash_collected") val cashCollected: Double? = null,
+    @SerialName("delivery_code") val deliveryCode: String? = null,
     val note: String? = null,
     @SerialName("occurred_at") val occurredAt: String,
 )

@@ -42,4 +42,59 @@
     <string name="trip_outcome_declined_body">This order will not be offered to you again.</string>
 
     <string name="trip_outcome_close">Close</string>
+
+    <!-- ═══════════════════════ Screen 10 — the trip ═══════════════════════ -->
+    <string name="trip_title">Trip</string>
+    <string name="trip_area_label">Delivery area</string>
+    <string name="trip_address_label">Address</string>
+    <string name="trip_recipient_label">Deliver to</string>
+    <string name="trip_section_items_title">Order</string>
+    <string name="trip_section_note_title">Customer note</string>
+    <string name="trip_no_customer_note">No note from the customer</string>
+
+    <string name="trip_action_pickup">I picked it up</string>
+    <string name="trip_pickup_disabled_hint">Waiting for the branch to mark the order ready</string>
+    <string name="trip_action_deliver">I delivered it</string>
+    <string name="trip_action_report_issue">Report a problem</string>
+
+    <string name="trip_action_call_customer">Call customer</string>
+    <string name="trip_action_call_branch">Call branch</string>
+    <string name="trip_action_whatsapp">WhatsApp</string>
+    <string name="trip_action_navigate">Navigate</string>
+    <string name="a11y_call_customer">Call the customer</string>
+    <string name="a11y_call_branch">Call the branch</string>
+    <string name="a11y_whatsapp_customer">Message the customer on WhatsApp</string>
+    <string name="a11y_navigate_to_customer">Navigate to the customer</string>
+
+    <string name="trip_resuming_title">Resuming your trip…</string>
+
+    <!-- ═══════════════════════ Screen 11 — delivery ═══════════════════════ -->
+    <string name="trip_delivery_sheet_title">Confirm delivery</string>
+    <string name="trip_delivery_collect_label">Collect</string>
+    <string name="trip_delivery_amount_label">Cash collected</string>
+    <string name="trip_delivery_note_label">Why the amount changed</string>
+    <string name="trip_delivery_note_placeholder">e.g. customer paid with a 100 note, no change</string>
+    <string name="trip_delivery_amount_required">Enter the amount you collected</string>
+    <string name="trip_delivery_reason_required">A different amount needs a reason — the restaurant will see it</string>
+    <string name="trip_delivery_code_label">Delivery code</string>
+    <string name="trip_delivery_code_hint">Ask the customer to read the 4-digit code from their order page</string>
+    <string name="trip_delivery_code_required">Enter the code the customer gives you</string>
+    <string name="trip_delivery_already_paid">Paid online — nothing to collect</string>
+    <string name="trip_delivery_hold_to_confirm">Hold to confirm delivery</string>
+    <string name="trip_delivery_cancel">Back</string>
+
+    <string name="trip_delivered_title">Delivered</string>
+    <string name="trip_delivered_fee_label">You earned</string>
+    <string name="trip_delivered_net_label">Your balance with the restaurant</string>
+    <string name="trip_delivered_done">Done</string>
+
+    <!-- ═══════════════════════ Screen 12 — report a problem ═══════════════════════ -->
+    <string name="trip_issue_sheet_title">Report a problem</string>
+    <string name="trip_issue_sheet_subtitle">This does not cancel the order — the restaurant will see it and decide what happens next.</string>
+    <string name="trip_issue_note_label">Add a note (optional)</string>
+    <string name="trip_issue_note_placeholder">What happened?</string>
+    <string name="trip_issue_submit">Send report</string>
+    <string name="trip_issue_cancel">Back</string>
+    <string name="trip_issue_reported_title">Report sent</string>
+    <string name="trip_issue_reported_body">The restaurant has been notified.</string>
 </resources>

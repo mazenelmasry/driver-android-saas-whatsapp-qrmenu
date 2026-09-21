@@ -34,4 +34,59 @@
     <string name="trip_outcome_declined_body">لن يُعرض عليك هذا الطلب مجدداً.</string>
 
     <string name="trip_outcome_close">إغلاق</string>
+
+    <!-- ═══════════════════════ الشاشة ١٠ — الرحلة ═══════════════════════ -->
+    <string name="trip_title">الرحلة</string>
+    <string name="trip_area_label">حى التوصيل</string>
+    <string name="trip_address_label">العنوان</string>
+    <string name="trip_recipient_label">التسليم إلى</string>
+    <string name="trip_section_items_title">الطلب</string>
+    <string name="trip_section_note_title">ملاحظة العميل</string>
+    <string name="trip_no_customer_note">لا توجد ملاحظة من العميل</string>
+
+    <string name="trip_action_pickup">استلمت</string>
+    <string name="trip_pickup_disabled_hint">فى انتظار تجهيز الطلب من الفرع</string>
+    <string name="trip_action_deliver">سلّمت</string>
+    <string name="trip_action_report_issue">الإبلاغ عن مشكلة</string>
+
+    <string name="trip_action_call_customer">اتصال بالعميل</string>
+    <string name="trip_action_call_branch">اتصال بالفرع</string>
+    <string name="trip_action_whatsapp">واتساب</string>
+    <string name="trip_action_navigate">الملاحة</string>
+    <string name="a11y_call_customer">اتصال بالعميل</string>
+    <string name="a11y_call_branch">اتصال بالفرع</string>
+    <string name="a11y_whatsapp_customer">مراسلة العميل عبر واتساب</string>
+    <string name="a11y_navigate_to_customer">الملاحة إلى العميل</string>
+
+    <string name="trip_resuming_title">جارٍ استئناف رحلتك…</string>
+
+    <!-- ═══════════════════════ الشاشة ١١ — التسليم ═══════════════════════ -->
+    <string name="trip_delivery_sheet_title">تأكيد التسليم</string>
+    <string name="trip_delivery_collect_label">حصّل</string>
+    <string name="trip_delivery_amount_label">المبلغ المحصَّل</string>
+    <string name="trip_delivery_note_label">سبب تغيّر المبلغ</string>
+    <string name="trip_delivery_note_placeholder">مثال: دفع العميل بورقة ١٠٠ بلا باقٍ</string>
+    <string name="trip_delivery_amount_required">أدخل المبلغ الذى حصّلته</string>
+    <string name="trip_delivery_reason_required">المبلغ المختلف يحتاج سبباً — سيراه المطعم</string>
+    <string name="trip_delivery_code_label">رمز التسليم</string>
+    <string name="trip_delivery_code_hint">اطلب من العميل قراءة الرمز المكوَّن من ٤ أرقام من صفحة طلبه</string>
+    <string name="trip_delivery_code_required">أدخل الرمز الذى يعطيك إياه العميل</string>
+    <string name="trip_delivery_already_paid">مدفوع أونلاين — لا يوجد ما تحصّله</string>
+    <string name="trip_delivery_hold_to_confirm">اضغط مطوّلاً لتأكيد التسليم</string>
+    <string name="trip_delivery_cancel">رجوع</string>
+
+    <string name="trip_delivered_title">تم التسليم</string>
+    <string name="trip_delivered_fee_label">ربحت</string>
+    <string name="trip_delivered_net_label">رصيدك مع المطعم</string>
+    <string name="trip_delivered_done">تم</string>
+
+    <!-- ═══════════════════════ الشاشة ١٢ — الإبلاغ عن مشكلة ═══════════════════════ -->
+    <string name="trip_issue_sheet_title">الإبلاغ عن مشكلة</string>
+    <string name="trip_issue_sheet_subtitle">هذا لا يلغى الطلب — سيراه المطعم ويقرّر الخطوة التالية.</string>
+    <string name="trip_issue_note_label">أضف ملاحظة (اختيارى)</string>
+    <string name="trip_issue_note_placeholder">ماذا حدث؟</string>
+    <string name="trip_issue_submit">إرسال البلاغ</string>
+    <string name="trip_issue_cancel">رجوع</string>
+    <string name="trip_issue_reported_title">تم إرسال البلاغ</string>
+    <string name="trip_issue_reported_body">تم إبلاغ المطعم.</string>
 </resources>

@@ -60,6 +60,8 @@ fun DriverErrorCode.messageResource(): Int = when (this) {
     DriverErrorCode.OrderCancelled -> R.string.error_order_cancelled
     DriverErrorCode.NotYourOrder -> R.string.error_not_your_order
     DriverErrorCode.CashLimitExceeded -> R.string.error_cash_limit_exceeded
+    DriverErrorCode.DeliveryCodeRequired -> R.string.error_delivery_code_required
+    DriverErrorCode.DeliveryCodeMismatch -> R.string.error_delivery_code_mismatch
     DriverErrorCode.BranchClosed -> R.string.error_branch_closed
     DriverErrorCode.ValidationFailed -> R.string.error_validation_failed
     DriverErrorCode.RateLimited -> R.string.error_rate_limited

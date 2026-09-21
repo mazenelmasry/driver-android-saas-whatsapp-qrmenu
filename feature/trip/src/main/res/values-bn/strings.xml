@@ -35,4 +35,56 @@
     <string name="trip_outcome_declined_body">এই অর্ডারটি আপনাকে আর দেওয়া হবে না।</string>
 
     <string name="trip_outcome_close">বন্ধ করুন</string>
+
+    <string name="trip_title">ট্রিপ</string>
+    <string name="trip_area_label">ডেলিভারি এলাকা</string>
+    <string name="trip_address_label">ঠিকানা</string>
+    <string name="trip_recipient_label">যাকে দিতে হবে</string>
+    <string name="trip_section_items_title">অর্ডার</string>
+    <string name="trip_section_note_title">গ্রাহকের নোট</string>
+    <string name="trip_no_customer_note">গ্রাহকের কোনো নোট নেই</string>
+
+    <string name="trip_action_pickup">আমি নিয়েছি</string>
+    <string name="trip_pickup_disabled_hint">রেস্তোরাঁর অর্ডার প্রস্তুত হওয়ার অপেক্ষায়</string>
+    <string name="trip_action_deliver">আমি পৌঁছে দিয়েছি</string>
+    <string name="trip_action_report_issue">সমস্যা রিপোর্ট করুন</string>
+
+    <string name="trip_action_call_customer">গ্রাহককে কল করুন</string>
+    <string name="trip_action_call_branch">রেস্তোরাঁয় কল করুন</string>
+    <string name="trip_action_whatsapp">হোয়াটসঅ্যাপ</string>
+    <string name="trip_action_navigate">নেভিগেট</string>
+    <string name="a11y_call_customer">গ্রাহককে কল করুন</string>
+    <string name="a11y_call_branch">রেস্তোরাঁয় কল করুন</string>
+    <string name="a11y_whatsapp_customer">হোয়াটসঅ্যাপে গ্রাহকের সাথে যোগাযোগ করুন</string>
+    <string name="a11y_navigate_to_customer">গ্রাহকের কাছে নেভিগেট করুন</string>
+
+    <string name="trip_resuming_title">আপনার ট্রিপ আবার লোড হচ্ছে…</string>
+
+    <string name="trip_delivery_sheet_title">ডেলিভারি নিশ্চিত করুন</string>
+    <string name="trip_delivery_collect_label">সংগ্রহ করুন</string>
+    <string name="trip_delivery_amount_label">সংগৃহীত নগদ</string>
+    <string name="trip_delivery_note_label">কেন পরিমাণ পরিবর্তিত হলো</string>
+    <string name="trip_delivery_note_placeholder">যেমন: গ্রাহক ১০০ নোট দিয়েছেন, ভাংতি নেই</string>
+    <string name="trip_delivery_amount_required">আপনি যে পরিমাণ সংগ্রহ করেছেন তা লিখুন</string>
+    <string name="trip_delivery_reason_required">ভিন্ন পরিমাণের জন্য কারণ প্রয়োজন — রেস্তোরাঁ এটি দেখবে</string>
+    <string name="trip_delivery_code_label">ডেলিভারি কোড</string>
+    <string name="trip_delivery_code_hint">গ্রাহককে তাদের অর্ডার পৃষ্ঠা থেকে ৪-সংখ্যার কোড পড়তে বলুন</string>
+    <string name="trip_delivery_code_required">গ্রাহক আপনাকে যে কোডটি দেয় তা লিখুন</string>
+    <string name="trip_delivery_already_paid">অনলাইনে পরিশোধিত — সংগ্রহ করার কিছু নেই</string>
+    <string name="trip_delivery_hold_to_confirm">নিশ্চিত করতে চেপে ধরুন</string>
+    <string name="trip_delivery_cancel">ফিরে যান</string>
+
+    <string name="trip_delivered_title">পৌঁছে দেওয়া হয়েছে</string>
+    <string name="trip_delivered_fee_label">আপনি আয় করেছেন</string>
+    <string name="trip_delivered_net_label">রেস্তোরাঁর সাথে আপনার ব্যালেন্স</string>
+    <string name="trip_delivered_done">সম্পন্ন</string>
+
+    <string name="trip_issue_sheet_title">সমস্যা রিপোর্ট করুন</string>
+    <string name="trip_issue_sheet_subtitle">এটি অর্ডার বাতিল করে না — রেস্তোরাঁ এটি দেখে পরবর্তী পদক্ষেপ ঠিক করবে।</string>
+    <string name="trip_issue_note_label">নোট যোগ করুন (ঐচ্ছিক)</string>
+    <string name="trip_issue_note_placeholder">কী হয়েছিল?</string>
+    <string name="trip_issue_submit">রিপোর্ট পাঠান</string>
+    <string name="trip_issue_cancel">ফিরে যান</string>
+    <string name="trip_issue_reported_title">রিপোর্ট পাঠানো হয়েছে</string>
+    <string name="trip_issue_reported_body">রেস্তোরাঁকে জানানো হয়েছে।</string>
 </resources>

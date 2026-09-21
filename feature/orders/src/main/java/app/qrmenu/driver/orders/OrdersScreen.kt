@@ -68,6 +68,7 @@ import kotlinx.coroutines.flow.StateFlow
  */
 @Composable
 fun OrdersRoute(
+    onOpenTrip: (Long) -> Unit = {},
     noOrdersContextOut: (AvailabilityContextDto?) -> Unit = {},
     onOpenNotifications: (() -> Unit)? = null,
     viewModel: OrdersViewModel = hiltViewModel(),
@@ -100,6 +101,7 @@ fun OrdersRoute(
         onRefreshMine = { viewModel.loadMine(isRefresh = true) },
         onRefreshAvailable = { viewModel.loadAvailable(isRefresh = true) },
         onRetry = viewModel::retry,
+        onOpenTrip = onOpenTrip,
         onOpenNotifications = onOpenNotifications,
     )
 }
@@ -112,6 +114,7 @@ internal fun OrdersScreen(
     onRefreshMine: () -> Unit,
     onRefreshAvailable: () -> Unit,
     onRetry: (OrdersTab) -> Unit,
+    onOpenTrip: (Long) -> Unit = {},
     onOpenNotifications: (() -> Unit)? = null,
 ) {
     Scaffold {
@@ -141,6 +144,7 @@ internal fun OrdersScreen(
                     listState = state.mine,
                     onRefresh = onRefreshMine,
                     onRetry = { onRetry(OrdersTab.Mine) },
+                    onOpenTrip = onOpenTrip,
                 )
                 OrdersTab.Available -> AvailableList(
                     listState = state.available,
@@ -155,7 +159,12 @@ internal fun OrdersScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun MineList(listState: OrderListState, onRefresh: () -> Unit, onRetry: () -> Unit) {
+private fun MineList(
+    listState: OrderListState,
+    onRefresh: () -> Unit,
+    onRetry: () -> Unit,
+    onOpenTrip: (Long) -> Unit,
+) {
     when {
         listState.isLoading -> OrdersLoadingSkeleton()
         else -> PullToRefreshBox(isRefreshing = listState.isRefreshing, onRefresh = onRefresh) {
@@ -173,7 +182,10 @@ private fun MineList(listState: OrderListState, onRefresh: () -> Unit, onRetry: 
                 }
 
                 items(listState.orders, key = DriverOrderDto::id) { order ->
-                    AssignedOrderCard(summary = order.toAssignedSummary())
+                    AssignedOrderCard(
+                        summary = order.toAssignedSummary(),
+                        onOpenTrip = { onOpenTrip(order.id) },
+                    )
                 }
             }
         }

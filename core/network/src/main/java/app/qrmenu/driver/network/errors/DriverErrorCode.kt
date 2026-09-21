@@ -42,6 +42,10 @@ enum class DriverErrorCode(val wire: String) {
     OrderCancelled("order_cancelled"),
     NotYourOrder("not_your_order"),
     CashLimitExceeded("cash_limit_exceeded"),
+    /** Decision 48: `delivered` was sent with no `delivery_code` for an order that carries one. */
+    DeliveryCodeRequired("delivery_code_required"),
+    /** Decision 48: the four digits the driver entered do not match — never compared client-side. */
+    DeliveryCodeMismatch("delivery_code_mismatch"),
     BranchClosed("branch_closed"),
     ValidationFailed("validation_failed"),
     RateLimited("rate_limited"),

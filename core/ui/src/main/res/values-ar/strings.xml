@@ -31,6 +31,8 @@
     <string name="error_order_cancelled">تم إلغاء هذا الطلب.</string>
     <string name="error_not_your_order">هذا الطلب ليس لك.</string>
     <string name="error_cash_limit_exceeded">النقد الذى بحوزتك تجاوز الحد. سوِّ مع المطعم أولاً.</string>
+    <string name="error_delivery_code_required">اطلب من العميل رمز التسليم.</string>
+    <string name="error_delivery_code_mismatch">رمز التسليم غير صحيح.</string>
     <string name="error_branch_closed">الفرع مغلق.</string>
     <string name="error_validation_failed">راجع ما أدخلته.</string>
     <string name="error_rate_limited">طلبات كثيرة. انتظر قليلاً.</string>
@@ -48,4 +50,11 @@
     <string name="availability_reason_nothing_pending">أنت جاهز — لا يوجد طلب لك حالياً فقط.</string>
     <string name="availability_reason_unknown">لا طلبات حالياً.</string>
     <string name="a11y_open_notifications">الإشعارات</string>
+
+    <!-- `issue.code` — الأسباب الخمسة التى يُبلّغها السائق بلا نقل حالة الطلب -->
+    <string name="issue_reason_customer_unreachable">العميل لا يردّ</string>
+    <string name="issue_reason_address_wrong">العنوان خاطئ</string>
+    <string name="issue_reason_customer_refused">العميل رفض الطلب</string>
+    <string name="issue_reason_vehicle_problem">مشكلة فى المركبة</string>
+    <string name="issue_reason_other">سبب آخر</string>
 </resources>

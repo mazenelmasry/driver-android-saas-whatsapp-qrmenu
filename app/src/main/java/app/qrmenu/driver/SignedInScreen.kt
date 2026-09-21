@@ -20,6 +20,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -37,8 +38,10 @@ import app.qrmenu.driver.location.permission.LocationPermissionStep
 import app.qrmenu.driver.location.permission.rememberLocationPermissionFlow
 import app.qrmenu.driver.location.upload.LocationConnectivityState
 import app.qrmenu.driver.network.dto.AvailabilityContextDto
+import app.qrmenu.driver.network.dto.DriverOrderDto
 import app.qrmenu.driver.orders.OrdersRoute
 import app.qrmenu.driver.trip.OfferRoute
+import app.qrmenu.driver.trip.TripRoute
 import app.qrmenu.driver.wallet.WalletRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -94,6 +97,10 @@ fun SignedInScreen(
     var showingNotifications by rememberSaveable { mutableStateOf(false) }
 
     if (showingNotifications) {
+        // Back belongs to the overlay, not to the task: without this the
+        // system pops the whole Activity and the driver is thrown out of the
+        // app instead of back to the tab they came from.
+        BackHandler { showingNotifications = false }
         NotificationCenterRoute(onBack = { showingNotifications = false })
         return
     }
@@ -106,17 +113,62 @@ fun SignedInScreen(
     // every time an offer arrives stops trusting the app.
     val pendingOffer by pendingOfferViewModel.pending.collectAsState()
 
+    // 🔴 What `accept` on the offer screen hands back: the ASSIGNED shape
+    // (customer + full address already included — see `DriverOrderDto`'s own
+    // doc) for the trip the driver now holds. Week 5's trip screen reads it
+    // directly, so accepting an offer does not cost a second network round
+    // trip for data the response already carried.
+    // The trip is addressed by its ID, which `rememberSaveable` carries through
+    // process death — the seed DTO is only an optimisation that spares the
+    // screen one request, so it may be lost without the driver losing the
+    // trip. Holding ONLY the DTO (it is not Parcelable) meant a driver whose
+    // app was killed mid-delivery had no route back to "picked up" at all.
+    var activeTripId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var activeTripSeed by remember { mutableStateOf<DriverOrderDto?>(null) }
+
     pendingOffer?.let { offer ->
         OfferRoute(
             orderId = offer.orderId,
             // Both endings stop the ringing. Accepting is not "success and
             // the alarm sorts itself out" — the alarm is deliberately
             // insistent, so every exit has to switch it off explicitly.
-            onAccepted = {
+            onAccepted = { assigned ->
                 pendingOfferViewModel.dismiss()
-                tab = SignedInTab.Orders
+                activeTripId = assigned.id
+                activeTripSeed = assigned
             },
             onResolved = { pendingOfferViewModel.dismiss() },
+        )
+        return
+    }
+
+    // The trip screen, same as the offer above it: it seizes the screen for
+    // the one trip a driver holds at a time (decision 21) rather than being a
+    // tab, and hands the driver back to حيث كانوا — the الطلبات tab, since the
+    // trip they were just working is now behind them — once it resolves.
+    activeTripId?.let { tripId ->
+        // Same reasoning as the notification overlay — and it matters more
+        // here: pressing back mid-delivery used to CLOSE the app on a driver
+        // holding someone's food and 82 riyals of someone's cash. An offer
+        // deliberately has no such handler: it is the one screen that must
+        // be answered, not dismissed.
+        BackHandler {
+            activeTripId = null
+            activeTripSeed = null
+            tab = SignedInTab.Orders
+        }
+        TripRoute(
+            orderId = tripId,
+            // Only hand over a seed that is actually THIS order — after
+            // process death the id survives and the seed does not, and a
+            // stale seed would render someone else's address.
+            initialOrder = activeTripSeed?.takeIf { it.id == tripId },
+            onOpenNotifications = { showingNotifications = true },
+            onExit = {
+                activeTripId = null
+                activeTripSeed = null
+                tab = SignedInTab.Orders
+            },
         )
         return
     }
@@ -146,6 +198,8 @@ fun SignedInScreen(
                     onOpenNotifications = { showingNotifications = true },
                 )
                 SignedInTab.Orders -> OrdersRoute(
+                    // The way back into a trip the driver is already holding.
+                    onOpenTrip = { activeTripId = it },
                     noOrdersContextOut = { noOrdersContext.value = it },
                     onOpenNotifications = { showingNotifications = true },
                 )

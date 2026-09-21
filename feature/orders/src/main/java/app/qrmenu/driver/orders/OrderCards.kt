@@ -104,12 +104,22 @@ fun OfferedOrderCard(summary: OfferedOrderSummary, modifier: Modifier = Modifier
  * The "طلباتى" card — the ASSIGNED shape, so the customer and address are
  * exactly the fields this driver has earned by holding the order (see
  * [AssignedOrderSummary]). The pickup action is rendered here but DISABLED
- * until the order reads ready — the tap handler itself lands with
- * `:feature:trip` (week 5); this week only the affordance and its disabled
- * state exist.
+ * until the order reads ready.
+ *
+ * 🔴 [onOpenTrip] is week 5 landing the tap handler week 3 deliberately left
+ * empty. It matters more than "the button now works": accepting an offer is
+ * NOT the only way a driver arrives at a held order. The app gets killed in a
+ * pocket, the phone reboots, the driver switches tabs — and this list is the
+ * only place that still knows they are holding one. While this callback was
+ * a no-op, such a driver stared at a full-width primary button that did
+ * nothing and had no route to "picked up" or "delivered" at all.
  */
 @Composable
-fun AssignedOrderCard(summary: AssignedOrderSummary, modifier: Modifier = Modifier) {
+fun AssignedOrderCard(
+    summary: AssignedOrderSummary,
+    onOpenTrip: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val ready = readinessState(summary.expectedReadyAt, summary.readyAt, Instant.now()) is Readiness.Ready
     val alreadyPickedUp = summary.pickedUpAt != null
 
@@ -145,7 +155,7 @@ fun AssignedOrderCard(summary: AssignedOrderSummary, modifier: Modifier = Modifi
         }
 
         Button(
-            onClick = {},
+            onClick = onOpenTrip,
             enabled = ready && !alreadyPickedUp,
             shape = RoundedCornerShape(Radius.card),
             colors = ButtonDefaults.buttonColors(

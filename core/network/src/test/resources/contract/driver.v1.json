@@ -998,7 +998,7 @@
                     "orders"
                 ],
                 "summary": "Handed to the customer, and the cash (if any) collected",
-                "description": "`cash_collected` is pre-filled by the app with `cash_to_collect` and is editable — but a DIFFERENT amount requires a note, because the gap between what the order said and what the driver holds is exactly what the ledger settles. The driver fee is earned HERE (decision 31).\n",
+                "description": "`cash_collected` is pre-filled by the app with `cash_to_collect` and is editable — but a DIFFERENT amount requires a note, because the gap between what the order said and what the driver holds is exactly what the ledger settles. The driver fee is earned HERE (decision 31).\n\n🔴 `delivery_code` (decision 48) is the customer's proof of receipt, and it is the reason this endpoint can assert a handover rather than merely a driver's claim. The customer reads it off their own order page (or is told it by the cashier who took the call); the driver has to ask for it. It is REQUIRED whenever the order carries one, and the server — never the app — compares. The code is therefore ABSENT from every `/driver/*` response by construction: a code the driver can read is a code that proves nothing.\n",
                 "parameters": [
                     {
                         "$ref": "#/components/parameters/OrderId"
@@ -1022,6 +1022,12 @@
                                         "type": "number",
                                         "nullable": true,
                                         "description": "Null for an order already paid. Money is a number, never a string."
+                                    },
+                                    "delivery_code": {
+                                        "type": "string",
+                                        "pattern": "^[0-9]{4}$",
+                                        "nullable": true,
+                                        "description": "The four digits the customer holds. Required when the order has a code; null only for an order created before the code existed, or one the restaurant has already waived. Wrong code ⇒ 422 `delivery_code_mismatch`; missing ⇒ 422 `delivery_code_required`. Never echoed back.\n"
                                     },
                                     "note": {
                                         "type": "string",
@@ -1363,6 +1369,8 @@
                     "order_cancelled",
                     "not_your_order",
                     "cash_limit_exceeded",
+                    "delivery_code_required",
+                    "delivery_code_mismatch",
                     "branch_closed",
                     "validation_failed",
                     "rate_limited",
@@ -1879,6 +1887,11 @@
                                 "type": "string",
                                 "format": "date-time",
                                 "nullable": true
+                            },
+                            "requires_delivery_code": {
+                                "type": "boolean",
+                                "default": false,
+                                "description": "Whether this order carries a customer delivery code (decision 48) — NOT the code itself, which never crosses this boundary. A boolean leaks nothing: four digits stay unguessable. It exists so the app can ASK for the code up front instead of discovering the requirement from a rejected `delivered`, which would have the driver standing at a door, already refused once, only then turning to the customer to ask. `false` for a pickup order, an order created before the feature, and one the restaurant has waived.\n"
                             }
                         }
                     }
