@@ -153,5 +153,7 @@ dependencies {
     // that only compiles on its own proves nothing about whether its bindings
     // resolve. No screen consumes it yet.
     implementation(project(":core:network"))
+    implementation(project(":core:common"))
+    implementation(project(":feature:onboarding"))
     debugImplementation(libs.compose.ui.tooling)
 }

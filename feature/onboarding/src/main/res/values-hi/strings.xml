@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The language names themselves are NOT here on purpose: they live in
+  LanguageOption and are shown in their own language in every locale. A driver
+  who reads only Bengali must find "বাংলা" whatever the app is currently
+  showing — translating the names would defeat the screen.
+-->
+<resources>
+    <string name="language_title">अपनी भाषा चुनें</string>
+    <string name="language_subtitle">आप इसे बाद में सेटिंग्स से बदल सकते हैं।</string>
+    <string name="language_continue">जारी रखें</string>
+</resources>

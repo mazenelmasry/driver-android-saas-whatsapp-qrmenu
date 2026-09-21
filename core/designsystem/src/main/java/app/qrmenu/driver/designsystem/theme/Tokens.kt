@@ -65,6 +65,27 @@ object TouchTarget {
 }
 
 /**
+ * Stroke widths and the few fixed control sizes.
+ *
+ * They live here for the same reason spacing does: no dp literal may appear
+ * outside this file, so "a slightly thicker border when selected" has one
+ * definition instead of one per screen.
+ */
+object Stroke {
+    /** An unselected outline, or a decorative ring. */
+    val hairline = 1.dp
+
+    /** A selected outline — thick enough to read at a glance in sunlight. */
+    val selected = 2.dp
+}
+
+/** Fixed sizes for small decorative controls (not touch targets — see [TouchTarget]). */
+object ControlSize {
+    /** The filled dot that marks a chosen row. */
+    val selectionDot = 24.dp
+}
+
+/**
  * Spring-based motion specs. `tween` is reserved for ambient looping
  * (skeleton shimmer, breathing dots) — never for user-driven motion.
  */

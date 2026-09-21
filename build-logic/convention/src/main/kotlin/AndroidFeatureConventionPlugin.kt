@@ -19,9 +19,17 @@ class AndroidFeatureConventionPlugin : Plugin<Project> {
 
             dependencies {
                 add("implementation", project(":core:designsystem"))
-                add("implementation", project(":core:ui"))
                 add("implementation", project(":core:common"))
-                add("implementation", project(":core:model"))
+                // :core:ui and :core:model are wired in only once they exist.
+                // Creating them empty just to satisfy this list would put two
+                // placeholder modules in the build with nothing to put in them —
+                // :core:ui earns its keep when the first screen that LOADS data
+                // needs the shared skeleton/error/offline components, and
+                // :core:model when there is a domain type to share. Until then a
+                // feature module simply does not depend on them.
+                listOf(":core:ui", ":core:model")
+                    .filter { rootProject.findProject(it) != null }
+                    .forEach { add("implementation", project(it)) }
 
                 add("implementation", libs.findLibrary("androidx.lifecycle.runtime.compose").get())
                 add("implementation", libs.findLibrary("androidx.lifecycle.viewmodel.compose").get())
