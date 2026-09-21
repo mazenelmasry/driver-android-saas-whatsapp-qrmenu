@@ -1,0 +1,1165 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Driver app ↔ Backend contract — phase 1.
+#
+# STATUS: this is the INTENDED contract. The backend has not been touched yet
+# (no tables, no endpoints, no PlanFeature — see the driver CLAUDE.md). It is
+# written FIRST on purpose: the dispatch engine, the ledger and the trip
+# lifecycle are already decided (47 frozen decisions) and the wire shape follows
+# from them, so both repos are built against one document instead of each
+# guessing at the other.
+#
+# WHEN THE BACKEND LANDS the source of truth MOVES to the backend repo at
+# `openapi/driver.v1.yaml`, enforced by a contract test that makes real requests
+# — the exact precedent of `openapi/pos.v1.yaml` +
+# tests/Feature/Contract/PosApiContractTest.php. This file then becomes the
+# mirror the Android side tests against. Do not let the two drift: a response
+# change updates the backend file IN THE SAME COMMIT, then the DTOs here.
+#
+# ONE contract for BOTH deployments: taaj and meniura run the same code; the
+# domains are only `servers` entries. The app picks its base URL by build
+# flavour.
+#
+# Rules (identical to the POS contract, deliberately):
+#  - Objects are STRICT: a response field not declared here fails the contract
+#    test. Drift detection is the whole point.
+#  - Money is a JSON NUMBER. A field arriving as "12.50" is a bug.
+#  - Timestamps are ISO-8601 WITH OFFSET (Carbon toIso8601String), e.g.
+#    2026-09-21T14:15:00+03:00. Time arithmetic is in the COMPANY's timezone.
+#  - Every 4xx carries `code` from the frozen enum (see ErrorCode). The app
+#    translates BY CODE, never by message text: the backend speaks ar/en only
+#    and the driver may be reading Urdu, Bengali or Hindi.
+#  - Every trip command carries `Idempotency-Key`; a repeat returns the SAME
+#    200 response. The driver is on a phone, on mobile data, in a car.
+# ─────────────────────────────────────────────────────────────────────────────
+openapi: 3.0.3
+info:
+  title: QR Menu Driver API
+  description: >
+    The surface consumed by the native Android driver app. Authenticated with a
+    bespoke `DriverToken` bearer (NOT Sanctum, and NOT the POS `PosStaffToken` —
+    a driver must never reach a `/pos/*` route). The token is bound to
+    `driver_id`, not `user_id`, so one login shows the orders of every
+    restaurant the driver is linked to.
+  version: 1.0.0
+servers:
+  - url: https://app.taaj.me/api/v1
+    description: TAAJ deployment
+  - url: https://app.meniura.com/api/v1
+    description: MENIURA deployment
+
+security:
+  - driverToken: []
+
+tags:
+  - name: auth
+    description: Invite → OTP → PIN. There is no self sign-up (decision 15).
+  - name: availability
+  - name: orders
+  - name: ledger
+  - name: app
+
+paths:
+  # ───────────────────────────── app / auth ─────────────────────────────
+  /driver/app-version:
+    get:
+      tags: [app]
+      summary: Minimum and latest shipped version (public — read before login)
+      description: >
+        The app compares `min_version_code` / `latest_version_code` as INTEGERS.
+        Comparing the NAME as a string makes 1.10.0 older than 1.9.0 and locks
+        out a driver who is already on the newest build. The names are for
+        display only.
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AppVersion' }
+
+  /driver/auth/request-otp:
+    post:
+      tags: [auth]
+      summary: Start phone verification (public)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [phone]
+              properties:
+                phone:
+                  type: string
+                  description: >
+                    Any local form. The server canonicalises with libphonenumber
+                    to E.164 and matches `drivers.phone_canonical`, so the driver
+                    may type the number the way it was read out to them.
+                  example: '0501234567'
+      responses:
+        '200': { $ref: '#/components/responses/Accepted' }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+
+  /driver/auth/verify-otp:
+    post:
+      tags: [auth]
+      summary: Exchange a verified Firebase phone token for the driver's links (public)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [phone, firebase_token]
+              properties:
+                phone: { type: string }
+                firebase_token:
+                  type: string
+                  description: Firebase Phone Auth ID token; verified server-side.
+      responses:
+        '200':
+          description: >
+            Verified. `needs_pin` true means this phone has no secret code yet.
+            An EMPTY `restaurants` array means the phone is verified but no
+            restaurant has invited it — the app then asks for the invite code,
+            because there is no self sign-up.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [driver, restaurants, needs_pin]
+                properties:
+                  driver: { $ref: '#/components/schemas/Driver' }
+                  restaurants:
+                    type: array
+                    items: { $ref: '#/components/schemas/RestaurantLink' }
+                  needs_pin: { type: boolean }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+
+  /driver/auth/set-pin:
+    post:
+      tags: [auth]
+      summary: Set the 4-digit secret code (immediately after OTP)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [pin]
+              properties:
+                pin: { type: string, pattern: '^[0-9]{4}$' }
+      responses:
+        '200': { $ref: '#/components/responses/Accepted' }
+        '422': { $ref: '#/components/responses/Error' }
+
+  /driver/auth/login:
+    post:
+      tags: [auth]
+      summary: Phone + PIN → token (public)
+      description: >
+        ONE device session: issuing a token revokes the driver's previous one.
+        The token lives 30 days and renews on use. Rate limited by the
+        `driver-login` limiter (10/min per IP + 5/min per phone+IP) with NO hard
+        per-account lockout — locking by phone alone is a denial of service on a
+        driver whose number is public.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [phone, pin, device_name, app_version]
+              properties:
+                phone: { type: string }
+                pin: { type: string, pattern: '^[0-9]{4}$' }
+                device_name: { type: string, maxLength: 100 }
+                app_version:
+                  type: integer
+                  description: versionCode (integer), not versionName.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [token, driver, restaurants]
+                properties:
+                  token: { type: string }
+                  expires_at: { type: string, format: date-time }
+                  driver: { $ref: '#/components/schemas/Driver' }
+                  restaurants:
+                    type: array
+                    items: { $ref: '#/components/schemas/RestaurantLink' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403':
+          description: >
+            Authenticated but not allowed: `account_inactive`, `no_active_link`,
+            `company_inactive`, `subscription_expired`, `feature_not_in_plan`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '426':
+          description: '`app_update_required` — below `min_version_code`.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+
+  /driver/auth/redeem-invite:
+    post:
+      tags: [auth]
+      summary: Attach this driver to the restaurant that invited them
+      description: >
+        The code comes from the restaurant panel over WhatsApp, or is read out
+        loud. A phone that was already invited is linked automatically at
+        verify-otp and never needs this.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [code]
+              properties:
+                code: { type: string }
+      responses:
+        '200':
+          description: Linked.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [restaurants]
+                properties:
+                  restaurants:
+                    type: array
+                    items: { $ref: '#/components/schemas/RestaurantLink' }
+        '422':
+          description: '`invalid_invite` or `invite_already_used`.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /driver/auth/logout:
+    post:
+      tags: [auth]
+      summary: Revoke this device's token
+      responses:
+        '200': { $ref: '#/components/responses/Accepted' }
+
+  /driver/me:
+    get:
+      tags: [auth]
+      summary: The driver, their restaurant links and current availability
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [driver, restaurants]
+                properties:
+                  driver: { $ref: '#/components/schemas/Driver' }
+                  restaurants:
+                    type: array
+                    items: { $ref: '#/components/schemas/RestaurantLink' }
+        '401': { $ref: '#/components/responses/Error' }
+
+  /driver/broadcasting/auth:
+    post:
+      tags: [app]
+      summary: Authorise the private Reverb channel for this driver
+      description: >
+        Needed because neither the session cookie nor a POS staff token can
+        authorise a DriverToken holder. Only ever authorises
+        `private-driver.{own driverId}`.
+      responses:
+        '200':
+          description: Pusher-shaped auth payload.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '403': { $ref: '#/components/responses/Error' }
+
+  # ─────────────────────── availability & location ───────────────────────
+  /driver/availability:
+    patch:
+      tags: [availability]
+      summary: Go available / unavailable (across ALL of the driver's restaurants)
+      description: >
+        Availability is global, not per restaurant (decision 20). The server
+        refuses to go offline mid-trip (`has_active_trip`) and turns availability
+        off by itself only when the branch closes (decision 22) or the location
+        heartbeat has been silent for 3 minutes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [online]
+              properties:
+                online: { type: boolean }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [is_online]
+                properties:
+                  is_online: { type: boolean }
+                  online_since: { type: string, format: date-time, nullable: true }
+        '409':
+          description: '`has_active_trip`.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422':
+          description: '`location_permission_required`.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /driver/location:
+    post:
+      tags: [availability]
+      summary: Batched location heartbeat (about every 15s while available)
+      description: >
+        Points are BATCHED by the client; only the latest is kept as the live
+        position and `last_seen_at` is written to MySQL at most once a minute.
+        Nothing is tracked at all while unavailable.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [points]
+              properties:
+                points:
+                  type: array
+                  minItems: 1
+                  maxItems: 60
+                  items: { $ref: '#/components/schemas/LocationPoint' }
+      responses:
+        '200': { $ref: '#/components/responses/Accepted' }
+        '422': { $ref: '#/components/responses/Error' }
+
+  # ───────────────────────────── orders ─────────────────────────────
+  /driver/orders/available:
+    get:
+      tags: [orders]
+      summary: Orders offered to, or claimable by, this driver
+      description: >
+        Scoped to the companies of the driver's ACTIVE links only. Before
+        acceptance the payload deliberately CANNOT carry the customer or the
+        address (decision 23) — see DriverOrderOffered.
+
+
+        An EMPTY `data` is the normal case for most of a shift, so the response
+        also carries `context`: WHY there is nothing, named (decision 47). Only
+        the server knows the radius and the candidate rules, so it must say the
+        reason rather than let the app infer one — a silent empty screen is what
+        makes a driver conclude the app is broken.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [data, context]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/DriverOrderOffered' }
+                  context: { $ref: '#/components/schemas/AvailabilityContext' }
+        '401': { $ref: '#/components/responses/Error' }
+
+  /driver/orders/mine:
+    get:
+      tags: [orders]
+      summary: The driver's active trip (at most one — decision 21)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    maxItems: 1
+                    items: { $ref: '#/components/schemas/DriverOrderAssigned' }
+
+  /driver/orders/history:
+    get:
+      tags: [orders]
+      summary: Finished trips (7 days — decision 38)
+      parameters:
+        - name: date
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: company_id
+          in: query
+          required: false
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/DriverOrderAssigned' }
+                  delivered_today: { type: integer }
+
+  /driver/orders/{id}:
+    get:
+      tags: [orders]
+      summary: One order
+      description: >
+        Returns the ASSIGNED shape (with customer and address) only when this
+        driver holds the order; otherwise the OFFERED shape. A driver who holds
+        neither gets 404, never 403 — an id is not something to confirm.
+      parameters: [{ $ref: '#/components/parameters/OrderId' }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/DriverOrderAssigned'
+                  - $ref: '#/components/schemas/DriverOrderOffered'
+        '404': { $ref: '#/components/responses/Error' }
+
+  /driver/orders/{id}/ack:
+    post:
+      tags: [orders]
+      summary: Acknowledge that the offer was RECEIVED (not accepted)
+      description: >
+        The spine of "zero lost offers": no ack within 15s re-sends the push, no
+        ack within 45s re-dispatches to the next candidate. Acking is not
+        accepting and must never be treated as such.
+      parameters:
+        - { $ref: '#/components/parameters/OrderId' }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      responses:
+        '200': { $ref: '#/components/responses/Accepted' }
+        '404': { $ref: '#/components/responses/Error' }
+
+  /driver/orders/{id}/accept:
+    post:
+      tags: [orders]
+      summary: Accept the offer
+      description: >
+        Settled under a row lock: the first driver wins and every other gets 409
+        `already_claimed`. This is what makes "available to all my restaurants at
+        once" safe.
+      parameters:
+        - { $ref: '#/components/parameters/OrderId' }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      responses:
+        '200':
+          description: The order in its assigned shape — the address and phone appear here.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverOrderAssigned' }
+        '409':
+          description: >
+            `already_claimed`, `offer_expired`, `too_many_active_orders`,
+            `order_cancelled`, `cash_limit_exceeded`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+
+  /driver/orders/{id}/decline:
+    post:
+      tags: [orders]
+      summary: Decline the offer, with a reason
+      parameters:
+        - { $ref: '#/components/parameters/OrderId' }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [reason]
+              properties:
+                reason: { type: string, maxLength: 255 }
+      responses:
+        '200': { $ref: '#/components/responses/Accepted' }
+        '404': { $ref: '#/components/responses/Error' }
+
+  /driver/orders/{id}/claim:
+    post:
+      tags: [orders]
+      summary: Claim an unassigned order (self-serve assignment modes)
+      parameters:
+        - { $ref: '#/components/parameters/OrderId' }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverOrderAssigned' }
+        '409': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+
+  /driver/orders/{id}/release:
+    post:
+      tags: [orders]
+      summary: Give the order back before pickup
+      parameters:
+        - { $ref: '#/components/parameters/OrderId' }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      responses:
+        '200': { $ref: '#/components/responses/Accepted' }
+        '409': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+
+  /driver/orders/{id}/picked-up:
+    post:
+      tags: [orders]
+      summary: Collected from the branch
+      parameters:
+        - { $ref: '#/components/parameters/OrderId' }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                occurred_at: { $ref: '#/components/schemas/OccurredAt' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverOrderAssigned' }
+        '409':
+          description: '`order_not_ready`, `not_your_order`, `order_cancelled`.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /driver/orders/{id}/delivered:
+    post:
+      tags: [orders]
+      summary: Handed to the customer, and the cash (if any) collected
+      description: >
+        `cash_collected` is pre-filled by the app with `cash_to_collect` and is
+        editable — but a DIFFERENT amount requires a note, because the gap
+        between what the order said and what the driver holds is exactly what the
+        ledger settles. The driver fee is earned HERE (decision 31).
+      parameters:
+        - { $ref: '#/components/parameters/OrderId' }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [occurred_at]
+              properties:
+                cash_collected:
+                  type: number
+                  nullable: true
+                  description: Null for an order already paid. Money is a number, never a string.
+                note: { type: string, maxLength: 500, nullable: true }
+                occurred_at: { $ref: '#/components/schemas/OccurredAt' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [order, ledger]
+                properties:
+                  order: { $ref: '#/components/schemas/DriverOrderAssigned' }
+                  ledger: { $ref: '#/components/schemas/LedgerSummary' }
+        '409': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+
+  /driver/orders/{id}/issue:
+    post:
+      tags: [orders]
+      summary: Report a problem — WITHOUT changing the order status
+      description: >
+        Five reasons plus a note. Deliberately does not move the order: a problem
+        is information for the restaurant, not a state transition the driver gets
+        to decide.
+      parameters:
+        - { $ref: '#/components/parameters/OrderId' }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [code]
+              properties:
+                code:
+                  type: string
+                  enum:
+                    - customer_unreachable
+                    - address_wrong
+                    - customer_refused
+                    - vehicle_problem
+                    - other
+                note: { type: string, maxLength: 500, nullable: true }
+                occurred_at: { $ref: '#/components/schemas/OccurredAt' }
+      responses:
+        '200': { $ref: '#/components/responses/Accepted' }
+        '404': { $ref: '#/components/responses/Error' }
+
+  /driver/orders/{id}/breadcrumbs:
+    post:
+      tags: [orders]
+      summary: Compressed trip trail (a point a minute, purged after 30 days)
+      description: Settles the "the driver never arrived" dispute. Not a live tracking feed.
+      parameters:
+        - { $ref: '#/components/parameters/OrderId' }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [points]
+              properties:
+                points:
+                  type: array
+                  minItems: 1
+                  maxItems: 240
+                  items: { $ref: '#/components/schemas/LocationPoint' }
+      responses:
+        '200': { $ref: '#/components/responses/Accepted' }
+        '404': { $ref: '#/components/responses/Error' }
+
+  # ───────────────────────────── ledger ─────────────────────────────
+  /driver/ledger:
+    get:
+      tags: [ledger]
+      summary: The driver's own book, for ONE restaurant
+      description: >
+        The book is per (driver × company) and never nets across restaurants
+        (binding rule 2) — which is also what keeps a multi-country driver's
+        currencies apart, since the currency follows the company. `company_id` is
+        therefore required.
+      parameters:
+        - name: company_id
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/LedgerSummary'
+                  - type: object
+                    additionalProperties: false
+                    required: [entries]
+                    properties:
+                      entries:
+                        type: array
+                        items: { $ref: '#/components/schemas/LedgerEntry' }
+        '404': { $ref: '#/components/responses/Error' }
+
+  /driver/ledger/settlements:
+    get:
+      tags: [ledger]
+      summary: Settlements already made with the driver
+      parameters:
+        - name: company_id
+          in: query
+          required: false
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Settlement' }
+
+components:
+  securitySchemes:
+    driverToken:
+      type: http
+      scheme: bearer
+      description: >
+        A `DriverToken` (sha256 at rest) bound to `driver_id`. Not Sanctum, and
+        not interchangeable with the POS staff token.
+
+  parameters:
+    OrderId:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: >
+        A client-generated key, stable across retries of the SAME command. A
+        repeat returns the same 200 body rather than acting twice.
+      schema: { type: string, minLength: 8, maxLength: 128 }
+
+  responses:
+    Accepted:
+      description: Done.
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [ok]
+            properties:
+              ok: { type: boolean }
+              message: { type: string }
+    Error:
+      description: Failed — read `code`, not `message`.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+  schemas:
+    ErrorCode:
+      type: string
+      description: >
+        The FROZEN list. A new code is added here AND to all five translations in
+        the same change, or the driver is shown raw English. An unknown code must
+        render a generic translated message and be logged to Sentry.
+      enum:
+        - invalid_credentials
+        - otp_invalid
+        - otp_expired
+        - too_many_attempts
+        - invalid_invite
+        - invite_already_used
+        - account_inactive
+        - no_active_link
+        - company_inactive
+        - subscription_expired
+        - feature_not_in_plan
+        - app_update_required
+        - has_active_trip
+        - driver_offline
+        - location_permission_required
+        - already_claimed
+        - offer_expired
+        - too_many_active_orders
+        - order_not_ready
+        - order_cancelled
+        - not_your_order
+        - cash_limit_exceeded
+        - branch_closed
+        - validation_failed
+        - rate_limited
+        - server_error
+
+    Error:
+      type: object
+      additionalProperties: false
+      required: [code, message]
+      properties:
+        code: { $ref: '#/components/schemas/ErrorCode' }
+        message:
+          type: string
+          description: ar/en only — for logs and as a fallback, never for branching.
+        errors:
+          type: object
+          additionalProperties: true
+          description: Field-level messages when `code` is `validation_failed`.
+
+    OccurredAt:
+      type: string
+      format: date-time
+      description: >
+        When the event happened ON THE DEVICE. Accepted and clamped between
+        (now − 6h) and now; the server stores BOTH its own time and this one, so
+        a trip finished in a dead zone keeps the real order of its events.
+
+    AppVersion:
+      type: object
+      additionalProperties: false
+      required: [min_version_code, latest_version_code]
+      properties:
+        min_version_code: { type: integer }
+        latest_version_code: { type: integer }
+        min_version_name: { type: string }
+        latest_version_name: { type: string }
+        download_url: { type: string, format: uri, nullable: true }
+        notes: { type: string, nullable: true }
+
+    Driver:
+      type: object
+      additionalProperties: false
+      required: [id, name, phone, is_active, is_online]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        phone: { type: string, description: E.164. }
+        is_active:
+          type: boolean
+          description: False stops the driver at EVERY restaurant; a link status stops one.
+        is_online: { type: boolean }
+        online_since: { type: string, format: date-time, nullable: true }
+        locale: { type: string, enum: [ar, en, ur, bn, hi] }
+        acceptance_rate:
+          type: number
+          nullable: true
+          description: 0–1. Feeds candidate ordering together with distance (decision 27).
+        last_seen_at: { type: string, format: date-time, nullable: true }
+
+    RestaurantLink:
+      type: object
+      additionalProperties: false
+      required: [company, branches, status]
+      description: >
+        One restaurant the driver works for. The COUNTRY and the working AREA come
+        from here — the driver never picks either (decisions 45–46), so there is
+        no second source of truth to contradict the invitation.
+      properties:
+        company:
+          type: object
+          additionalProperties: false
+          required: [id, name]
+          properties:
+            id: { type: integer }
+            name: { type: string }
+            logo: { type: string, format: uri, nullable: true }
+            country_code: { type: string, nullable: true }
+            currency: { type: string, nullable: true }
+        branches:
+          type: array
+          items: { $ref: '#/components/schemas/Branch' }
+        fleet:
+          type: object
+          nullable: true
+          additionalProperties: false
+          required: [id, type]
+          properties:
+            id: { type: integer }
+            name: { type: string, nullable: true }
+            type:
+              type: string
+              enum: [restaurant, platform]
+              description: '`platform` is phase 4 and is not sold yet.'
+        status: { type: string, enum: [invited, active, suspended] }
+        cash_limit:
+          type: number
+          nullable: true
+          description: Set by the restaurant; 0 or null means no ceiling.
+
+    Branch:
+      type: object
+      additionalProperties: false
+      required: [id, name]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        address: { type: string, nullable: true }
+        lat: { type: number, nullable: true }
+        lng: { type: number, nullable: true }
+        phone: { type: string, nullable: true }
+        is_open: { type: boolean }
+
+    LocationPoint:
+      type: object
+      additionalProperties: false
+      required: [lat, lng, recorded_at]
+      properties:
+        lat: { type: number }
+        lng: { type: number }
+        accuracy: { type: number, nullable: true }
+        speed: { type: number, nullable: true }
+        heading: { type: number, nullable: true }
+        recorded_at: { $ref: '#/components/schemas/OccurredAt' }
+
+    OrderItem:
+      type: object
+      additionalProperties: false
+      required: [name, quantity]
+      description: A summary WITHOUT prices — the driver is delivering, not selling.
+      properties:
+        name: { type: string }
+        quantity: { type: integer }
+
+    Offer:
+      type: object
+      additionalProperties: false
+      required: [expires_at]
+      properties:
+        expires_at:
+          type: string
+          format: date-time
+          description: >
+            45 seconds from dispatch (decision 29). The app counts down to THIS,
+            not 45s from the moment the push happened to arrive.
+        wave: { type: integer, nullable: true }
+
+    DriverOrderOffered:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - order_number
+        - status
+        - delivery_method
+        - payment_method
+        - payment_status
+        - total
+        - cash_to_collect
+        - driver_fee
+        - company
+        - branch
+        - items
+      description: >
+        What a driver may see BEFORE accepting: the area, the distance and the
+        money (decision 23). The customer and the full address are STRUCTURALLY
+        absent — not null, not blanked — so the privacy rule cannot be broken by
+        forgetting to clear a field. Never sent at all: the customer's email,
+        coupons, discounts, online payment detail, staff notes.
+      properties:
+        id: { type: integer }
+        order_number: { type: string }
+        status: { type: string }
+        delivery_method: { type: string }
+        payment_method: { type: string }
+        payment_status: { type: string }
+        total: { type: number }
+        cash_to_collect:
+          type: number
+          description: 0 for an order already paid online.
+        driver_fee:
+          type: number
+          description: >
+            The SNAPSHOT stamped at creation (binding rule 3) — never the live
+            zone fee, which a "free delivery" offer zeroes out and with it the
+            driver's pay.
+        company:
+          type: object
+          additionalProperties: false
+          required: [name]
+          properties:
+            name: { type: string }
+            logo: { type: string, format: uri, nullable: true }
+        branch: { $ref: '#/components/schemas/Branch' }
+        zone:
+          type: object
+          nullable: true
+          additionalProperties: false
+          required: [name]
+          properties:
+            name: { type: string }
+        distance_km: { type: number, nullable: true }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/OrderItem' }
+        notes:
+          type: string
+          nullable: true
+          description: The CUSTOMER's note. Staff notes are never sent.
+        expected_ready_at: { type: string, format: date-time, nullable: true }
+        ready_at: { type: string, format: date-time, nullable: true }
+        offer: { $ref: '#/components/schemas/Offer' }
+
+    DriverOrderAssigned:
+      allOf:
+        - $ref: '#/components/schemas/DriverOrderOffered'
+        - type: object
+          additionalProperties: false
+          required: [customer, delivery_address]
+          description: Only ever returned to the driver who holds the order.
+          properties:
+            customer:
+              type: object
+              additionalProperties: false
+              required: [name, phone]
+              properties:
+                name: { type: string }
+                phone: { type: string }
+            delivery_address:
+              type: object
+              additionalProperties: false
+              required: [text]
+              properties:
+                text: { type: string }
+                lat: { type: number, nullable: true }
+                lng: { type: number, nullable: true }
+                notes: { type: string, nullable: true }
+            picked_up_at: { type: string, format: date-time, nullable: true }
+            delivered_at: { type: string, format: date-time, nullable: true }
+            claimed_at: { type: string, format: date-time, nullable: true }
+
+    AvailabilityContext:
+      type: object
+      additionalProperties: false
+      required: [is_online, branches, reason]
+      description: >
+        Why the available list looks the way it does. `reason` is null whenever
+        `data` is non-empty. This exists because of decision 47: the driver must
+        be told which branches they are linked to and why none of them is
+        offering work, instead of staring at a blank list. It is also the honest
+        answer to "I registered in Saudi Arabia and see nothing" — the cause is
+        almost always distance or a closed branch, and the app can now say so.
+      properties:
+        is_online: { type: boolean }
+        has_active_trip:
+          type: boolean
+          description: One trip at a time (decision 21), so a held order hides the rest.
+        branches:
+          type: array
+          description: >
+            Every branch of every ACTIVE link — named, so the driver can see the
+            restaurant thinks they cover Riyadh while they are in Jeddah.
+          items:
+            type: object
+            additionalProperties: false
+            required: [id, name, is_open]
+            properties:
+              id: { type: integer }
+              name: { type: string }
+              company_name: { type: string }
+              is_open: { type: boolean }
+              distance_km:
+                type: number
+                nullable: true
+                description: Null when the driver's position is unknown (offline, or no fix yet).
+              within_radius: { type: boolean, nullable: true }
+        search_radius_km:
+          type: number
+          nullable: true
+          description: The restaurant's own radius (decision 26, 5 km by default).
+        reason:
+          type: string
+          nullable: true
+          enum:
+            - offline
+            - no_active_link
+            - all_branches_closed
+            - outside_radius
+            - location_unknown
+            - has_active_trip
+            - nothing_pending
+          description: >
+            `nothing_pending` is the healthy case: online, in range, a branch is
+            open, there simply is no order yet. It must read differently in the
+            UI from `outside_radius`, which is the driver's own to fix.
+
+    LedgerSummary:
+      type: object
+      additionalProperties: false
+      required: [company_id, currency, earned_today, cash_on_hand, net]
+      properties:
+        company_id: { type: integer }
+        currency: { type: string }
+        earned_today: { type: number }
+        cash_on_hand:
+          type: number
+          description: Collected on the restaurant's behalf and not yet handed over.
+        net:
+          type: number
+          description: >
+            Fees earned minus cash held. Positive = the restaurant owes the
+            driver; negative = the driver owes the restaurant.
+        cash_limit: { type: number, nullable: true }
+
+    LedgerEntry:
+      type: object
+      additionalProperties: false
+      required: [id, type, amount, balance_after, created_at]
+      properties:
+        id: { type: integer }
+        type:
+          type: string
+          enum:
+            - delivery_fee_earned
+            - cash_collected
+            - failed_trip_fee
+            - settlement
+            - manual_adjustment
+        amount: { type: number }
+        balance_after: { type: number }
+        order_id: { type: integer, nullable: true }
+        order_number: { type: string, nullable: true }
+        note: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    Settlement:
+      type: object
+      additionalProperties: false
+      required: [id, company_id, amount, direction, created_at]
+      properties:
+        id: { type: integer }
+        company_id: { type: integer }
+        amount: { type: number }
+        currency: { type: string }
+        direction: { type: string, enum: [to_driver, from_driver] }
+        period_from: { type: string, format: date, nullable: true }
+        period_to: { type: string, format: date, nullable: true }
+        note: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
