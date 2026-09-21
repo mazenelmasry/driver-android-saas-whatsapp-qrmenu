@@ -222,6 +222,11 @@ firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.r
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics-ktx" }
 firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashlytics-ktx" }
 firebase-perf = { group = "com.google.firebase", name = "firebase-perf-ktx" }
+# The only two this app actually uses: phone sign-in (decision 17) and the
+# high-priority data messages that wake the app for an offer (decision 13).
+# OneSignal stays the restaurant/customer channel; it is not used here.
+firebase-auth = { group = "com.google.firebase", name = "firebase-auth-ktx" }
+firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging-ktx" }
 
 # Plugin classpath aliases (used by build-logic)
 android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }

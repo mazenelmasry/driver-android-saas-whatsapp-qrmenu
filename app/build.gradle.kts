@@ -129,16 +129,62 @@ android {
     }
 }
 
-// Apply google-services only once the file exists, so `assembleDebug` works
-// before Firebase is provisioned (CLAUDE.md § ما يحتاجه صاحب المشروع، بند ٣).
-if (file("google-services.json").exists() ||
-    file("src/meniura/google-services.json").exists() ||
-    file("src/taaj/google-services.json").exists()
-) {
+// ── Firebase, one project per BRAND ──────────────────────────────────────
+//
+// The two brands belong to DIFFERENT Google accounts, so they cannot share a
+// Firebase project. Each brand's google-services.json therefore lives in its
+// own flavour source set (app/src/<flavour>/), never at app/ where one file
+// would silently serve both. The file is gitignored (it carries an API key and
+// a project id) — download it from that brand's console.
+//
+// A brand whose project does not exist yet must still BUILD. The plugin is
+// project-wide, so it cannot be applied per flavour; instead the
+// process<Variant>GoogleServices task is disabled for a flavour with no file,
+// and that flavour is stamped FIREBASE_CONFIGURED = false. Nothing then
+// pretends phone verification works there: the app reads the flag and says so,
+// rather than crashing on a null FirebaseApp at the moment a driver taps
+// "send code".
+val brandsWithFirebase = listOf("meniura", "taaj")
+    .filter { file("src/$it/google-services.json").exists() }
+
+if (brandsWithFirebase.isNotEmpty()) {
     apply(plugin = libs.plugins.google.services.get().pluginId)
+
+    // A flavour without a file would fail processGoogleServices and take the
+    // whole build down with it — including verify.sh, which builds both.
+    tasks.matching {
+        it.name.startsWith("process") && it.name.endsWith("GoogleServices")
+    }.configureEach {
+        val variant = name.removePrefix("process").removeSuffix("GoogleServices")
+        enabled = brandsWithFirebase.any { brand ->
+            variant.startsWith(brand, ignoreCase = true)
+        }
+    }
+}
+
+android {
+    productFlavors {
+        listOf("meniura", "taaj").forEach { brand ->
+            getByName(brand) {
+                buildConfigField(
+                    "boolean",
+                    "FIREBASE_CONFIGURED",
+                    brandsWithFirebase.contains(brand).toString(),
+                )
+            }
+        }
+    }
 }
 
 dependencies {
+    // Firebase: phone sign-in (decision 17) and the high-priority data
+    // messages that wake the app for an offer (decision 13). Versions come
+    // from the BOM so the two can never drift apart. OneSignal stays the
+    // restaurant/customer channel and is deliberately not used here.
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.messaging)
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)

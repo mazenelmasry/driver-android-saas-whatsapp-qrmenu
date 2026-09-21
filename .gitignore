@@ -16,3 +16,10 @@ _screenshots/
 docs/audits/
 # Untracked scratch
 *.log
+
+# Firebase config. One project per BRAND (separate Google accounts), so the
+# file lives in the flavour source set, never at app/ where it would apply to
+# both. Carries an API key and a project id, which CLAUDE.md forbids putting
+# in the repo — same rule POS follows. Download it from the Firebase console
+# of that brand and drop it in app/src/<flavour>/.
+google-services.json
