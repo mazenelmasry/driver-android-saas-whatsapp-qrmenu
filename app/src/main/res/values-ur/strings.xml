@@ -9,4 +9,12 @@
     <string name="permission_location_action">ترتیبات</string>
     <string name="tab_wallet">بٹوہ</string>
     <string name="tab_account">میرا اکاؤنٹ</string>
+
+    <plurals name="unsent_actions_title">
+        <item quantity="one">%1$d کارروائی ابھی تک نہیں بھیجی گئی</item>
+        <item quantity="other">%1$d کارروائیاں ابھی تک نہیں بھیجی گئیں</item>
+    </plurals>
+    <string name="unsent_actions_body">سگنل آتے ہی آپ کا فون انہیں خودکار بھیج دے گا۔ انہیں دوبارہ نہ کریں۔</string>
+    <string name="notification_health_dnd_title">ڈسٹرب نہ کریں‬ اِس وقت آن ہے</string>
+    <string name="notification_health_dnd_body">آرڈر بغیر آواز کے آ سکتا ہے اور آپ سے چھوٹ سکتا ہے۔ سیٹنگز میں اس ایپ کو اجازت دیں، یا ڈسٹرب نہ کریں بند کریں۔</string>
 </resources>

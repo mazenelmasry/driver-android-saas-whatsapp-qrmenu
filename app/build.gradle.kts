@@ -226,6 +226,11 @@ dependencies {
     // :feature:trip declares them `implementation`, so they do not leak here.
     implementation(libs.work.runtime.ktx)
     implementation(libs.hilt.work)
+
+    // The unsent-actions banner reads the outbox's pending count directly —
+    // it is the only surface that tells a driver a delivery has not reached
+    // the restaurant yet.
+    implementation(project(":core:database"))
     debugImplementation(libs.compose.ui.tooling)
 
     testImplementation(libs.junit)

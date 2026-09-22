@@ -9,4 +9,12 @@
     <string name="permission_location_action">সেটিংস</string>
     <string name="tab_wallet">ওয়ালেট</string>
     <string name="tab_account">আমার অ্যাকাউন্ট</string>
+
+    <plurals name="unsent_actions_title">
+        <item quantity="one">%1$dটি কাজ এখনও পাঠানো হয়নি</item>
+        <item quantity="other">%1$dটি কাজ এখনও পাঠানো হয়নি</item>
+    </plurals>
+    <string name="unsent_actions_body">সিগন্যাল এলেই আপনার ফোন নিজেই পাঠিয়ে দেবে। আবার করবেন না।</string>
+    <string name="notification_health_dnd_title">ডু নট ডিস্টার্ব এখন চালু আছে</string>
+    <string name="notification_health_dnd_body">অর্ডার শব্দ ছাড়াই আসতে পারে এবং আপনি সেটি মিস করতে পারেন। সেটিংসে এই অ্যাপটিকে অনুমতি দিন, অথবা ডু নট ডিস্টার্ব বন্ধ করুন।</string>
 </resources>

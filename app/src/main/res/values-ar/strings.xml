@@ -11,11 +11,20 @@
     <string name="notification_health_disabled_body">لن يصلك أى عرض توصيل حتى تُعيد تشغيلها — لا شىء آخر فى التطبيق يقدر يوقظ جوالك.</string>
     <string name="notification_health_channel_title">تنبيه العروض مكتوم</string>
     <string name="notification_health_channel_body">الإشعارات شغّالة، لكن تنبيه العروض نفسه مُطفأ من إعدادات جوالك.</string>
-    <string name="notification_health_dnd_title">قد يصل بصمت أثناء وضع عدم الإزعاج</string>
-    <string name="notification_health_dnd_body">العروض تصلك الآن، لكن لو كان جوالك على وضع عدم الإزعاج فقد يصل العرض بصمت وتفوّتك فرصة.</string>
+    <string name="notification_health_dnd_title">وضع «عدم الإزعاج» مفعّل الآن</string>
+    <string name="notification_health_dnd_body">قد يصل العرض بلا صوت فتفوتك فرصة. اسمح لهذا التطبيق بالتجاوز من الإعدادات، أو أوقف وضع عدم الإزعاج.</string>
     <string name="notification_health_action">الإعدادات</string>
     <string name="offer_notification_title">عرض توصيل جديد</string>
     <string name="offer_notification_body">افتح التطبيق لقبوله قبل أن تنتهي مدته.</string>
     <string name="tab_wallet">المحفظة</string>
     <string name="tab_account">حسابى</string>
+
+    <plurals name="unsent_actions_title">
+        <item quantity="one">إجراء واحد لم يُرسَل بعد</item>
+        <item quantity="two">إجراءان لم يُرسَلا بعد</item>
+        <item quantity="few">%1$d إجراءات لم تُرسَل بعد</item>
+        <item quantity="many">%1$d إجراءً لم تُرسَل بعد</item>
+        <item quantity="other">%1$d إجراء لم تُرسَل بعد</item>
+    </plurals>
+    <string name="unsent_actions_body">سيرسلها جوالك تلقائياً فور توفّر الشبكة. لا تُعِدها.</string>
 </resources>

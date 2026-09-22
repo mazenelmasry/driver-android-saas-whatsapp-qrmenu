@@ -9,4 +9,12 @@
     <string name="permission_location_action">सेटिंग्स</string>
     <string name="tab_wallet">वॉलेट</string>
     <string name="tab_account">मेरा खाता</string>
+
+    <plurals name="unsent_actions_title">
+        <item quantity="one">%1$d कार्रवाई अभी तक नहीं भेजी गई</item>
+        <item quantity="other">%1$d कार्रवाइयाँ अभी तक नहीं भेजी गईं</item>
+    </plurals>
+    <string name="unsent_actions_body">सिग्नल आते ही आपका फ़ोन इन्हें अपने आप भेज देगा। इन्हें दोबारा न करें।</string>
+    <string name="notification_health_dnd_title">डू नॉट डिस्टर्ब अभी चालू है</string>
+    <string name="notification_health_dnd_body">ऑर्डर बिना आवाज़ के आ सकता है और आप उसे चूक सकते हैं। सेटिंग्स में इस ऐप को अनुमति दें, या डू नॉट डिस्टर्ब बंद करें।</string>
 </resources>

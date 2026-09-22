@@ -105,15 +105,55 @@ class NotificationHealthProvider @Inject constructor(
     }
 
     /**
-     * "Do Not Disturb access" is a system-wide grant per app (distinct from
-     * the per-channel `setBypassDnd` flag, which only takes effect once
-     * this is also true). There is no crash risk in checking it — the
-     * platform simply reports false until the user opts in from Settings.
+     * 🔴 Answers "will Do Not Disturb silence an offer RIGHT NOW", not "does
+     * this app hold DND policy access".
+     *
+     * It used to be the latter, and that is a permission the user must grant
+     * by hand in system Settings — so it reads false on essentially every
+     * phone, forever. The banner therefore appeared on every device with DND
+     * switched OFF, which is where this was caught: `zen_mode = 0` on the
+     * test device and the warning showing anyway.
+     *
+     * A permanent warning is worse than no warning. It is the top item in a
+     * stack that also has to carry "notifications are disabled" and "you have
+     * unsent deliveries" — a driver who learns the stack always has something
+     * in it stops reading the stack, and the real alerts go with it.
      */
     private fun isDndBypassGranted(manager: NotificationManager?): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return true
-        return manager?.isNotificationPolicyAccessGranted == true
+        if (manager == null) return true
+
+        // Nothing is being silenced, so there is nothing to warn about. This
+        // is the normal state of almost every phone almost all the time, and
+        // it is the check that was missing.
+        if (!isDoNotDisturbActive(manager)) return true
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            // No channels to ask, so policy access is the only signal left.
+            return manager.isNotificationPolicyAccessGranted
+        }
+
+        // DND IS on — the only question that matters now is whether the offer
+        // channel is one of the things allowed through it.
+        val channel = manager.getNotificationChannel(OfferNotificationChannels.CHANNEL_OFFERS)
+            ?: return manager.isNotificationPolicyAccessGranted
+
+        return channel.canBypassDnd()
     }
+
+    /**
+     * `INTERRUPTION_FILTER_UNKNOWN` is treated as "not active" on purpose:
+     * the project's rule is that what cannot be judged is allowed, and the
+     * cost of guessing wrong here is a permanent banner nobody can clear.
+     */
+    private fun isDoNotDisturbActive(manager: NotificationManager): Boolean =
+        when (manager.currentInterruptionFilter) {
+            NotificationManager.INTERRUPTION_FILTER_ALL,
+            NotificationManager.INTERRUPTION_FILTER_UNKNOWN,
+            -> false
+
+            else -> true
+        }
 
     private fun appNotificationSettingsIntent(): Intent =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

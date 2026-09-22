@@ -11,11 +11,17 @@
     <string name="notification_health_disabled_body">You will not be alerted for a single offer until you turn them back on — nothing else in the app can wake your phone.</string>
     <string name="notification_health_channel_title">Offer alerts are muted</string>
     <string name="notification_health_channel_body">Notifications are on, but the offer alert itself is turned off in your phone\'s settings.</string>
-    <string name="notification_health_dnd_title">May go silent during Do Not Disturb</string>
-    <string name="notification_health_dnd_body">Offers work now, but if your phone is on Do Not Disturb they could arrive silently and you could miss one.</string>
+    <string name="notification_health_dnd_title">Do Not Disturb is on</string>
+    <string name="notification_health_dnd_body">An offer can arrive without a sound right now, and you could miss it. Let this app through in settings, or turn Do Not Disturb off.</string>
     <string name="notification_health_action">Settings</string>
     <string name="offer_notification_title">New delivery offer</string>
     <string name="offer_notification_body">Open the app to accept before it expires.</string>
     <string name="tab_wallet">Wallet</string>
     <string name="tab_account">Account</string>
+
+    <plurals name="unsent_actions_title">
+        <item quantity="one">%1$d action has not been sent yet</item>
+        <item quantity="other">%1$d actions have not been sent yet</item>
+    </plurals>
+    <string name="unsent_actions_body">Your phone will send them automatically once it has signal. Do not repeat them.</string>
 </resources>

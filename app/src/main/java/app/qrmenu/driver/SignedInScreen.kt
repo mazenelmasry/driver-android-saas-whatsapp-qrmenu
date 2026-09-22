@@ -41,6 +41,7 @@ import app.qrmenu.driver.availability.AvailabilityRoute
 import app.qrmenu.driver.account.AccountRoute
 import app.qrmenu.driver.designsystem.theme.Spacing
 import app.qrmenu.driver.health.NotificationHealthBanner
+import app.qrmenu.driver.outbox.UnsentActionsBanner
 import app.qrmenu.driver.health.RequestNotificationPermissionOnce
 import app.qrmenu.driver.notifications.NotificationCenterRoute
 import app.qrmenu.driver.location.DriverLocationService
@@ -321,6 +322,17 @@ fun SignedInScreen(
             // never arrive. Anchoring it to one tab would hide it the moment
             // they switch away from it.
             NotificationHealthBanner()
+
+            // 🔴 Above the tabs for the same reason the health banner is: a
+            // queued delivery is money the restaurant has not been told
+            // about, and the driver must not have to be on one particular
+            // tab to learn of it. Renders nothing when the queue is empty,
+            // which is almost always.
+            UnsentActionsBanner(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Spacing.md, vertical = Spacing.xxs),
+            )
 
             // The dismissible "an update exists" notice — never shown here
             // when `updateRequirement` is anything but `NotRequired` (this
