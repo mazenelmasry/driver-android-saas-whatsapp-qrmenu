@@ -304,7 +304,16 @@ fun SignedInScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = insets.calculateBottomPadding()),
+                .padding(bottom = insets.calculateBottomPadding())
+                // 🔴 The app-level banners below sit ABOVE each tab's own
+                // `DriverScreenScaffold`, which is where the status-bar inset
+                // was being applied — so the banners themselves had none and
+                // were drawn under the clock and the battery icon. Applied
+                // once here for the whole stack, then CONSUMED so the tab's
+                // scaffold does not add a second gap beneath it (the same
+                // pairing the active-trip branch above already documents).
+                .windowInsetsPadding(WindowInsets.statusBars)
+                .consumeWindowInsets(WindowInsets.statusBars),
         ) {
             // 🔴 Shown above whichever tab is on screen, on ALL four — a
             // driver spends their entire shift on this bar, most of it on
