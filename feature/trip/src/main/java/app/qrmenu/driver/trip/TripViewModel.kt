@@ -144,9 +144,30 @@ class TripViewModel @Inject constructor(
         } else {
             load(orderId)
         }
+        // 🔴 Drains whatever this driver's PREVIOUS session left queued (app
+        // was killed mid-delivery, offline the whole time) — see
+        // [TripRepository.flushPending]'s own doc. Fire-and-forget on
+        // purpose: a queued row from an earlier trip must never block THIS
+        // screen's own loading state, and a failure here (still offline)
+        // just leaves the row queued for the next opportunity.
+        flushQueuedActions()
     }
 
     fun retryLoad(orderId: Long) = load(orderId)
+
+    /**
+     * A successful command is proof this device is online RIGHT NOW — the
+     * best signal this screen has without a connectivity listener or
+     * WorkManager wired at the app level (see [TripRepository.flushPending]'s
+     * own doc). Launched on its own, never awaited by the caller: a queued
+     * row from an earlier failure must not delay the state update the driver
+     * is already looking at.
+     */
+    private fun flushQueuedActions() {
+        viewModelScope.launch {
+            runCatching { repository.flushPending() }
+        }
+    }
 
     private fun load(orderId: Long) {
         _state.update { it.copy(phase = TripPhase.Loading) }
@@ -178,6 +199,7 @@ class TripViewModel @Inject constructor(
                 .onSuccess { dto ->
                     pickedUpKey = null
                     _state.update { it.copy(phase = TripPhase.Content(order = dto)) }
+                    flushQueuedActions()
                 }
                 .onFailure { thrown ->
                     _state.update { current ->
@@ -278,6 +300,7 @@ class TripViewModel @Inject constructor(
                             deliveredResult = response,
                         )
                     }
+                    flushQueuedActions()
                 }
                 .onFailure { thrown ->
                     val apiError = thrown.toDriverApiError()
@@ -368,6 +391,7 @@ class TripViewModel @Inject constructor(
                 .onSuccess {
                     issueKey = null
                     _state.update { it.copy(issueSheet = IssueSheetState(visible = false), issueReported = true) }
+                    flushQueuedActions()
                 }
                 .onFailure { thrown ->
                     _state.update {

@@ -1,5 +1,7 @@
 package app.qrmenu.driver.trip
 
+import app.qrmenu.driver.database.dao.DriverActionOutboxDao
+import app.qrmenu.driver.database.entity.DriverActionOutboxEntity
 import app.qrmenu.driver.network.api.OrderApi
 import app.qrmenu.driver.network.dto.AcceptedDto
 import app.qrmenu.driver.network.dto.BranchDto
@@ -17,6 +19,9 @@ import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -32,6 +37,41 @@ import org.junit.Before
 import org.junit.Test
 import retrofit2.HttpException
 import retrofit2.Response
+
+/**
+ * An in-memory stand-in for the real Room DAO — this module has no Room test
+ * dependency, and none of these tests need one: everything under test is
+ * [TripRepository]'s own decisions about when a row is queued, acknowledged
+ * (deleted) or left for a retry, which this fake reproduces exactly against
+ * plain in-memory state. `IGNORE` conflict semantics are reproduced in
+ * [enqueue] since [DriverActionOutboxDaoTest] (the real DAO's own test)
+ * documents that as load-bearing: a re-enqueue of an already-queued key must
+ * not clobber its `attempts`/`last_error`.
+ */
+private class FakeDriverActionOutboxDao : DriverActionOutboxDao {
+    private val rows = MutableStateFlow<List<DriverActionOutboxEntity>>(emptyList())
+
+    val current: List<DriverActionOutboxEntity> get() = rows.value
+
+    override suspend fun enqueue(action: DriverActionOutboxEntity) {
+        if (rows.value.any { it.idempotency_key == action.idempotency_key }) return
+        rows.value = rows.value + action
+    }
+
+    override fun observePending(): Flow<List<DriverActionOutboxEntity>> = rows
+
+    override fun observePendingCount(): Flow<Int> = rows.map { it.size }
+
+    override suspend fun acknowledge(idempotencyKey: String) {
+        rows.value = rows.value.filterNot { it.idempotency_key == idempotencyKey }
+    }
+
+    override suspend fun recordFailure(idempotencyKey: String, error: String?) {
+        rows.value = rows.value.map {
+            if (it.idempotency_key == idempotencyKey) it.copy(attempts = it.attempts + 1, last_error = error) else it
+        }
+    }
+}
 
 /**
  * Week 5 — the trip screen's state machine.
@@ -87,7 +127,8 @@ class TripViewModelTest {
         requiresDeliveryCode = requiresDeliveryCode,
     )
 
-    private fun viewModel(): TripViewModel = TripViewModel(TripRepository(orderApi))
+    private fun viewModel(outboxDao: DriverActionOutboxDao = FakeDriverActionOutboxDao()): TripViewModel =
+        TripViewModel(TripRepository(orderApi, outboxDao))
 
     // ───────────────────────── seeded start makes no network call ─────────────────────────
 
@@ -614,5 +655,171 @@ class TripViewModelTest {
         dispatcher.scheduler.runCurrent()
 
         assertTrue(model.state.value.phase is TripPhase.LoadFailed)
+    }
+
+    // ───────────────────────── offline outbox ─────────────────────────
+    // The bug this closes: a driver taps "delivered" with no signal, the
+    // process dies before a retry — before this, nothing survived to prove
+    // either the delivery or the cash collected. See TripRepository's class
+    // doc.
+
+    @Test
+    fun `an offline pick-up leaves its row queued in the outbox`() = runTest(dispatcher) {
+        coEvery { orderApi.pickedUp(7, any(), any()) } throws java.io.IOException("no signal")
+        val dao = FakeDriverActionOutboxDao()
+
+        val model = viewModel(dao)
+        model.start(7, seed = assignedOrder(status = "ready"))
+        dispatcher.scheduler.runCurrent()
+
+        model.pickUp(7)
+        dispatcher.scheduler.runCurrent()
+
+        assertEquals("the row must survive an offline failure for a later retry", 1, dao.current.size)
+        assertEquals(1, dao.current.single().attempts)
+    }
+
+    @Test
+    fun `a delivered command that reaches the server successfully is removed from the outbox`() = runTest(dispatcher) {
+        val dao = FakeDriverActionOutboxDao()
+        coEvery { orderApi.delivered(7, any(), any()) } returns DeliveredResponse(
+            order = assignedOrder(status = "delivered"),
+            ledger = LedgerSummaryDto(companyId = 1, currency = "SAR", earnedToday = 6.0, cashOnHand = 40.0, net = -34.0, cashLimit = null),
+        )
+
+        val model = viewModel(dao)
+        model.start(7, seed = assignedOrder(status = "out_for_delivery", pickedUpAt = "x"))
+        dispatcher.scheduler.runCurrent()
+
+        model.openDeliverySheet()
+        model.confirmDelivery(7, isCashOrder = true, cashToCollect = 40.0)
+        dispatcher.scheduler.runCurrent()
+
+        assertTrue("a successfully-sent command must not remain queued", dao.current.isEmpty())
+    }
+
+    @Test
+    fun `retrying the same failed pick-up does not duplicate its outbox row`() = runTest(dispatcher) {
+        val dao = FakeDriverActionOutboxDao()
+        var call = 0
+        coEvery { orderApi.pickedUp(7, any(), any()) } coAnswers {
+            call++
+            if (call < 2) throw java.io.IOException("no signal") else assignedOrder(status = "out_for_delivery", pickedUpAt = "x")
+        }
+
+        val model = viewModel(dao)
+        model.start(7, seed = assignedOrder(status = "ready"))
+        dispatcher.scheduler.runCurrent()
+
+        model.pickUp(7) // fails, queued
+        dispatcher.scheduler.runCurrent()
+        assertEquals(1, dao.current.size)
+
+        model.pickUp(7) // same key, driver taps again — succeeds
+        dispatcher.scheduler.runCurrent()
+
+        assertTrue("no duplicate row for a retry of the same command", dao.current.isEmpty())
+    }
+
+    /**
+     * 🔴 The case the brief calls out by name: a 422
+     * `delivery_code_required`/`delivery_code_mismatch` is a pure rejection —
+     * nothing was applied server-side, and [TripViewModel] mints a FRESH key
+     * for the corrected retry (see its own doc on `confirmDelivery`). The OLD
+     * key's row must therefore be deleted, never left to retry an unchanged,
+     * already-rejected body forever.
+     */
+    @Test
+    fun `a delivery_code_required rejection removes its outbox row instead of leaving it to retry forever`() = runTest(dispatcher) {
+        val dao = FakeDriverActionOutboxDao()
+        coEvery { orderApi.delivered(7, any(), any()) } throws
+            httpError(422, """{"code":"delivery_code_required"}""")
+
+        val model = viewModel(dao)
+        model.start(7, seed = assignedOrder(status = "out_for_delivery", pickedUpAt = "x"))
+        dispatcher.scheduler.runCurrent()
+
+        model.openDeliverySheet()
+        model.confirmDelivery(7, isCashOrder = true, cashToCollect = 40.0)
+        dispatcher.scheduler.runCurrent()
+
+        assertTrue(
+            "a pure 422 rejection must not sit in the queue waiting to be replayed with the same (already-rejected) body",
+            dao.current.isEmpty(),
+        )
+    }
+
+    /**
+     * 🔴 The three 4xx codes that mean "later", not "no".
+     *
+     * A blanket `code in 400..499 -> delete the row` reads sensible and is the
+     * one rule this table cannot afford: 401 (session expired), 408 (timeout)
+     * and 429 (`rate_limited`, an EXPECTED state in the frozen error-code
+     * list) all succeed on a later retry of the SAME body. Discarding them
+     * would destroy the record of a delivery that really happened and of the
+     * cash the driver is carrying for it — the exact loss the whole outbox
+     * exists to prevent, reintroduced by the code meant to implement it.
+     */
+    @Test
+    fun `a session-expired, timed-out or throttled delivery stays queued instead of being discarded`() = runTest(dispatcher) {
+        for (transientCode in listOf(401, 408, 429)) {
+            val dao = FakeDriverActionOutboxDao()
+            coEvery { orderApi.delivered(7, any(), any()) } throws httpError(transientCode, "{}")
+
+            val model = viewModel(dao)
+            model.start(7, seed = assignedOrder(status = "out_for_delivery", pickedUpAt = "x"))
+            dispatcher.scheduler.runCurrent()
+
+            model.openDeliverySheet()
+            model.confirmDelivery(7, isCashOrder = true, cashToCollect = 40.0)
+            dispatcher.scheduler.runCurrent()
+
+            assertTrue(
+                "HTTP $transientCode means try again later — the delivery and the cash it collected " +
+                    "must still be in the queue, not thrown away",
+                dao.current.isNotEmpty(),
+            )
+        }
+    }
+
+    @Test
+    fun `a delivery_code_mismatch rejection also removes its outbox row`() = runTest(dispatcher) {
+        val dao = FakeDriverActionOutboxDao()
+        coEvery { orderApi.delivered(7, any(), any()) } throws
+            httpError(422, """{"code":"delivery_code_mismatch"}""")
+
+        val model = viewModel(dao)
+        model.start(7, seed = assignedOrder(status = "out_for_delivery", pickedUpAt = "x"))
+        dispatcher.scheduler.runCurrent()
+
+        model.openDeliverySheet()
+        model.confirmDelivery(7, isCashOrder = true, cashToCollect = 40.0)
+        dispatcher.scheduler.runCurrent()
+
+        assertTrue(dao.current.isEmpty())
+    }
+
+    @Test
+    fun `queued actions from a previous session are flushed the moment the trip screen starts`() = runTest(dispatcher) {
+        val dao = FakeDriverActionOutboxDao()
+        val key = "leftover-key"
+        dao.enqueue(
+            DriverActionOutboxEntity(
+                idempotency_key = key,
+                order_id = 7,
+                action_type = app.qrmenu.driver.database.entity.DriverActionType.PickedUp,
+                payload_json = """{"occurred_at":"2026-09-21T09:00:00Z"}""",
+                occurred_at = 1L,
+                created_at = 1L,
+            ),
+        )
+        coEvery { orderApi.pickedUp(7, key, any()) } returns assignedOrder(status = "out_for_delivery", pickedUpAt = "x")
+
+        val model = viewModel(dao)
+        model.start(7, seed = assignedOrder(status = "ready"))
+        dispatcher.scheduler.runCurrent()
+
+        assertTrue("app-open must drain what an earlier session left queued", dao.current.isEmpty())
+        coVerify(exactly = 1) { orderApi.pickedUp(7, key, any()) }
     }
 }

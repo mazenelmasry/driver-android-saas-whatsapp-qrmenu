@@ -12,6 +12,11 @@ dependencies {
     // here — nothing new to declare.
     implementation(project(":core:network"))
 
+    // The offline outbox for trip commands (picked-up / delivered / issue) —
+    // see TripRepository's own doc for why a command is queued before the
+    // network call is even attempted.
+    implementation(project(":core:database"))
+
     // DriverErrorBanner + the retry/localized() extensions this screen reuses
     // for the inline accept/decline failure banner are wired in automatically
     // by the feature convention plugin.
