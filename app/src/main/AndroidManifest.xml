@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -22,6 +23,31 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Driver.Starting">
+
+        <!--
+            🔴 WorkManager must NOT self-initialise.
+
+            `DriverApplication` implements `Configuration.Provider` to hand
+            WorkManager the Hilt worker factory. If the default initialiser
+            below is left in place it runs FIRST, at app-startup, and builds
+            WorkManager with the stock factory — after which the provider is
+            never consulted and `OutboxFlushWorker` cannot be constructed
+            (nothing can inject `TripRepository` into it).
+
+            The failure is silent: the worker simply never runs, so a delivery
+            queued offline would sit unsent with nothing reporting why. The
+            only way to notice is to look for the drain that never happened.
+        -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
 
         <activity
             android:name=".MainActivity"

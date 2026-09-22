@@ -10,6 +10,7 @@ import app.qrmenu.driver.network.dto.DeliveredResponse
 import app.qrmenu.driver.network.dto.DriverOrderDto
 import app.qrmenu.driver.network.dto.IssueRequest
 import app.qrmenu.driver.network.dto.PickedUpRequest
+import app.qrmenu.driver.trip.outbox.OutboxFlushScheduler
 import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -66,6 +67,7 @@ import retrofit2.HttpException
 class TripRepository @Inject constructor(
     private val orderApi: OrderApi,
     private val outboxDao: DriverActionOutboxDao,
+    private val flushScheduler: OutboxFlushScheduler,
 ) {
     /** Resumes a trip already in progress — after process death, the app was killed, or a fresh open of the tab. */
     suspend fun fetch(orderId: Long): DriverOrderDto = orderApi.order(orderId)
@@ -208,6 +210,12 @@ class TripRepository @Inject constructor(
             outboxDao.acknowledge(idempotencyKey)
         } else {
             outboxDao.recordFailure(idempotencyKey, thrown.message)
+            // The row just survived a failure, so something has to come back
+            // for it. Scheduling HERE — at the moment the row is left behind —
+            // rather than only at app start is what lets a delivery reach the
+            // restaurant while the driver's phone is in their pocket and the
+            // app is closed.
+            flushScheduler.scheduleFlush()
         }
     }
 

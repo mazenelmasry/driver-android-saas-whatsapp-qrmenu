@@ -17,6 +17,13 @@ dependencies {
     // network call is even attempted.
     implementation(project(":core:database"))
 
+    // Background drain of that outbox. The module that OWNS the queue owns
+    // its draining — :app only registers the Hilt worker factory, it does not
+    // know what a trip command is.
+    implementation(libs.work.runtime.ktx)
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.work.compiler)
+
     // DriverErrorBanner + the retry/localized() extensions this screen reuses
     // for the inline accept/decline failure banner are wired in automatically
     // by the feature convention plugin.

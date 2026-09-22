@@ -1,6 +1,7 @@
 package app.qrmenu.driver.trip
 
 import app.qrmenu.driver.database.dao.DriverActionOutboxDao
+import app.qrmenu.driver.trip.outbox.OutboxFlushScheduler
 import app.qrmenu.driver.database.entity.DriverActionOutboxEntity
 import app.qrmenu.driver.network.api.OrderApi
 import app.qrmenu.driver.network.dto.AcceptedDto
@@ -127,8 +128,20 @@ class TripViewModelTest {
         requiresDeliveryCode = requiresDeliveryCode,
     )
 
-    private fun viewModel(outboxDao: DriverActionOutboxDao = FakeDriverActionOutboxDao()): TripViewModel =
-        TripViewModel(TripRepository(orderApi, outboxDao))
+    /** Records whether a retry was actually asked for — see [OutboxFlushScheduler]'s doc. */
+    private class RecordingFlushScheduler : OutboxFlushScheduler {
+        var scheduled = 0
+            private set
+
+        override fun scheduleFlush() {
+            scheduled++
+        }
+    }
+
+    private fun viewModel(
+        outboxDao: DriverActionOutboxDao = FakeDriverActionOutboxDao(),
+        scheduler: OutboxFlushScheduler = RecordingFlushScheduler(),
+    ): TripViewModel = TripViewModel(TripRepository(orderApi, outboxDao, scheduler))
 
     // ───────────────────────── seeded start makes no network call ─────────────────────────
 
@@ -747,6 +760,115 @@ class TripViewModelTest {
             "a pure 422 rejection must not sit in the queue waiting to be replayed with the same (already-rejected) body",
             dao.current.isEmpty(),
         )
+    }
+
+    /**
+     * 🔴 What `OutboxFlushWorker` actually calls — untested until now, which
+     * made the whole background drain an assumption.
+     *
+     * The assertion that matters is the KEY: a replay must send the stored
+     * `Idempotency-Key`, not a fresh one. A new key would present the same
+     * delivery to the server as a second, unrelated delivery — crediting the
+     * ledger twice for one trip, which is worse than the lost record this
+     * queue was built to prevent.
+     */
+    @Test
+    fun `flushing replays a queued delivery under its ORIGINAL idempotency key and clears it`() = runTest(dispatcher) {
+        val dao = FakeDriverActionOutboxDao()
+        val scheduler = RecordingFlushScheduler()
+        val repository = TripRepository(orderApi, dao, scheduler)
+
+        // First attempt dies offline: the row survives.
+        coEvery { orderApi.delivered(7, any(), any()) } throws java.io.IOException("no signal")
+        runCatching {
+            repository.delivered(
+                orderId = 7,
+                idempotencyKey = "key-from-the-basement",
+                cashCollected = 40.0,
+                deliveryCode = null,
+                note = null,
+            )
+        }
+        assertTrue("the failed delivery must stay queued", dao.current.isNotEmpty())
+
+        // Network is back — this is the worker's call.
+        coEvery { orderApi.delivered(7, any(), any()) } returns DeliveredResponse(
+            order = assignedOrder(status = "delivered", pickedUpAt = "x"),
+            ledger = LedgerSummaryDto(companyId = 1, currency = "SAR", earnedToday = 6.0, cashOnHand = 40.0, net = -34.0, cashLimit = null),
+        )
+        repository.flushPending()
+
+        assertTrue("a delivered row must be cleared once the server has it", dao.current.isEmpty())
+        coVerify {
+            orderApi.delivered(
+                id = 7,
+                idempotencyKey = "key-from-the-basement",
+                body = any(),
+            )
+        }
+    }
+
+    /** A replay that fails again leaves the row exactly where it was — never dropped. */
+    @Test
+    fun `flushing keeps the row when the retry also fails`() = runTest(dispatcher) {
+        val dao = FakeDriverActionOutboxDao()
+        val repository = TripRepository(orderApi, dao, RecordingFlushScheduler())
+
+        coEvery { orderApi.delivered(7, any(), any()) } throws java.io.IOException("still no signal")
+        runCatching {
+            repository.delivered(7, "key-still-stuck", cashCollected = 40.0, deliveryCode = null, note = null)
+        }
+        repository.flushPending()
+
+        assertTrue("a delivery that still cannot be sent must not be discarded", dao.current.isNotEmpty())
+    }
+
+    /**
+     * A row left in the queue with nothing coming back for it is not a fix —
+     * it is the same lost delivery with extra steps. This pins that a
+     * transient failure actually ASKS for the background drain, which is the
+     * only thing that reaches the server while the app is closed.
+     */
+    @Test
+    fun `a delivery that fails offline schedules the background drain`() = runTest(dispatcher) {
+        val dao = FakeDriverActionOutboxDao()
+        val scheduler = RecordingFlushScheduler()
+        coEvery { orderApi.delivered(7, any(), any()) } throws java.io.IOException("no signal")
+
+        val model = viewModel(dao, scheduler)
+        model.start(7, seed = assignedOrder(status = "out_for_delivery", pickedUpAt = "x"))
+        dispatcher.scheduler.runCurrent()
+
+        model.openDeliverySheet()
+        model.confirmDelivery(7, isCashOrder = true, cashToCollect = 40.0)
+        dispatcher.scheduler.runCurrent()
+
+        assertTrue("the row survived, so a drain must have been scheduled for it", dao.current.isNotEmpty())
+        assertTrue("nothing asked for the queue to be drained", scheduler.scheduled > 0)
+    }
+
+    /**
+     * The mirror of the test above: a body the server has genuinely refused is
+     * removed, so scheduling a drain for it would wake the device to send
+     * nothing.
+     */
+    @Test
+    fun `a pure rejection schedules no background drain`() = runTest(dispatcher) {
+        val dao = FakeDriverActionOutboxDao()
+        val scheduler = RecordingFlushScheduler()
+        coEvery { orderApi.delivered(7, any(), any()) } throws
+            httpError(422, """{"code":"delivery_code_required"}""")
+
+        val model = viewModel(dao, scheduler)
+        model.start(7, seed = assignedOrder(status = "out_for_delivery", pickedUpAt = "x"))
+        dispatcher.scheduler.runCurrent()
+
+        model.openDeliverySheet()
+        model.confirmDelivery(7, isCashOrder = true, cashToCollect = 40.0)
+        dispatcher.scheduler.runCurrent()
+
+        assertTrue("a refused body must not be queued", dao.current.isEmpty())
+        assertEquals("nothing to send, so nothing should have been scheduled", 0, scheduler.scheduled)
     }
 
     /**

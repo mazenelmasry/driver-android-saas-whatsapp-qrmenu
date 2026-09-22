@@ -1,8 +1,11 @@
 package app.qrmenu.driver
 
 import android.app.Application
+import androidx.hilt.work.HiltWorkerFactory
+import androidx.work.Configuration
 import app.qrmenu.driver.alerts.OfferNotificationChannels
 import app.qrmenu.driver.offers.DeviceTokenRegistrar
+import app.qrmenu.driver.trip.outbox.OutboxFlushScheduler
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
@@ -31,13 +34,32 @@ import kotlinx.coroutines.launch
  * الخلفية).
  */
 @HiltAndroidApp
-class DriverApplication : Application() {
+class DriverApplication : Application(), Configuration.Provider {
 
     @Inject
     lateinit var notificationChannels: OfferNotificationChannels
 
     @Inject
     lateinit var deviceTokenRegistrar: DeviceTokenRegistrar
+
+    @Inject
+    lateinit var workerFactory: HiltWorkerFactory
+
+    @Inject
+    lateinit var outboxFlushScheduler: OutboxFlushScheduler
+
+    /**
+     * 🔴 This alone is not enough — the default `WorkManagerInitializer` is
+     * ALSO removed in the manifest. Left in place it initialises WorkManager
+     * eagerly at startup with the stock factory, before this provider is ever
+     * consulted, and `OutboxFlushWorker` then fails to construct because
+     * nothing can inject `TripRepository` into it. The symptom is a worker
+     * that never runs, with no error anywhere the app can see.
+     */
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder()
+            .setWorkerFactory(workerFactory)
+            .build()
 
     // Deliberately not viewModelScope-shaped — nothing here belongs to a
     // screen, and this object's whole reason to exist is to run before any
@@ -48,5 +70,9 @@ class DriverApplication : Application() {
         super.onCreate()
         notificationChannels.ensureChannels()
         appScope.launch { deviceTokenRegistrar.registerCurrentToken() }
+        // Covers a row queued by a process that died before it could schedule
+        // anything — and costs nothing when the queue is empty, since the
+        // worker's first act is to find no rows and finish.
+        outboxFlushScheduler.scheduleFlush()
     }
 }

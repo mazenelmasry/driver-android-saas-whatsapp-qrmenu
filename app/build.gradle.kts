@@ -219,6 +219,13 @@ dependencies {
     // Hilt never generates its component.
     implementation(project(":core:location"))
     implementation(project(":core:notifications"))
+
+    // The outbox WORKER lives in :feature:trip; :app only hands WorkManager
+    // the Hilt factory (DriverApplication implements Configuration.Provider),
+    // and needs these two on its own classpath to name those types —
+    // :feature:trip declares them `implementation`, so they do not leak here.
+    implementation(libs.work.runtime.ktx)
+    implementation(libs.hilt.work)
     debugImplementation(libs.compose.ui.tooling)
 
     testImplementation(libs.junit)
