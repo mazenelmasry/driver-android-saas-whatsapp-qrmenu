@@ -475,6 +475,81 @@
                 }
             }
         },
+        "/driver/account/deletion-request": {
+            "post": {
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Ask for the account to be deleted (reviewed by an admin, not immediate)",
+                "description": "Google Play requires an in-app account-deletion path. This is deliberately NOT self-service, instant deletion: a driver may be carrying cash collected on a restaurant's behalf that has not yet been settled, and the trip history the account holds belongs to the restaurant too — so an admin reviews the request and deletes the driver as a separate, deliberate act.\n\nIdempotent: a driver who already has a PENDING request gets that same request back rather than a second row, so the app can call this safely on retry.\n\n`account` auth mode — a driver with zero restaurant links must still be able to ask to be deleted — and exempt from the client-version floor, same reasoning as `logout`/`device-token`: this must keep working on an outdated build.\n",
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                    "reason": {
+                                        "type": "string",
+                                        "maxLength": 2000,
+                                        "nullable": true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK — the current (possibly pre-existing) pending request.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeletionRequest"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/Error"
+                    }
+                }
+            },
+            "get": {
+                "tags": [
+                    "auth"
+                ],
+                "summary": "The current deletion request, if any",
+                "description": "So the app can show \"your request is under review\" instead of offering the delete button again. `deletion_request` is null when the driver has never filed one, or every prior one was rejected — the app should offer the delete action again in that case.\n",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "required": [
+                                        "deletion_request"
+                                    ],
+                                    "properties": {
+                                        "deletion_request": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/DeletionRequest"
+                                                }
+                                            ],
+                                            "nullable": true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/driver/me": {
             "get": {
                 "tags": [
@@ -1535,6 +1610,73 @@
                         "type": "string",
                         "nullable": true,
                         "description": "Hex, e.g. `#B4471F`. Tints the app; the flavour colour is the fallback."
+                    },
+                    "privacy_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true,
+                        "description": "Google Play requires a privacy-policy link reachable INSIDE the app. Same admin setting the web/POS surfaces already read (`app.privacy_policy_url`); only ever a validated absolute http(s) URL, never a blank or malformed value.\n"
+                    },
+                    "terms_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true,
+                        "description": "Same validation as `privacy_url` (`app.terms_of_service_url`)."
+                    },
+                    "help_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true,
+                        "description": "Tutorials / help centre link (`app.tutorials_url`), same validation as `privacy_url`.\n"
+                    },
+                    "support_whatsapp": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "Digits only (`app.contact_whatsapp`, normalised) — the app builds its own `wa.me` link. Null if unset or not a plausible phone number.\n"
+                    },
+                    "support_email": {
+                        "type": "string",
+                        "format": "email",
+                        "nullable": true,
+                        "description": "`app.contact_email`, only ever a validated email address."
+                    }
+                }
+            },
+            "DeletionRequest": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "id",
+                    "status",
+                    "reason",
+                    "requested_at",
+                    "processed_at"
+                ],
+                "description": "Deliberately carries no `admin_notes`/`processed_by` — those are for the admin panel only, never shown to the driver.\n",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "pending",
+                            "approved",
+                            "rejected"
+                        ]
+                    },
+                    "reason": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "requested_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "processed_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
                     }
                 }
             },

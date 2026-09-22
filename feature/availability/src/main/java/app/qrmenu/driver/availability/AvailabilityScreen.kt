@@ -10,7 +10,6 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,15 +22,18 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -49,22 +51,28 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.qrmenu.driver.designsystem.theme.DriverTheme
+import app.qrmenu.driver.designsystem.theme.Elevation
 import app.qrmenu.driver.designsystem.theme.Motion
 import app.qrmenu.driver.designsystem.theme.Radius
 import app.qrmenu.driver.designsystem.theme.Spacing
-import app.qrmenu.driver.ui.components.DriverScreenScaffold
+import app.qrmenu.driver.designsystem.theme.ControlSize
 import app.qrmenu.driver.designsystem.theme.TouchTarget
 import app.qrmenu.driver.network.dto.AvailabilityContextDto
-import app.qrmenu.driver.ui.orders.messageResource
-import app.qrmenu.driver.ui.orders.noOrdersReason
 import app.qrmenu.driver.network.dto.ContextBranchDto
 import app.qrmenu.driver.network.errors.DriverApiError
 import app.qrmenu.driver.network.errors.DriverErrorCode
+import app.qrmenu.driver.ui.components.DriverArt
+import app.qrmenu.driver.ui.components.DriverEmptyState
 import app.qrmenu.driver.ui.components.DriverErrorBanner
+import app.qrmenu.driver.ui.components.DriverScreenScaffold
 import app.qrmenu.driver.ui.orders.CashHoldBanner
+import app.qrmenu.driver.ui.orders.NoOrdersReason
+import app.qrmenu.driver.ui.orders.messageResource
+import app.qrmenu.driver.ui.orders.noOrdersReason
 import app.qrmenu.driver.ui.text.ltr
 import java.time.Duration
 import java.time.Instant
+import java.util.Locale
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -104,6 +112,11 @@ fun AvailabilityRoute(
     onGoOffline: () -> Unit = {},
     /** Opens the notification centre from this screen's bell. Null hides the bell. */
     onOpenNotifications: (() -> Unit)? = null,
+    /**
+     * How many notifications the driver has not opened yet — the number on
+     * the bell. Zero draws no badge at all, which is almost always.
+     */
+    unreadNotifications: Int = 0,
     viewModel: AvailabilityViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -122,6 +135,7 @@ fun AvailabilityRoute(
         onRetryLoad = viewModel::retry,
         onToggle = viewModel::onToggle,
         onOpenNotifications = onOpenNotifications,
+            unreadNotifications = unreadNotifications,
     )
 
     // Fires only once a request has SETTLED (never mid-flight, `isPending`
@@ -143,6 +157,11 @@ internal fun AvailabilityScreen(
     onRetryLoad: () -> Unit,
     onToggle: (Boolean) -> Unit,
     onOpenNotifications: (() -> Unit)? = null,
+    /**
+     * How many notifications the driver has not opened yet — the number on
+     * the bell. Zero draws no badge at all, which is almost always.
+     */
+    unreadNotifications: Int = 0,
 ) {
     Scaffold {
         // The shared frame — same title placement and same bell as every
@@ -150,6 +169,7 @@ internal fun AvailabilityScreen(
         DriverScreenScaffold(
             title = stringResource(R.string.availability_title),
             onOpenNotifications = onOpenNotifications,
+            unreadNotifications = unreadNotifications,
         ) {
         when {
             // First load only — never shown again once anything has arrived,
@@ -158,6 +178,12 @@ internal fun AvailabilityScreen(
 
             else -> LazyColumn(
                 modifier = Modifier.fillMaxSize(),
+                // ONE gutter for every card on this screen (Spacing.lg), and
+                // ONE vertical rhythm (Spacing.md) between them — the fix for
+                // the card that used to sit at a visibly wider inset than its
+                // neighbours. `warningSlot()` is rendered as just another item
+                // in this same list, so whatever `:core:location` hands us
+                // inherits this same gutter rather than choosing its own.
                 contentPadding = PaddingValues(horizontal = Spacing.lg, vertical = Spacing.md),
                 verticalArrangement = Arrangement.spacedBy(Spacing.md),
             ) {
@@ -200,8 +226,20 @@ internal fun AvailabilityScreen(
 
                 item { warningSlot() }
 
+                // Two SEPARATE items, not one combined card: this is what
+                // fills the dead lower half of the screen for a waiting
+                // driver with a real designed state (art + title + body)
+                // instead of one flat text box floating above a mostly-empty
+                // screen, and it keeps the same Spacing.md rhythm as every
+                // other card above it.
                 if (context != null) {
-                    item { NoOrdersReasonCard(context = context) }
+                    val reason = context.noOrdersReason()
+                    if (reason != null) {
+                        item { NoOrdersReasonCard(reason = reason) }
+                    }
+                    if (context.branches.isNotEmpty()) {
+                        item { BranchesCard(branches = context.branches) }
+                    }
                 }
             }
         }
@@ -221,30 +259,37 @@ private val AvailabilityUiState.driverNeverLoaded: Boolean
 
 @Composable
 private fun ConnectionLostBanner() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.errorContainer, RoundedCornerShape(Radius.card))
-            .padding(horizontal = Spacing.md, vertical = Spacing.sm),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(Radius.card),
+        color = MaterialTheme.colorScheme.errorContainer,
+        shadowElevation = Elevation.card,
+        tonalElevation = Elevation.card,
     ) {
-        Icon(
-            imageVector = Icons.Filled.WifiOff,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onErrorContainer,
-        )
-        Column {
-            Text(
-                text = stringResource(R.string.availability_connection_lost),
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onErrorContainer,
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.WifiOff,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onErrorContainer,
             )
-            Text(
-                text = stringResource(R.string.availability_connection_lost_body),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onErrorContainer,
-            )
+            Column {
+                Text(
+                    text = stringResource(R.string.availability_connection_lost),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                )
+                Text(
+                    text = stringResource(R.string.availability_connection_lost_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                )
+            }
         }
     }
 }
@@ -258,6 +303,13 @@ private fun ConnectionLostBanner() {
  * muted surface when off; a filled check on the brand colour when on; a
  * spinner on that same muted surface while pending) so the state reads in
  * direct sun and for a colour-blind driver without reading the label at all.
+ *
+ * 🔴 Online is also told apart by MOTION now, not colour alone: a breathing
+ * dot beside the label while online, the same "recording"/"live" language
+ * every courier app on this driver's phone already uses for the one control
+ * their income depends on. The card previously sat there inert once the
+ * colour settled — correct information, but nothing said "this is ON and
+ * doing something" at a glance.
  */
 @Composable
 private fun AvailabilitySwitch(
@@ -286,69 +338,113 @@ private fun AvailabilitySwitch(
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant
     }
+    val isLive = isOnline && !isPending
 
-    Column(
+    // A real Surface, not a manual background+clip: this is what gives the
+    // card DEPTH (a shadow + a tonal lift) instead of reading as a flat fill
+    // indistinguishable from the page behind it — and it is more elevated
+    // while live than while off/pending, so depth itself tells the state
+    // apart, the same way colour and icon already do.
+    Surface(
+        onClick = { onToggle(!isOnline) },
+        enabled = !isPending,
         modifier = Modifier
             .fillMaxWidth()
             // heightIn, not height: a fixed box left the content stranded at
             // the top with a hand-sized patch of empty colour beneath it. The
             // card is now as tall as it needs to be, with a floor so it still
             // reads as the biggest target on the screen.
-            .heightIn(min = TouchTarget.primary * 2)
-            .clip(RoundedCornerShape(Radius.card))
-            .background(container)
-            // Disabled while pending — a second tap mid-flight must not queue a
-            // second PATCH; the tap target itself refuses input here, on top of
-            // the ViewModel's own re-entrancy guard.
-            .clickable(enabled = !isPending) { onToggle(!isOnline) }
-            .padding(Spacing.lg),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(Spacing.xs, Alignment.CenterVertically),
+            .heightIn(min = TouchTarget.primary * 2),
+        shape = RoundedCornerShape(Radius.card),
+        color = container,
+        shadowElevation = if (isLive) Elevation.cardSelected else Elevation.card,
+        tonalElevation = if (isLive) Elevation.cardSelected else Elevation.card,
     ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-            verticalAlignment = Alignment.CenterVertically,
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(Spacing.lg),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(Spacing.xs, Alignment.CenterVertically),
         ) {
-            when {
-                isPending -> CircularProgressIndicator(
-                    modifier = Modifier.size(Spacing.xl),
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                when {
+                    isPending -> CircularProgressIndicator(
+                        modifier = Modifier.size(Spacing.xl),
+                        color = content,
+                    )
+                    isOnline -> Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = content)
+                    else -> Icon(Icons.Filled.PowerSettingsNew, contentDescription = null, tint = content)
+                }
+                Text(
+                    text = stringResource(
+                        when {
+                            isPending -> R.string.availability_switch_pending
+                            isOnline -> R.string.availability_switch_online
+                            else -> R.string.availability_switch_offline
+                        },
+                    ),
+                    style = MaterialTheme.typography.headlineSmall,
                     color = content,
                 )
-                isOnline -> Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = content)
-                else -> Icon(Icons.Filled.PowerSettingsNew, contentDescription = null, tint = content)
+                if (isLive) {
+                    PulsingLiveDot(color = content)
+                }
             }
-            Text(
-                text = stringResource(
-                    when {
-                        isPending -> R.string.availability_switch_pending
-                        isOnline -> R.string.availability_switch_online
-                        else -> R.string.availability_switch_offline
-                    },
-                ),
-                style = MaterialTheme.typography.headlineSmall,
-                color = content,
-            )
-        }
 
-        if (isOnline && !isPending && onlineSince != null) {
-            ElapsedSince(isoInstant = onlineSince, color = content)
-        }
+            if (isOnline && !isPending && onlineSince != null) {
+                ElapsedSince(isoInstant = onlineSince, color = content)
+            }
 
-        // Says what the tap DOES, not what the state IS. A driver who has just
-        // installed the app looks at a coloured card reading "غير متاح" and
-        // has no way to know the card itself is the switch.
-        if (!isPending) {
-            Text(
-                text = stringResource(
-                    if (isOnline) R.string.availability_switch_hint_online
-                    else R.string.availability_switch_hint_offline,
-                ),
-                style = MaterialTheme.typography.bodySmall,
-                color = content.copy(alpha = HINT_ALPHA),
-            )
+            // Says what the tap DOES, not what the state IS. A driver who has just
+            // installed the app looks at a coloured card reading "غير متاح" and
+            // has no way to know the card itself is the switch.
+            if (!isPending) {
+                Text(
+                    text = stringResource(
+                        if (isOnline) R.string.availability_switch_hint_online
+                        else R.string.availability_switch_hint_offline,
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = content.copy(alpha = HINT_ALPHA),
+                )
+            }
         }
     }
 }
+
+/**
+ * A soft breathing dot, alpha only — never a `tween` on the switch's own
+ * colour or size, which stays [Motion]-spring-driven and user-caused. This
+ * is the one ambient loop [Motion]'s own doc carves out for `tween`, and it
+ * reuses [Motion.shimmerCycleMs] rather than inventing a second magic
+ * duration for the same "something is alive" cadence the skeleton already
+ * uses.
+ */
+@Composable
+private fun PulsingLiveDot(color: Color, modifier: Modifier = Modifier) {
+    val transition = rememberInfiniteTransition(label = "availability_switch_pulse")
+    val alpha by transition.animateFloat(
+        initialValue = PULSE_MIN_ALPHA,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = Motion.shimmerCycleMs, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "availability_switch_pulse_alpha",
+    )
+    Box(
+        modifier = modifier
+            .size(ControlSize.statusDot)
+            .clip(CircleShape)
+            .background(color.copy(alpha = alpha)),
+    )
+}
+
+private const val PULSE_MIN_ALPHA = 0.35f
 
 /** Quiet enough to sit under the state without competing with it. */
 private const val HINT_ALPHA = 0.75f
@@ -380,47 +476,98 @@ private fun ElapsedSince(isoInstant: String, color: Color) {
     )
 }
 
+/**
+ * 🔴 `Locale.US` is not decorative here. `"%02d".format(...)` with no locale
+ * argument formats against `Locale.getDefault()`, and on an Arabic device
+ * that renders Eastern Arabic-Indic digits (٢٣:٤٠:٤٤) for a plain `%d` —
+ * exactly the bug this fixes, and exactly the reasoning [TripMoneyFormat]
+ * already documents for money. This is the one other place in this module
+ * that formats a bare number, so it gets the same pin.
+ */
 private fun formatElapsed(duration: Duration): String {
     val totalSeconds = duration.seconds.coerceAtLeast(0)
     val hours = totalSeconds / 3600
     val minutes = (totalSeconds % 3600) / 60
     val seconds = totalSeconds % 60
-    return "%02d:%02d:%02d".format(hours, minutes, seconds)
+    return "%02d:%02d:%02d".format(Locale.US, hours, minutes, seconds)
 }
 
 /**
- * Why no orders (decision 47) — shown whenever a [AvailabilityContextDto] has
- * been supplied. Every linked branch is named, exactly as the contract
- * intends: "I registered in Riyadh and see nothing" is usually the driver
- * standing in the wrong city or a branch that closed early, and this card is
- * the honest answer instead of a blank list.
+ * Which art carries each [NoOrdersReason] — a light, honest mapping, not a
+ * bespoke drawing per reason: [DriverArt.RoadAhead] for every "you're fine,
+ * just wait / move / connect" case, [DriverArt.Storefront] for the two
+ * reasons that are actually about a restaurant (no link yet, or everyone's
+ * shut), and [DriverArt.QuietBell] for the one reason that means offers are
+ * deliberately paused rather than simply absent.
+ */
+private fun NoOrdersReason.emptyStateArt(): DriverArt = when (this) {
+    NoOrdersReason.NoActiveLink, NoOrdersReason.AllBranchesClosed -> DriverArt.Storefront
+    NoOrdersReason.HasActiveTrip -> DriverArt.QuietBell
+    else -> DriverArt.RoadAhead
+}
+
+/** A short heading over the existing, already-localised [NoOrdersReason.messageResource] body. */
+private fun NoOrdersReason.emptyStateTitleResource(): Int = when (this) {
+    NoOrdersReason.NoActiveLink, NoOrdersReason.AllBranchesClosed -> R.string.availability_empty_title_no_branches
+    NoOrdersReason.HasActiveTrip -> R.string.availability_empty_title_paused
+    else -> R.string.availability_empty_title_waiting
+}
+
+/**
+ * Why no orders (decision 47). This is what fills the lower half of the
+ * screen for a waiting driver — most of a shift — with a designed state
+ * (picture, short heading, the honest reason) instead of a flat grey box
+ * floating above empty space that used to read as a failure to load.
  */
 @Composable
-private fun NoOrdersReasonCard(context: AvailabilityContextDto) {
-    val reason = context.noOrdersReason()
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(Radius.card))
-            .padding(Spacing.md),
-        verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+private fun NoOrdersReasonCard(reason: NoOrdersReason) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(Radius.card),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shadowElevation = Elevation.card,
+        tonalElevation = Elevation.card,
     ) {
-        if (reason != null) {
-            Text(
-                text = stringResource(reason.messageResource()),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+        DriverEmptyState(
+            art = reason.emptyStateArt(),
+            title = stringResource(reason.emptyStateTitleResource()),
+            body = stringResource(reason.messageResource()),
+        )
+    }
+}
 
-        if (context.branches.isNotEmpty()) {
+/**
+ * Every linked branch, named, exactly as the contract intends: "I registered
+ * in Riyadh and see nothing" is usually the driver standing in the wrong
+ * city or a branch that closed early, and this card is the honest answer
+ * instead of a blank list.
+ */
+@Composable
+private fun BranchesCard(branches: List<ContextBranchDto>) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(Radius.card),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shadowElevation = Elevation.card,
+        tonalElevation = Elevation.card,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(Spacing.md),
+            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+        ) {
             Text(
                 text = stringResource(R.string.availability_branches_heading),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            context.branches.forEach { branch -> BranchRow(branch) }
+            branches.forEachIndexed { index, branch ->
+                BranchRow(branch)
+                if (index != branches.lastIndex) {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                }
+            }
         }
     }
 }
@@ -428,25 +575,50 @@ private fun NoOrdersReasonCard(context: AvailabilityContextDto) {
 @Composable
 private fun BranchRow(branch: ContextBranchDto) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = TouchTarget.compact),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        // No `weight`+truncate: the branch name is never cut off, it is what
+        // pushes the row taller instead (CLAUDE.md's rule on names/addresses).
         Text(
             text = branch.name,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .weight(1f)
+                .padding(end = Spacing.sm),
+        )
+        BranchStatusPill(open = branch.isOpen)
+    }
+}
+
+/** A proper status pill — a coloured dot plus a coloured label — not bare coloured text floating in a row. */
+@Composable
+private fun BranchStatusPill(open: Boolean) {
+    val container = if (open) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer
+    val content = if (open) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer
+
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(Radius.pill))
+            .background(container)
+            .padding(horizontal = Spacing.sm, vertical = Spacing.xxs),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.xxs),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(ControlSize.statusDot)
+                .clip(CircleShape)
+                .background(content),
         )
         Text(
-            text = stringResource(
-                if (branch.isOpen) R.string.availability_branch_open else R.string.availability_branch_closed,
-            ),
+            text = stringResource(if (open) R.string.availability_branch_open else R.string.availability_branch_closed),
             style = MaterialTheme.typography.labelMedium,
-            color = if (branch.isOpen) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.error
-            },
+            color = content,
         )
     }
 }

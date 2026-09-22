@@ -1,7 +1,9 @@
 package app.qrmenu.driver.account
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.res.Configuration
+import android.net.Uri
 import android.provider.Settings
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.spring
@@ -31,23 +33,31 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Battery3Bar
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Storefront
+import androidx.compose.material.icons.filled.SupportAgent
 import androidx.compose.material.icons.filled.Translate
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -58,6 +68,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import android.app.Activity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -83,6 +94,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.qrmenu.driver.datastore.UiScale
 import app.qrmenu.driver.designsystem.theme.ControlSize
 import app.qrmenu.driver.designsystem.theme.DriverTheme
+import app.qrmenu.driver.designsystem.theme.Elevation
 import app.qrmenu.driver.designsystem.theme.Motion
 import app.qrmenu.driver.designsystem.theme.Radius
 import app.qrmenu.driver.designsystem.theme.Spacing
@@ -99,6 +111,7 @@ import app.qrmenu.driver.ui.components.DriverRowDivider
 import app.qrmenu.driver.ui.components.DriverScreenScaffold
 import app.qrmenu.driver.ui.components.DriverSection
 import app.qrmenu.driver.ui.components.DriverSettingRow
+import app.qrmenu.driver.ui.error.localized
 import app.qrmenu.driver.ui.text.ltr
 
 /**
@@ -112,11 +125,45 @@ fun AccountRoute(
     onSignedOut: () -> Unit,
     /** Routes to the invite-code screen; that screen belongs to another module. */
     onEnterInviteCode: () -> Unit,
+    /**
+     * 🔴 Not wired at this route's current call site (`SignedInScreen`'s
+     * `AccountRoute(...)` passes neither) — the other three tabs all get a
+     * bell, this one doesn't, and a driver who has learned "the bell lives in
+     * the top corner" finds it missing on the one tab out of four where they
+     * expect it least. The scaffold call below is ready for both the moment
+     * `:app` passes them; until then this screen renders no bell, same as
+     * today.
+     */
+    unreadNotifications: Int = 0,
+    onOpenNotifications: (() -> Unit)? = null,
+    /**
+     * The build's own version name/code (e.g. "1.4.2" / 10402), for the quiet
+     * footer row at the bottom of the screen. `:feature:account` has no
+     * `BuildConfig` of its own with the app's version in it — only `:app`
+     * does — so this is handed in rather than read locally. `null` renders no
+     * footer at all.
+     */
+    appVersionName: String? = null,
+    appVersionCode: Int? = null,
+    /**
+     * The platform's published legal/support links (from `PlatformBrandingStore`,
+     * cached from `GET driver/branding`). Handed in rather than read here for
+     * the same reason [appVersionName] is: `:feature:account` must not gain a
+     * `:core:datastore`-store-specific read of its own, so `:app` is the only
+     * place that knows where [app.qrmenu.driver.datastore.PlatformBranding]
+     * lives. `null`/blank renders no row for that link.
+     */
+    privacyUrl: String? = null,
+    termsUrl: String? = null,
+    helpUrl: String? = null,
+    supportWhatsApp: String? = null,
+    supportEmail: String? = null,
     viewModel: AccountViewModel = hiltViewModel(),
 ) {
     val me by viewModel.me.collectAsStateWithLifecycle()
     val language by viewModel.language.collectAsStateWithLifecycle()
     val uiScale by viewModel.uiScale.collectAsStateWithLifecycle()
+    val deletionRequest by viewModel.deletionRequest.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
 
@@ -124,6 +171,18 @@ fun AccountRoute(
         me = me,
         language = language,
         uiScale = uiScale,
+        unreadNotifications = unreadNotifications,
+        onOpenNotifications = onOpenNotifications,
+        appVersionName = appVersionName,
+        appVersionCode = appVersionCode,
+        privacyUrl = privacyUrl,
+        termsUrl = termsUrl,
+        helpUrl = helpUrl,
+        supportWhatsApp = supportWhatsApp,
+        supportEmail = supportEmail,
+        deletionRequest = deletionRequest,
+        onRequestAccountDeletion = viewModel::requestAccountDeletion,
+        onDismissDeletionError = viewModel::dismissDeletionError,
         onRefresh = viewModel::refresh,
         onSelectLanguage = { code ->
             viewModel.selectLanguage(code)
@@ -163,11 +222,28 @@ internal fun AccountScreen(
     onSelectUiScale: (UiScale) -> Unit,
     onSignOut: () -> Unit,
     onEnterInviteCode: () -> Unit,
+    unreadNotifications: Int = 0,
+    onOpenNotifications: (() -> Unit)? = null,
+    appVersionName: String? = null,
+    appVersionCode: Int? = null,
+    privacyUrl: String? = null,
+    termsUrl: String? = null,
+    helpUrl: String? = null,
+    supportWhatsApp: String? = null,
+    supportEmail: String? = null,
+    deletionRequest: DeletionRequestUiState = DeletionRequestUiState(isLoading = false),
+    onRequestAccountDeletion: (String?) -> Unit = {},
+    onDismissDeletionError: () -> Unit = {},
 ) {
     var showLanguageSheet by remember { mutableStateOf(false) }
     var showSignOutConfirm by remember { mutableStateOf(false) }
+    var showDeleteAccountConfirm by remember { mutableStateOf(false) }
 
-    DriverScreenScaffold(title = stringResource(R.string.account_title)) {
+    DriverScreenScaffold(
+        title = stringResource(R.string.account_title),
+        unreadNotifications = unreadNotifications,
+        onOpenNotifications = onOpenNotifications,
+    ) {
         val driver = me.driver
 
         when {
@@ -203,8 +279,14 @@ internal fun AccountScreen(
                     )
                 }
 
+                // A single, untitled row — same rhythm as the battery/sign-out
+                // section below it. The row's own label already says
+                // "Language"; a section heading repeating that word above it
+                // was the section-heading inconsistency this screen used to
+                // have (a one-row section titled with the row's own label,
+                // next to multi-row sections that earn a title).
                 item {
-                    DriverSection(title = stringResource(R.string.account_language_row_label)) {
+                    DriverSection {
                         DriverSettingRow(
                             icon = Icons.Filled.Translate,
                             label = stringResource(R.string.account_language_row_label),
@@ -222,6 +304,11 @@ internal fun AccountScreen(
                     )
                 }
 
+                // Battery and sign-out are the two loose device-local rows
+                // this screen has, with no shared theme beyond "single tap,
+                // no sub-content" — grouped into one untitled section, same
+                // shape as the language row above, instead of each getting
+                // its own card with its own gap.
                 item {
                     val context = LocalContext.current
                     DriverSection {
@@ -236,11 +323,7 @@ internal fun AccountScreen(
                             },
                             trailing = { ChevronRight() },
                         )
-                    }
-                }
-
-                item {
-                    DriverSection {
+                        DriverRowDivider()
                         DriverSettingRow(
                             icon = Icons.AutoMirrored.Filled.Logout,
                             label = stringResource(R.string.account_sign_out),
@@ -249,6 +332,25 @@ internal fun AccountScreen(
                         )
                     }
                 }
+
+                item {
+                    LegalSupportSection(
+                        privacyUrl = privacyUrl,
+                        termsUrl = termsUrl,
+                        helpUrl = helpUrl,
+                        supportWhatsApp = supportWhatsApp,
+                        supportEmail = supportEmail,
+                    )
+                }
+
+                item {
+                    DeleteAccountSection(
+                        deletionRequest = deletionRequest,
+                        onClick = { showDeleteAccountConfirm = true },
+                    )
+                }
+
+                item { AppVersionFooter(versionName = appVersionName, versionCode = appVersionCode) }
 
                 item { Spacer(Modifier.height(Spacing.lg)) }
             }
@@ -275,15 +377,42 @@ internal fun AccountScreen(
             onDismiss = { showSignOutConfirm = false },
         )
     }
+
+    // The dialog closes itself the moment a request successfully lands —
+    // staying open on top of a row that has already flipped to "pending
+    // review" would ask the driver to confirm a second time for nothing.
+    LaunchedEffect(deletionRequest.request, deletionRequest.isSubmitting) {
+        if (showDeleteAccountConfirm && deletionRequest.request != null && !deletionRequest.isSubmitting) {
+            showDeleteAccountConfirm = false
+        }
+    }
+
+    if (showDeleteAccountConfirm) {
+        DeleteAccountConfirmDialog(
+            isSubmitting = deletionRequest.isSubmitting,
+            error = deletionRequest.error,
+            onConfirm = { reason -> onRequestAccountDeletion(reason) },
+            onDismiss = {
+                showDeleteAccountConfirm = false
+                onDismissDeletionError()
+            },
+        )
+    }
 }
 
 // region Identity
 
 @Composable
 private fun IdentityCard(driver: DriverDto) {
+    // The one card on this screen the driver's own identity lives in — it
+    // gets the same lift an order card gets ([Elevation.card]), not the flat
+    // hairline-only fill every row below it uses. That's what makes it read
+    // as the top of the screen rather than as the first row in a long list.
     Surface(
         shape = RoundedCornerShape(Radius.card),
         color = MaterialTheme.colorScheme.surface,
+        shadowElevation = Elevation.card,
+        tonalElevation = Elevation.card,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Row(
@@ -629,6 +758,17 @@ private fun uiScaleLabel(scale: UiScale): String = when (scale) {
  * driver sees the effect before committing, and the real screens below the
  * tab bar pick it up the moment they next compose against the persisted
  * value.
+ *
+ * 🔴 Known defect fixed here: this used to render with no caption at all — a
+ * card that says "فرع العليا / الأجرة 25 SAR" with nothing marking it as
+ * fake reads as a live order a driver cannot open. The badge in the top
+ * corner is the fix: it sits ON the card, in the driver's eye path before
+ * the branch name, in a colour that never appears on a real order card.
+ *
+ * The empty circle was the other half of the same problem — a blank tinted
+ * disc where an avatar failed to load. It now carries the sample branch
+ * name's own initial, the same mark [IdentityCard] and a real order card
+ * both use, so at a glance it reads as "a card" rather than "a broken one".
  */
 @Composable
 private fun UiScalePreview(scale: UiScale) {
@@ -636,35 +776,77 @@ private fun UiScalePreview(scale: UiScale) {
         Surface(
             shape = RoundedCornerShape(Radius.card),
             color = MaterialTheme.colorScheme.surfaceVariant,
+            shadowElevation = Elevation.card,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(Spacing.sm),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
-            ) {
-                Box(
+            Box {
+                Row(
                     modifier = Modifier
-                        .size(ControlSize.orderAvatar)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primaryContainer),
-                )
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = stringResource(R.string.account_ui_scale_preview_branch),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    Text(
-                        text = stringResource(R.string.account_ui_scale_preview_fee, "25 SAR".ltr()),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                        .fillMaxWidth()
+                        .padding(Spacing.sm)
+                        .padding(top = Spacing.lg),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                ) {
+                    val sampleBranchName = stringResource(R.string.account_ui_scale_preview_branch)
+
+                    Box(
+                        modifier = Modifier
+                            .size(ControlSize.orderAvatar)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primaryContainer),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = sampleBranchName.trim().firstOrNull()?.uppercase() ?: "?",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        )
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = sampleBranchName,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Text(
+                            text = stringResource(R.string.account_ui_scale_preview_fee, "25 SAR".ltr()),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
+
+                PreviewBadge(modifier = Modifier.align(Alignment.TopStart).padding(Spacing.xs))
             }
         }
+    }
+}
+
+/** The "this is a sample, not a real order" label pinned to [UiScalePreview]'s corner. */
+@Composable
+private fun PreviewBadge(modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(Radius.pill))
+            .background(MaterialTheme.colorScheme.tertiaryContainer)
+            .padding(horizontal = Spacing.xs, vertical = Spacing.xxs),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.xxs),
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Visibility,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onTertiaryContainer,
+            modifier = Modifier.size(ControlSize.inlineIcon),
+        )
+        Text(
+            text = stringResource(R.string.account_ui_scale_preview_badge),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onTertiaryContainer,
+        )
     }
 }
 
@@ -691,6 +873,234 @@ private fun SignOutConfirmDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
                 Text(stringResource(R.string.account_sign_out_confirm_cancel))
             }
         },
+    )
+}
+
+// endregion
+
+// region Legal & support
+
+/**
+ * The Google-Play-required links: privacy policy, terms, help, and a way to
+ * reach support — each served by the admin panel via `GET driver/branding`
+ * (see [AccountRoute]'s doc on why they arrive as parameters). Every row is
+ * independently optional; a deployment that has configured none of them
+ * renders nothing here at all, not an empty framed section.
+ */
+@Composable
+private fun LegalSupportSection(
+    privacyUrl: String?,
+    termsUrl: String?,
+    helpUrl: String?,
+    supportWhatsApp: String?,
+    supportEmail: String?,
+) {
+    val context = LocalContext.current
+
+    data class LegalRow(val icon: ImageVector, val label: String, val onClick: () -> Unit)
+
+    val contactUrl = when {
+        !supportWhatsApp.isNullOrBlank() -> "https://wa.me/$supportWhatsApp"
+        !supportEmail.isNullOrBlank() -> "mailto:$supportEmail"
+        else -> null
+    }
+
+    val rows = buildList {
+        if (!privacyUrl.isNullOrBlank()) {
+            add(
+                LegalRow(
+                    icon = Icons.Filled.PrivacyTip,
+                    label = stringResource(R.string.account_privacy_policy),
+                    onClick = { openUrl(context, privacyUrl) },
+                ),
+            )
+        }
+        if (!termsUrl.isNullOrBlank()) {
+            add(
+                LegalRow(
+                    icon = Icons.Filled.Gavel,
+                    label = stringResource(R.string.account_terms_of_service),
+                    onClick = { openUrl(context, termsUrl) },
+                ),
+            )
+        }
+        if (!helpUrl.isNullOrBlank()) {
+            add(
+                LegalRow(
+                    icon = Icons.AutoMirrored.Filled.HelpOutline,
+                    label = stringResource(R.string.account_help),
+                    onClick = { openUrl(context, helpUrl) },
+                ),
+            )
+        }
+        if (contactUrl != null) {
+            add(
+                LegalRow(
+                    icon = Icons.Filled.SupportAgent,
+                    label = stringResource(R.string.account_contact_support),
+                    onClick = { openUrl(context, contactUrl) },
+                ),
+            )
+        }
+    }
+
+    if (rows.isEmpty()) return
+
+    DriverSection(title = stringResource(R.string.account_legal_section_title)) {
+        rows.forEachIndexed { index, row ->
+            DriverSettingRow(
+                icon = row.icon,
+                label = row.label,
+                onClick = row.onClick,
+                trailing = { ChevronRight() },
+            )
+            if (index != rows.lastIndex) {
+                DriverRowDivider()
+            }
+        }
+    }
+}
+
+/**
+ * Opens a URL (http(s)/`wa.me`/`mailto:`) in whatever app handles it.
+ *
+ * A phone with no browser installed, or no WhatsApp, throws
+ * [ActivityNotFoundException] — caught here rather than left to crash the
+ * screen a driver is working from over a broken link.
+ */
+private fun openUrl(context: android.content.Context, url: String) {
+    try {
+        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    } catch (_: ActivityNotFoundException) {
+        // Nothing else to do — there is no in-app fallback for "no app can
+        // open this link", and a toast here would be one more translated
+        // string for a case the row's own icon already made optional.
+    }
+}
+
+// endregion
+
+// region Delete account
+
+/**
+ * The final, visually subordinate row for the Play-Store-required
+ * account-deletion request — quiet like [AppVersionFooter] below it, not
+ * alarmed like [SignOutConfirmDialog]'s confirm button, even though it is
+ * destructive: this is a REQUEST an admin reviews, not an instant action.
+ */
+@Composable
+private fun DeleteAccountSection(deletionRequest: DeletionRequestUiState, onClick: () -> Unit) {
+    DriverSection {
+        if (deletionRequest.isPending) {
+            DriverSettingRow(
+                icon = Icons.Filled.DeleteForever,
+                label = stringResource(R.string.account_delete_pending_label),
+                supporting = stringResource(R.string.account_delete_pending_supporting),
+            )
+        } else {
+            DriverSettingRow(
+                icon = Icons.Filled.DeleteForever,
+                label = stringResource(R.string.account_delete_row_label),
+                tint = MaterialTheme.colorScheme.error,
+                onClick = onClick,
+            )
+        }
+    }
+}
+
+@Composable
+private fun DeleteAccountConfirmDialog(
+    isSubmitting: Boolean,
+    error: DriverApiError?,
+    onConfirm: (String?) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var reason by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = { if (!isSubmitting) onDismiss() },
+        title = { Text(stringResource(R.string.account_delete_confirm_title)) },
+        text = {
+            Column {
+                Text(
+                    text = stringResource(R.string.account_delete_confirm_body),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(Modifier.height(Spacing.sm))
+                OutlinedTextField(
+                    value = reason,
+                    onValueChange = { reason = it },
+                    enabled = !isSubmitting,
+                    label = { Text(stringResource(R.string.account_delete_confirm_reason_label)) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                if (error != null) {
+                    Spacer(Modifier.height(Spacing.sm))
+                    Text(
+                        text = error.localized(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(reason) },
+                enabled = !isSubmitting,
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+            ) {
+                if (isSubmitting) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(ControlSize.inlineIcon),
+                        strokeWidth = Stroke.hairline,
+                        color = MaterialTheme.colorScheme.onError,
+                    )
+                } else {
+                    Text(stringResource(R.string.account_delete_confirm_confirm))
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, enabled = !isSubmitting) {
+                Text(stringResource(R.string.account_delete_confirm_cancel))
+            }
+        },
+    )
+}
+
+// endregion
+
+// region App version
+
+/**
+ * A quiet footer, not a setting: the build's version name and code, for
+ * Play Store support requests ("what version are you on?"). Centred,
+ * `bodySmall`, muted — nothing here invites a tap.
+ *
+ * `:feature:account` has no `BuildConfig` of its own carrying the app's
+ * version, so both values are handed in from `:app` (see [AccountRoute]).
+ * Renders nothing at all when either is missing, rather than a placeholder
+ * — an unwired footer should be invisible, not wrong.
+ */
+@Composable
+private fun AppVersionFooter(versionName: String?, versionCode: Int?) {
+    if (versionName == null || versionCode == null) return
+
+    // Plain string interpolation, not resource `%d` formatting — Kotlin's
+    // `Int.toString()` never locale-converts digits, but the digits still
+    // sit inside an Arabic/Urdu sentence, so the whole value is isolated
+    // LTR the same way a phone number or a fee is (see `BidiText`).
+    val versionLabel = "$versionName ($versionCode)".ltr()
+
+    Text(
+        text = stringResource(R.string.account_app_version, versionLabel),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = Spacing.md),
     )
 }
 

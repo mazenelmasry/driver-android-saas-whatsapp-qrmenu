@@ -29,6 +29,7 @@
     <string name="account_ui_scale_largest">सबसे बड़ा</string>
     <string name="account_ui_scale_preview_branch">अल ओलाया शाखा</string>
     <string name="account_ui_scale_preview_fee">शुल्क %1$s</string>
+    <string name="account_ui_scale_preview_badge">पूर्वावलोकन — यह असली ऑर्डर नहीं है</string>
 
     <string name="account_battery_row_label">बैटरी</string>
     <string name="account_battery_supporting">सो रहा फ़ोन ऑर्डर प्राप्त करना बंद कर देता है</string>
@@ -37,6 +38,23 @@
     <string name="account_sign_out_confirm_body">दोबारा साइन इन करने के लिए आपको अपने फ़ोन नंबर की आवश्यकता होगी।</string>
     <string name="account_sign_out_confirm_confirm">साइन आउट</string>
     <string name="account_sign_out_confirm_cancel">रद्द करें</string>
+
+    <string name="account_app_version">संस्करण %1$s</string>
+
+    <string name="account_legal_section_title">कानूनी और सहायता</string>
+    <string name="account_privacy_policy">गोपनीयता नीति</string>
+    <string name="account_terms_of_service">सेवा की शर्तें</string>
+    <string name="account_help">सहायता और मार्गदर्शन</string>
+    <string name="account_contact_support">सहायता से संपर्क करें</string>
+
+    <string name="account_delete_row_label">मेरा खाता हटाएं</string>
+    <string name="account_delete_pending_label">खाता हटाने का अनुरोध समीक्षाधीन है</string>
+    <string name="account_delete_pending_supporting">हम आपके अनुरोध की समीक्षा कर रहे हैं। निर्णय होते ही आपको सूचित किया जाएगा।</string>
+    <string name="account_delete_confirm_title">अपना खाता हटाएं?</string>
+    <string name="account_delete_confirm_body">यह प्लेटफ़ॉर्म को एक अनुरोध भेजता है, तुरंत हटाना नहीं — हो सकता है आप अभी भी किसी रेस्तरां का एकत्रित नकद अपने पास रखे हों, और आपकी ट्रिप हिस्ट्री भी उसी रेस्तरां की है। एक एडमिन आपके अनुरोध की समीक्षा करके यह स्पष्ट होने के बाद आपका खाता हटाएगा।</string>
+    <string name="account_delete_confirm_reason_label">कारण (वैकल्पिक)</string>
+    <string name="account_delete_confirm_confirm">अनुरोध भेजें</string>
+    <string name="account_delete_confirm_cancel">रद्द करें</string>
 
     <string name="a11y_account_identity">आपका खाता</string>
 </resources>

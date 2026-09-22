@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.net.Uri
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -76,8 +77,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.qrmenu.driver.designsystem.theme.ControlSize
 import app.qrmenu.driver.designsystem.theme.DriverTheme
+import app.qrmenu.driver.designsystem.theme.Elevation
 import app.qrmenu.driver.designsystem.theme.Radius
 import app.qrmenu.driver.designsystem.theme.Spacing
+import app.qrmenu.driver.designsystem.theme.Stroke
 import app.qrmenu.driver.designsystem.theme.TouchTarget
 import app.qrmenu.driver.network.dto.BranchDto
 import app.qrmenu.driver.network.dto.DeliveredResponse
@@ -92,6 +95,8 @@ import app.qrmenu.driver.network.dto.OrderZoneDto
 import app.qrmenu.driver.network.errors.DriverApiError
 import app.qrmenu.driver.network.errors.DriverErrorCode
 import app.qrmenu.driver.ui.components.DigitCellsField
+import app.qrmenu.driver.ui.components.DriverArt
+import app.qrmenu.driver.ui.components.DriverArtwork
 import app.qrmenu.driver.ui.components.DriverErrorBanner
 import app.qrmenu.driver.ui.components.DriverScreenScaffold
 import app.qrmenu.driver.ui.orders.messageResource
@@ -301,6 +306,13 @@ private fun TripTopFacts(order: DriverOrderDto) {
     Surface(
         shape = RoundedCornerShape(Radius.card),
         color = MaterialTheme.colorScheme.surface,
+        // 🔴 The one card that must never read as equal weight to the ones
+        // below it: it carries the three facts CLAUDE.md forbids hiding
+        // behind a scroll. Real elevation, not just a hairline, is what makes
+        // "look here first" legible at a glance rather than something a
+        // driver has to read to discover.
+        shadowElevation = Elevation.cardSelected,
+        border = BorderStroke(Stroke.hairline, MaterialTheme.colorScheme.outlineVariant),
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = Spacing.lg, vertical = Spacing.xs),
@@ -471,7 +483,7 @@ private fun QuickActionButton(
  */
 @Composable
 private fun TripRecipientCard(name: String) {
-    Surface(shape = RoundedCornerShape(Radius.card), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+    Surface(shape = RoundedCornerShape(Radius.card), color = MaterialTheme.colorScheme.surface, border = BorderStroke(Stroke.hairline, MaterialTheme.colorScheme.outlineVariant), modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.padding(Spacing.md),
             horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
@@ -523,7 +535,7 @@ private fun TripAddressCard(
 ) {
     val context = LocalContext.current
     val a11yOpenCustomerLocation = stringResource(R.string.a11y_open_customer_location)
-    Surface(shape = RoundedCornerShape(Radius.card), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+    Surface(shape = RoundedCornerShape(Radius.card), color = MaterialTheme.colorScheme.surface, border = BorderStroke(Stroke.hairline, MaterialTheme.colorScheme.outlineVariant), modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(Spacing.md), verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
             Text(
                 text = stringResource(R.string.trip_address_label),
@@ -594,7 +606,7 @@ private fun TripAddressCard(
 
 @Composable
 private fun TripItemsCard(order: DriverOrderDto) {
-    Surface(shape = RoundedCornerShape(Radius.card), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+    Surface(shape = RoundedCornerShape(Radius.card), color = MaterialTheme.colorScheme.surface, border = BorderStroke(Stroke.hairline, MaterialTheme.colorScheme.outlineVariant), modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(Spacing.md), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             Text(
                 text = stringResource(R.string.trip_section_items_title),
@@ -1077,6 +1089,12 @@ private fun TripDeliveredOverlay(result: DeliveredResponse, onDone: () -> Unit) 
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
+            // 🔴 The payoff for the whole trip used to be plain text — the
+            // one moment on this screen that should feel like something
+            // happened now has a picture, matching the quality bar every
+            // empty state on this app already meets.
+            DriverArtwork(art = DriverArt.Wallet)
+
             Text(
                 text = stringResource(R.string.trip_delivered_title),
                 style = MaterialTheme.typography.headlineMedium,
@@ -1084,7 +1102,13 @@ private fun TripDeliveredOverlay(result: DeliveredResponse, onDone: () -> Unit) 
                 color = MaterialTheme.colorScheme.onBackground,
             )
 
-            Surface(shape = RoundedCornerShape(Radius.card), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+            Surface(
+                shape = RoundedCornerShape(Radius.card),
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = Elevation.cardSelected,
+                border = BorderStroke(Stroke.hairline, MaterialTheme.colorScheme.outlineVariant),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
                 Column(modifier = Modifier.padding(Spacing.md), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                     LedgerRow(label = stringResource(R.string.trip_delivered_fee_label), amount = ledger.earnedToday, currency = ledger.currency, emphasized = true)
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)

@@ -4,36 +4,27 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import app.qrmenu.driver.designsystem.theme.ControlSize
@@ -41,16 +32,21 @@ import app.qrmenu.driver.designsystem.theme.Radius
 import app.qrmenu.driver.designsystem.theme.Spacing
 import app.qrmenu.driver.designsystem.theme.Stroke
 import app.qrmenu.driver.designsystem.theme.TouchTarget
-import app.qrmenu.driver.ui.R
 
 /**
  * The frame every main screen wears.
  *
  * It exists so the four destinations read as one app rather than four screens
- * written in four weeks: same title placement, same bell, same page padding,
- * same background. A screen that builds its own header drifts within a
- * release, and the drift is what makes an app look assembled rather than
- * designed.
+ * written in four weeks: same header, same bell, same page padding, same
+ * background. A screen that builds its own header drifts within a release,
+ * and the drift is what makes an app look assembled rather than designed.
+ *
+ * 🔴 The order here is the fix to a real complaint: TITLE first, then the
+ * app-level alert banners, then the content. The banners used to be drawn
+ * above every tab's scaffold — so the first thing a driver's eye met on
+ * opening any screen was a warning, and the name of the screen came second.
+ * They now arrive through [LocalAppBanners], which `SignedInScreen` fills and
+ * this reads, so the banners can stay app-wide without being app-TOP.
  */
 @Composable
 fun DriverScreenScaffold(
@@ -59,93 +55,46 @@ fun DriverScreenScaffold(
     subtitle: String? = null,
     unreadNotifications: Int = 0,
     onOpenNotifications: (() -> Unit)? = null,
+    /** Content placed INSIDE the coloured block, under the title — a tab row. */
+    belowTitle: (@Composable ColumnScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val banners = LocalAppBanners.current
+
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            // The app draws edge-to-edge, so the frame — not each screen —
-            // owes the status bar its space. Without this the title sits
-            // under the clock on the one screen that forgot to ask.
-            .windowInsetsPadding(WindowInsets.statusBars),
+            .background(MaterialTheme.colorScheme.background),
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = Spacing.md, vertical = Spacing.sm),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                subtitle?.let {
-                    Text(
-                        text = it,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-            }
+        // The header pays the status-bar inset itself — it draws behind the
+        // clock on purpose, so the gradient reaches the top of the glass.
+        DriverHeader(
+            title = title,
+            subtitle = subtitle,
+            unreadNotifications = unreadNotifications,
+            onOpenNotifications = onOpenNotifications,
+            belowTitle = belowTitle,
+        )
 
-            onOpenNotifications?.let { NotificationBell(unreadNotifications, it) }
-        }
+        banners()
 
         content()
     }
 }
 
 /**
- * The bell, with the count of what the driver has not seen.
+ * The app-level alert banners (notification health, unsent actions, "an
+ * update exists"), handed down from `SignedInScreen` to whichever scaffold is
+ * on screen.
  *
- * The badge is a COUNT, not a dot: "three things happened while you were
- * riding" and "one did" are different decisions about whether to stop and
- * look. Zero renders no badge at all rather than a "0".
+ * A composition local rather than a parameter on every route: these belong to
+ * the app, not to any one screen, and threading them through four route
+ * signatures would mean a fifth screen silently loses them the day it is
+ * added. The default renders nothing, which is what the auth and onboarding
+ * screens — outside the signed-in shell — should show.
  */
-@Composable
-private fun NotificationBell(unread: Int, onClick: () -> Unit) {
-    Box {
-        IconButton(
-            onClick = onClick,
-            modifier = Modifier.size(TouchTarget.compact),
-        ) {
-            Icon(
-                imageVector = Icons.Filled.NotificationsNone,
-                contentDescription = stringResource(R.string.a11y_open_notifications),
-                tint = MaterialTheme.colorScheme.onBackground,
-            )
-        }
+val LocalAppBanners = staticCompositionLocalOf<@Composable ColumnScope.() -> Unit> { {} }
 
-        if (unread > 0) {
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .offset(x = -Spacing.xxs, y = Spacing.xxs),
-            ) {
-                Text(
-                    text = if (unread > MAX_BADGE) "$MAX_BADGE+" else unread.toString(),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onError,
-                    modifier = Modifier.padding(horizontal = Spacing.xxs),
-                )
-            }
-        }
-    }
-}
-
-private const val MAX_BADGE = 9
 
 /**
  * A titled block of related rows — the unit every settings-like screen is

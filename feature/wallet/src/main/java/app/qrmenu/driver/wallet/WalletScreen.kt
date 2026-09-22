@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.SyncAlt
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -50,6 +51,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -74,6 +76,8 @@ import app.qrmenu.driver.designsystem.theme.TouchTarget
 import app.qrmenu.driver.network.dto.LedgerEntryDto
 import app.qrmenu.driver.network.dto.LedgerResponse
 import app.qrmenu.driver.network.errors.DriverApiError
+import app.qrmenu.driver.ui.components.DriverArt
+import app.qrmenu.driver.ui.components.DriverEmptyState
 import app.qrmenu.driver.ui.components.DriverErrorBanner
 import app.qrmenu.driver.ui.text.ltr
 
@@ -89,6 +93,11 @@ import app.qrmenu.driver.ui.text.ltr
 fun WalletRoute(
     /** Opens the notification centre from this screen's bell. Null hides the bell. */
     onOpenNotifications: (() -> Unit)? = null,
+    /**
+     * How many notifications the driver has not opened yet — the number on
+     * the bell. Zero draws no badge at all, which is almost always.
+     */
+    unreadNotifications: Int = 0,
     viewModel: WalletViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -97,6 +106,7 @@ fun WalletRoute(
         WalletPane.Book -> WalletScreen(
             state = state,
             onOpenNotifications = onOpenNotifications,
+            unreadNotifications = unreadNotifications,
             onSelectRestaurant = viewModel::selectRestaurant,
             onRefreshBook = {
                 state.selectedCompanyId?.let { viewModel.loadBook(it, isRefresh = true) }
@@ -124,13 +134,39 @@ internal fun WalletScreen(
     onRetryRestaurants: () -> Unit,
     onOpenSettlements: () -> Unit,
     onOpenNotifications: (() -> Unit)? = null,
+    /**
+     * How many notifications the driver has not opened yet — the number on
+     * the bell. Zero draws no badge at all, which is almost always.
+     */
+    unreadNotifications: Int = 0,
 ) {
+    // Restaurant context is framed INSIDE the coloured header now, not as bare
+    // text floating above the figures (task brief's complaint #5): one
+    // restaurant becomes the header's subtitle, several become a switcher row
+    // living in `belowTitle` — never both, and neither renders until the
+    // restaurant list has actually loaded successfully.
+    val restaurantsReady = !state.restaurantsLoading && state.restaurantsError == null && state.restaurants.isNotEmpty()
+    val singleRestaurantName = state.restaurants.singleOrNull().takeIf { restaurantsReady }?.name
+
     Scaffold {
         // The shared frame — one title placement and one bell across all four
         // destinations, rather than each screen drawing its own header.
         DriverScreenScaffold(
             title = stringResource(R.string.wallet_title),
+            subtitle = singleRestaurantName,
             onOpenNotifications = onOpenNotifications,
+            unreadNotifications = unreadNotifications,
+            belowTitle = if (restaurantsReady && state.restaurants.size > 1) {
+                {
+                    RestaurantSwitcher(
+                        restaurants = state.restaurants,
+                        selectedCompanyId = state.selectedCompanyId,
+                        onSelect = onSelectRestaurant,
+                    )
+                }
+            } else {
+                null
+            },
         ) {
             when {
                 state.restaurantsLoading -> WalletLoadingSkeleton()
@@ -143,7 +179,6 @@ internal fun WalletScreen(
 
                 else -> BookPane(
                     state = state,
-                    onSelectRestaurant = onSelectRestaurant,
                     onRefreshBook = onRefreshBook,
                     onRetryBook = onRetryBook,
                     onOpenSettlements = onOpenSettlements,
@@ -157,37 +192,11 @@ internal fun WalletScreen(
 @Composable
 private fun BookPane(
     state: WalletUiState,
-    onSelectRestaurant: (Long) -> Unit,
     onRefreshBook: () -> Unit,
     onRetryBook: () -> Unit,
     onOpenSettlements: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        // The switcher itself is chrome a single-restaurant driver never
-        // needs to see — one restaurant renders its name plainly instead of
-        // a one-item row of tap targets.
-        if (state.restaurants.size > 1) {
-            RestaurantSwitcher(
-                restaurants = state.restaurants,
-                selectedCompanyId = state.selectedCompanyId,
-                onSelect = onSelectRestaurant,
-            )
-        } else {
-            state.restaurants.firstOrNull()?.let { only ->
-                Text(
-                    text = only.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = Spacing.lg, vertical = Spacing.xs),
-                )
-            }
-        }
-
         when {
             state.book.isLoading -> BookLoadingSkeleton()
 
@@ -201,7 +210,16 @@ private fun BookPane(
             else -> PullToRefreshBox(isRefreshing = state.book.isRefreshing, onRefresh = onRefreshBook) {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = Spacing.lg, vertical = Spacing.md),
+                    // 🔴 Bottom clearance beyond the ordinary rhythm on
+                    // purpose (Spacing.xxl, not Spacing.md): the last ledger
+                    // row must fully clear the tab bar rather than sit flush
+                    // against it or read as cut off (task brief's defect #1).
+                    contentPadding = PaddingValues(
+                        start = Spacing.lg,
+                        end = Spacing.lg,
+                        top = Spacing.md,
+                        bottom = Spacing.xxl,
+                    ),
                     verticalArrangement = Arrangement.spacedBy(Spacing.md),
                 ) {
                     state.book.summary?.let { summary ->
@@ -246,15 +264,27 @@ private fun BookPane(
     }
 }
 
-/** A row of the driver's linked restaurants — the ONLY control that changes which book is shown. */
+/**
+ * A row of the driver's linked restaurants — the ONLY control that changes
+ * which book is shown.
+ *
+ * Lives inside the header's coloured block now (via `belowTitle`), which
+ * is what gives it the framing the task brief asked for (complaint #5): it
+ * reads as "you are choosing whose book this is" rather than as a stray row
+ * of text sitting above the figures. Because it renders on the gradient, its
+ * colours come from [LocalContentColor] (the header's `onHeader` tone) rather
+ * than the page's own surface roles — a chip using `surfaceContainerHigh`
+ * here would be a flat grey patch on burnt orange.
+ */
 @Composable
 private fun RestaurantSwitcher(
     restaurants: List<RestaurantOption>,
     selectedCompanyId: Long?,
     onSelect: (Long) -> Unit,
 ) {
+    val onHeader = LocalContentColor.current
     LazyRow(
-        contentPadding = PaddingValues(horizontal = Spacing.lg, vertical = Spacing.xs),
+        contentPadding = PaddingValues(top = Spacing.xs),
         horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
     ) {
         items(restaurants, key = RestaurantOption::companyId) { restaurant ->
@@ -263,14 +293,14 @@ private fun RestaurantSwitcher(
             Surface(
                 shape = RoundedCornerShape(Radius.pill),
                 color = if (selected) {
-                    MaterialTheme.colorScheme.primary
+                    MaterialTheme.colorScheme.surface
                 } else {
-                    MaterialTheme.colorScheme.surfaceContainerHigh
+                    onHeader.copy(alpha = UNSELECTED_CHIP_ALPHA)
                 },
                 border = if (selected) {
-                    BorderStroke(Stroke.selected, MaterialTheme.colorScheme.primary)
+                    null
                 } else {
-                    BorderStroke(Stroke.hairline, MaterialTheme.colorScheme.outlineVariant)
+                    BorderStroke(Stroke.hairline, onHeader.copy(alpha = UNSELECTED_CHIP_BORDER_ALPHA))
                 },
                 modifier = Modifier
                     .heightIn(min = TouchTarget.compact)
@@ -283,9 +313,9 @@ private fun RestaurantSwitcher(
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,
                     color = if (selected) {
-                        MaterialTheme.colorScheme.onPrimary
+                        MaterialTheme.colorScheme.primary
                     } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
+                        onHeader
                     },
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -296,6 +326,9 @@ private fun RestaurantSwitcher(
     }
 }
 
+private const val UNSELECTED_CHIP_ALPHA = 0.16f
+private const val UNSELECTED_CHIP_BORDER_ALPHA = 0.4f
+
 /**
  * كسبتَ اليوم · بحوزتك نقداً · الصافى — the hero of the screen (CLAUDE.md's
  * exact three labels). "بحوزتك نقداً" gets the strongest treatment: it is the
@@ -303,39 +336,42 @@ private fun RestaurantSwitcher(
  */
 @Composable
 private fun TheThreeFigures(summary: LedgerResponse) {
+    // The two tiles stack instead of clipping when the type gets big.
+    //
+    // Two half-width tiles are right at the design's own size. At the 200%
+    // system font scale this app is required to support (CLAUDE.md — the POS
+    // pins the scale and that was judged wrong for an older driver), each one
+    // is barely wider than the word "SAR": the figure was first CLIPPED to
+    // "25.0", and once allowed to wrap it broke INSIDE the number —
+    // "25.0 / 0 / SAR" — which reads as two amounts. A taller screen is the
+    // least bad of the three. Nothing changes below the threshold.
+    val stacked = LocalDensity.current.fontScale >= STACK_FIGURES_ABOVE_FONT_SCALE
+
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        Row(
-            // 🔴 `IntrinsicSize.Min` makes both cards as tall as the taller
-            // one. Without it the card carrying a third line ("المطعم يدين
-            // لك") stands taller than its neighbour, and two figures that
-            // belong to the same glance stop looking like a pair.
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(IntrinsicSize.Min),
-            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-        ) {
-            FigureCard(
-                label = stringResource(R.string.wallet_earned_today_label),
-                value = formatMoney(summary.earnedToday, summary.currency),
+        if (stacked) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+            ) {
+                EarnedTodayFigure(summary, Modifier.fillMaxWidth())
+                NetFigure(summary, Modifier.fillMaxWidth())
+            }
+        } else {
+            Row(
+                // `IntrinsicSize.Min` makes both cards as tall as the taller
+                // one. Without it the card carrying a third line ("المطعم
+                // يدين لك") stands taller than its neighbour, and two figures
+                // that belong to the same glance stop looking like a pair.
+                // Meaningless once they are stacked, so it is asked for here
+                // only.
                 modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight(),
-            )
-            FigureCard(
-                label = stringResource(R.string.wallet_net_label),
-                value = formatSignedMoney(summary.net, summary.currency),
-                valueColor = if (summary.net >= 0) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.error
-                },
-                supporting = stringResource(
-                    if (summary.net >= 0) R.string.wallet_net_owed_to_you else R.string.wallet_net_you_owe,
-                ),
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight(),
-            )
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Min),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            ) {
+                EarnedTodayFigure(summary, Modifier.weight(1f).fillMaxHeight())
+                NetFigure(summary, Modifier.weight(1f).fillMaxHeight())
+            }
         }
 
         CashOnHandCard(
@@ -347,18 +383,95 @@ private fun TheThreeFigures(summary: LedgerResponse) {
 }
 
 @Composable
+private fun EarnedTodayFigure(summary: LedgerResponse, modifier: Modifier) {
+    FigureCard(
+        label = stringResource(R.string.wallet_earned_today_label),
+        value = formatMoney(summary.earnedToday, summary.currency),
+        icon = Icons.AutoMirrored.Filled.TrendingUp,
+        iconTint = MaterialTheme.colorScheme.primary,
+        iconContainer = MaterialTheme.colorScheme.primaryContainer,
+        modifier = modifier,
+    )
+}
+
+/**
+ * The net, whose icon follows its own sign — "the restaurant owes you" and
+ * "you owe the restaurant" are told apart by MORE than the figure's colour
+ * (driver-ui-standards), because a cheap screen in sunlight may not resolve
+ * one warm hue from another.
+ */
+@Composable
+private fun NetFigure(summary: LedgerResponse, modifier: Modifier) {
+    val netIsPositive = summary.net >= 0
+    FigureCard(
+        label = stringResource(R.string.wallet_net_label),
+        value = formatSignedMoney(summary.net, summary.currency),
+        icon = if (netIsPositive) {
+            Icons.AutoMirrored.Filled.TrendingUp
+        } else {
+            Icons.AutoMirrored.Filled.TrendingDown
+        },
+        iconTint = if (netIsPositive) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.error
+        },
+        iconContainer = if (netIsPositive) {
+            MaterialTheme.colorScheme.primaryContainer
+        } else {
+            MaterialTheme.colorScheme.errorContainer
+        },
+        valueColor = if (netIsPositive) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.error
+        },
+        supporting = stringResource(
+            if (netIsPositive) R.string.wallet_net_owed_to_you else R.string.wallet_net_you_owe,
+        ),
+        modifier = modifier,
+    )
+}
+
+/**
+ * Above this system font scale the two figure tiles stop sharing a row.
+ *
+ * 1.5 rather than 2.0: the breakage starts well before the maximum — at 150%
+ * the currency is already crowding the digits — and stacking early costs
+ * nothing but a little scrolling.
+ */
+private const val STACK_FIGURES_ABOVE_FONT_SCALE = 1.5f
+
+
+/**
+ * One of the two hero tiles. Carries an icon badge — the same circular,
+ * tinted-container language the ledger rows below use — so the figures that
+ * changed a driver's day read as members of one card family rather than as
+ * flat white boxes with numbers in them (task brief's complaint #2). The
+ * badge is tonal, not just decorative: it repeats the earn/owe colour the
+ * value text already carries, one more way (beyond hue) to tell the two
+ * tiles apart at a glance.
+ */
+@Composable
 private fun FigureCard(
     label: String,
     value: String,
+    icon: ImageVector,
     modifier: Modifier = Modifier,
+    iconTint: Color = MaterialTheme.colorScheme.primary,
+    iconContainer: Color = MaterialTheme.colorScheme.primaryContainer,
     valueColor: Color = MaterialTheme.colorScheme.onSurface,
     supporting: String? = null,
 ) {
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(Radius.card),
+        // White, not a tonal step — this theme's language is white panels
+        // floating on warm paper (see `Theme.kt`), and a grey tile on that
+        // paper reads as muddy rather than as raised. The weight comes from
+        // the shadow and the icon badge instead, so these still support the
+        // stronger `CashOnHandCard` beneath rather than competing with it.
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(Stroke.hairline, MaterialTheme.colorScheme.outlineVariant),
         shadowElevation = Elevation.card,
     ) {
         Column(
@@ -367,25 +480,57 @@ private fun FigureCard(
                 .padding(Spacing.md),
             verticalArrangement = Arrangement.spacedBy(Spacing.xxs),
         ) {
+            Box(
+                modifier = Modifier
+                    .size(ControlSize.orderAvatar)
+                    .clip(CircleShape)
+                    .background(iconContainer),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = iconTint,
+                    modifier = Modifier.size(ControlSize.inlineIcon),
+                )
+            }
+
+            Spacer(Modifier.height(Spacing.xxs))
+
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
             )
+            // 🔴 Money is never clipped, and this is why the type here is a
+            // step smaller than the cash card's.
+            //
+            // With `maxLines = 1` and no ellipsis, "25.00 SAR" in a half-width
+            // tile was CLIPPED to "25.0" on the device at a large font scale.
+            // A figure that loses a digit and its currency is not a smaller
+            // figure, it is a wrong one.
+            //
+            // So it wraps instead, and `maxLines = 2` is what it wraps within.
+            // Measured on the device, a half-width tile is NOT wide enough for
+            // "25.00 SAR" on one line even at `titleLarge` — the amount takes
+            // one line and the currency the next, in both tiles alike, which
+            // reads as a deliberate treatment rather than as damage. Above
+            // 150% font scale the pair stops sharing a row altogether and the
+            // whole question goes away (see `TheThreeFigures`).
             Text(
                 text = value.ltr(),
-                style = MaterialTheme.typography.headlineSmall,
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = valueColor,
-                maxLines = 1,
+                maxLines = 2,
             )
             supporting?.let {
+                // Same reasoning: "المطعم يدين لك" clipped to "المطعم" says
+                // the opposite of what it means.
                 Text(
                     text = it,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
                 )
             }
         }
@@ -511,6 +656,11 @@ private fun LedgerEntryRow(entry: LedgerEntryDto, currency: String) {
         shape = RoundedCornerShape(Radius.card),
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(Stroke.hairline, MaterialTheme.colorScheme.outlineVariant),
+        // A hint of lift so the row reads as a card in a stack rather than a
+        // flat line in a list (task brief's complaint #3) — kept subtle
+        // ([Elevation.card], the same weight the hero tiles carry) so a whole
+        // scrolling list of these does not turn into a wall of shadows.
+        shadowElevation = Elevation.card,
     ) {
         Row(
             modifier = Modifier.padding(Spacing.md),
@@ -592,48 +742,31 @@ private fun entryKind(type: String): EntryKind = when (type) {
     else -> EntryKind(Icons.AutoMirrored.Filled.ReceiptLong, R.string.wallet_entry_type_unknown)
 }
 
+/**
+ * No restaurant has this driver on its list — [DriverArt.Storefront] (task
+ * brief), replacing the flat grey two-line box this used to be (complaint
+ * #4). This is a distinct reason from an empty book (below): there is no
+ * restaurant to have a book WITH yet.
+ */
 @Composable
 private fun RestaurantsEmptyState() {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(Spacing.lg),
-    ) {
-        EmptyStateCard(
+    Column(modifier = Modifier.padding(Spacing.lg)) {
+        DriverEmptyState(
+            art = DriverArt.Storefront,
             title = stringResource(R.string.wallet_restaurants_empty_title),
             body = stringResource(R.string.wallet_restaurants_empty_body),
         )
     }
 }
 
+/** Nothing in the ledger yet — [DriverArt.Wallet] (task brief), same replacement. */
 @Composable
 private fun BookEmptyState() {
-    EmptyStateCard(
+    DriverEmptyState(
+        art = DriverArt.Wallet,
         title = stringResource(R.string.wallet_book_empty_title),
         body = stringResource(R.string.wallet_book_empty_body),
     )
-}
-
-@Composable
-internal fun EmptyStateCard(title: String, body: String) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(Radius.card))
-            .padding(Spacing.md),
-        verticalArrangement = Arrangement.spacedBy(Spacing.xs),
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = body,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
 }
 
 /** Shimmer matching the eventual figure cards + list — never a centred spinner. */

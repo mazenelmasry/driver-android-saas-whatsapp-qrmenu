@@ -32,6 +32,7 @@
     <string name="account_ui_scale_largest">Largest</string>
     <string name="account_ui_scale_preview_branch">Al Olaya branch</string>
     <string name="account_ui_scale_preview_fee">Fee %1$s</string>
+    <string name="account_ui_scale_preview_badge">Preview</string>
 
     <string name="account_battery_row_label">Battery</string>
     <string name="account_battery_supporting">A phone that sleeps stops receiving orders</string>
@@ -40,6 +41,23 @@
     <string name="account_sign_out_confirm_body">You will need your phone number to sign in again.</string>
     <string name="account_sign_out_confirm_confirm">Sign out</string>
     <string name="account_sign_out_confirm_cancel">Cancel</string>
+
+    <string name="account_app_version">Version %1$s</string>
+
+    <string name="account_legal_section_title">Legal &amp; support</string>
+    <string name="account_privacy_policy">Privacy policy</string>
+    <string name="account_terms_of_service">Terms of service</string>
+    <string name="account_help">Help &amp; tutorials</string>
+    <string name="account_contact_support">Contact support</string>
+
+    <string name="account_delete_row_label">Delete my account</string>
+    <string name="account_delete_pending_label">Account deletion requested</string>
+    <string name="account_delete_pending_supporting">We\'re reviewing your request. You\'ll be notified once it\'s handled.</string>
+    <string name="account_delete_confirm_title">Delete your account?</string>
+    <string name="account_delete_confirm_body">This sends a request to the platform, not an instant deletion — you may still be holding cash collected for a restaurant, and your trip history belongs to it too. An admin will review your request and delete your account once that\'s clear.</string>
+    <string name="account_delete_confirm_reason_label">Reason (optional)</string>
+    <string name="account_delete_confirm_confirm">Send request</string>
+    <string name="account_delete_confirm_cancel">Cancel</string>
 
     <string name="a11y_account_identity">Your account</string>
 </resources>

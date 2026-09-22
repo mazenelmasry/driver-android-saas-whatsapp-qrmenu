@@ -15,6 +15,10 @@
     <string name="availability_connection_lost_body">সংযোগ পুনরুদ্ধার না হলে সার্ভার কয়েক মিনিটের মধ্যে আপনাকে অফলাইন করে দেবে।</string>
 
 
+    <string name="availability_empty_title_waiting">অর্ডারের অপেক্ষায়</string>
+    <string name="availability_empty_title_no_branches">কাছাকাছি কোনো শাখা খোলা নেই</string>
+    <string name="availability_empty_title_paused">অফার স্থগিত আছে</string>
+
     <string name="availability_branches_heading">আপনার সংযুক্ত শাখা</string>
     <string name="availability_branch_open">খোলা</string>
     <string name="availability_branch_closed">বন্ধ</string>

@@ -36,6 +36,15 @@ object Radius {
     val sheet = 16.dp
     val fab = 28.dp
     val pill = 999.dp
+
+    /**
+     * The bottom corners of the coloured screen header.
+     *
+     * Large enough to read as a deliberate block of brand rather than a
+     * rectangle that happens to be orange — this is the one shape a driver
+     * sees on every screen, so it carries most of the app's character.
+     */
+    val header = 28.dp
 }
 
 /** Elevation scale. */
@@ -148,6 +157,31 @@ object ControlSize {
 
     /** The status dot inside a readiness pill. */
     val statusDot = 8.dp
+
+    /**
+     * The platform monogram in the screen header. Deliberately small: it is
+     * there so the driver never has to ask whose app this is, not so they
+     * look at it — the screen title above it stays the larger mark.
+     */
+    val brandMark = 20.dp
+}
+
+/**
+ * The empty-state artwork.
+ *
+ * Sizes, not drawings: the drawings live in `:core:ui`'s `DriverArt`, which
+ * paints them on a square canvas of [canvas] and scales every coordinate to
+ * it — so changing this number resizes the art rather than breaking it.
+ */
+object Illustration {
+    /** The square the art is painted on. */
+    val canvas = 132.dp
+
+    /** The line weight of the art. Thick enough to survive sunlight. */
+    val stroke = 5.dp
+
+    /** The thinner weight used for the art's secondary marks. */
+    val strokeThin = 3.dp
 }
 
 /**

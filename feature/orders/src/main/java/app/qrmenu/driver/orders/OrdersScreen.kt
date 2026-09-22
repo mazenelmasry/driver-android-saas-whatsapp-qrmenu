@@ -20,21 +20,27 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -47,6 +53,8 @@ import app.qrmenu.driver.ui.orders.noOrdersReason
 import app.qrmenu.driver.designsystem.theme.DriverTheme
 import app.qrmenu.driver.designsystem.theme.Radius
 import app.qrmenu.driver.designsystem.theme.Spacing
+import app.qrmenu.driver.ui.components.DriverArt
+import app.qrmenu.driver.ui.components.DriverEmptyState
 import app.qrmenu.driver.ui.components.DriverScreenScaffold
 import app.qrmenu.driver.designsystem.theme.TouchTarget
 import app.qrmenu.driver.network.dto.AvailabilityContextDto
@@ -72,6 +80,11 @@ fun OrdersRoute(
     onOpenTrip: (Long) -> Unit = {},
     noOrdersContextOut: (AvailabilityContextDto?) -> Unit = {},
     onOpenNotifications: (() -> Unit)? = null,
+    /**
+     * How many notifications the driver has not opened yet — the number on
+     * the bell. Zero draws no badge at all, which is almost always.
+     */
+    unreadNotifications: Int = 0,
     viewModel: OrdersViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -104,6 +117,7 @@ fun OrdersRoute(
         onRetry = viewModel::retry,
         onOpenTrip = onOpenTrip,
         onOpenNotifications = onOpenNotifications,
+            unreadNotifications = unreadNotifications,
     )
 }
 
@@ -117,6 +131,11 @@ internal fun OrdersScreen(
     onRetry: (OrdersTab) -> Unit,
     onOpenTrip: (Long) -> Unit = {},
     onOpenNotifications: (() -> Unit)? = null,
+    /**
+     * How many notifications the driver has not opened yet — the number on
+     * the bell. Zero draws no badge at all, which is almost always.
+     */
+    unreadNotifications: Int = 0,
 ) {
     Scaffold {
         // The shared frame, so this screen carries the same title placement
@@ -124,22 +143,16 @@ internal fun OrdersScreen(
         DriverScreenScaffold(
             title = stringResource(R.string.orders_title),
             onOpenNotifications = onOpenNotifications,
+            unreadNotifications = unreadNotifications,
+            // 🔴 The طلباتى/المتاحة switch lives INSIDE the coloured block now,
+            // not as a floating white strip between the header and the
+            // content — that strip, plus a selection indicator that measured
+            // its own width against the full screen instead of the padded
+            // header, is what used to visibly overflow the trailing edge.
+            belowTitle = {
+                OrdersTabRow(selectedTab = state.tab, onSelectTab = onSelectTab)
+            },
         ) {
-            TabRow(selectedTabIndex = state.tab.ordinal) {
-                Tab(
-                    selected = state.tab == OrdersTab.Mine,
-                    onClick = { onSelectTab(OrdersTab.Mine) },
-                    text = { Text(stringResource(R.string.orders_tab_mine)) },
-                    modifier = Modifier.height(TouchTarget.compact),
-                )
-                Tab(
-                    selected = state.tab == OrdersTab.Available,
-                    onClick = { onSelectTab(OrdersTab.Available) },
-                    text = { Text(stringResource(R.string.orders_tab_available)) },
-                    modifier = Modifier.height(TouchTarget.compact),
-                )
-            }
-
             when (state.tab) {
                 OrdersTab.Mine -> MineList(
                     listState = state.mine,
@@ -155,6 +168,53 @@ internal fun OrdersScreen(
                 )
             }
         }
+    }
+}
+
+/**
+ * The طلباتى/المتاحة switch, styled for the coloured header it now lives
+ * inside rather than for a plain surface: white/[LocalContentColor] labels
+ * (dimmed automatically by M3 for the unselected tab), a white indicator, and
+ * a transparent container so the header's gradient shows through underneath
+ * it instead of a second, mismatched band of colour.
+ *
+ * [LocalContentColor] is read rather than passed in because [DriverHeader]
+ * already provides it as `onHeader` for everything inside [belowTitle] — one
+ * source for "the ink colour on this block" instead of a second one that
+ * could drift from it.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun OrdersTabRow(selectedTab: OrdersTab, onSelectTab: (OrdersTab) -> Unit) {
+    val onHeader = LocalContentColor.current
+
+    TabRow(
+        selectedTabIndex = selectedTab.ordinal,
+        modifier = Modifier.fillMaxWidth(),
+        containerColor = Color.Transparent,
+        contentColor = onHeader,
+        indicator = { tabPositions ->
+            TabRowDefaults.SecondaryIndicator(
+                modifier = with(TabRowDefaults) {
+                    Modifier.tabIndicatorOffset(tabPositions[selectedTab.ordinal])
+                },
+                color = onHeader,
+            )
+        },
+        divider = {},
+    ) {
+        Tab(
+            selected = selectedTab == OrdersTab.Mine,
+            onClick = { onSelectTab(OrdersTab.Mine) },
+            text = { Text(stringResource(R.string.orders_tab_mine)) },
+            modifier = Modifier.height(TouchTarget.compact),
+        )
+        Tab(
+            selected = selectedTab == OrdersTab.Available,
+            onClick = { onSelectTab(OrdersTab.Available) },
+            text = { Text(stringResource(R.string.orders_tab_available)) },
+            modifier = Modifier.height(TouchTarget.compact),
+        )
     }
 }
 
@@ -234,59 +294,70 @@ private fun AvailableList(
     }
 }
 
+/**
+ * "طلباتى" empty: an open delivery bag, not yet taken — this is the state a
+ * waiting driver is in most of a shift, so it gets the same artwork
+ * treatment as every other empty screen instead of a flat grey box.
+ */
 @Composable
 private fun MineEmptyState() {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(Radius.card))
-            .padding(Spacing.md),
-        verticalArrangement = Arrangement.spacedBy(Spacing.xs),
-    ) {
-        Text(
-            text = stringResource(R.string.orders_mine_empty_title),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = stringResource(R.string.orders_mine_empty_body),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
+    DriverEmptyState(
+        art = DriverArt.EmptyBag,
+        title = stringResource(R.string.orders_mine_empty_title),
+        body = stringResource(R.string.orders_mine_empty_body),
+    )
 }
 
-/** Decision-47 reason, plus every linked branch named (decision 47's other half). */
+/**
+ * "المتاحة" empty: an open road, work still to come — plus, below it, the
+ * decision-47 reason (kept verbatim, wording unchanged — see
+ * [NoOrdersReason]) and every linked branch named (decision 47's other
+ * half).
+ */
 @Composable
 private fun AvailableEmptyState(context: AvailabilityContextDto) {
     val reason = context.noOrdersReason()
 
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(Radius.card))
-            .padding(Spacing.md),
-        verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(Spacing.lg),
     ) {
-        if (reason != null) {
-            Text(
-                text = stringResource(reason.messageResource()),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+        DriverEmptyState(
+            art = DriverArt.RoadAhead,
+            title = stringResource(R.string.orders_available_empty_title),
+            body = reason?.let { stringResource(it.messageResource()) },
+        )
 
         if (context.branches.isNotEmpty()) {
-            Text(
-                text = stringResource(R.string.orders_available_branches_heading),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            context.branches.forEach { branch ->
+            AvailableEmptyBranchList(branches = context.branches)
+        }
+    }
+}
+
+/** The linked-branch list under the "المتاحة" empty state, as a row of pills. */
+@Composable
+private fun AvailableEmptyBranchList(branches: List<ContextBranchDto>) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+    ) {
+        Text(
+            text = stringResource(R.string.orders_available_branches_heading),
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        branches.forEach { branch ->
+            Surface(
+                shape = RoundedCornerShape(Radius.pill),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            ) {
                 Text(
                     text = branch.name,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = Spacing.sm, vertical = Spacing.xxs),
                 )
             }
         }

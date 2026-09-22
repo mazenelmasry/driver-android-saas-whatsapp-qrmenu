@@ -194,6 +194,9 @@ dependencies {
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
     implementation(project(":core:designsystem"))
+    // The shell hands the app-level alert banners to whichever screen scaffold
+    // is on show, through `LocalAppBanners` — see `SignedInScreen`.
+    implementation(project(":core:ui"))
     implementation(project(":core:push"))
     implementation(project(":core:datastore"))
     // Included so the Hilt graph is actually VALIDATED in a component: a module

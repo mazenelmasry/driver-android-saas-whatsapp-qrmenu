@@ -5,4 +5,10 @@
 
     <string name="notifications_empty_title">Nothing yet</string>
     <string name="notifications_empty_body">You will be told here the moment an order is offered to you.</string>
+
+    <string name="notifications_item_offer_title">New delivery offer</string>
+    <string name="notifications_item_offer_body">Order #%1$d</string>
+
+    <string name="notifications_error_body">Couldn\'t load your notifications.</string>
+    <string name="notifications_error_retry">Try again</string>
 </resources>

@@ -34,7 +34,11 @@ import app.qrmenu.driver.designsystem.theme.Spacing
  *    app is broken when it is working stops trusting every later warning.
  */
 @Composable
-fun LocationPermissionWarning(isBlocking: Boolean, onAction: () -> Unit) {
+fun LocationPermissionWarning(
+    isBlocking: Boolean,
+    onAction: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     // 🔴 The non-blocking case is NOT green and NOT a warning triangle.
     //
     // Green reads "all good" and a triangle reads "something is wrong"; together
@@ -57,9 +61,13 @@ fun LocationPermissionWarning(isBlocking: Boolean, onAction: () -> Unit) {
         color = container,
         contentColor = content,
         shape = MaterialTheme.shapes.medium,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
+        // 🔴 No horizontal padding of its own. This card is handed to the
+        // availability screen through a slot, and that screen's list already
+        // pays the page gutter — adding one here stacked the two, so this one
+        // card sat visibly further in than every card above and below it. A
+        // component dropped into someone else's list takes its margins from
+        // the list, not from itself.
+        modifier = modifier.fillMaxWidth(),
     ) {
         Row(
             modifier = Modifier.padding(Spacing.md),

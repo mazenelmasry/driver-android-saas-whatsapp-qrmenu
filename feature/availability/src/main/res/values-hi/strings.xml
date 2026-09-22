@@ -15,6 +15,10 @@
     <string name="availability_connection_lost_body">यदि कनेक्शन बहाल नहीं हुआ तो सर्वर कुछ मिनटों में आपको अनुपलब्ध कर देगा।</string>
 
 
+    <string name="availability_empty_title_waiting">ऑर्डर का इंतज़ार</string>
+    <string name="availability_empty_title_no_branches">आसपास कोई शाखा खुली नहीं</string>
+    <string name="availability_empty_title_paused">ऑफ़र रोके गए हैं</string>
+
     <string name="availability_branches_heading">आपकी जुड़ी शाखाएँ</string>
     <string name="availability_branch_open">खुला</string>
     <string name="availability_branch_closed">बंद</string>

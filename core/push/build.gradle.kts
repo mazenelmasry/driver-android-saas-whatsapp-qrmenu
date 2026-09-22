@@ -9,6 +9,10 @@ android {
 
 dependencies {
     api(project(":core:common"))
+    // For NotificationHistoryRecorder — the only reason :core:push touches
+    // Room at all; everything else about the push transport stays isolated
+    // in this module (see PushHandler's own doc).
+    implementation(project(":core:database"))
 
     // The transport. Deliberately the ONLY module that knows Firebase
     // Messaging exists — every other module talks to `PushHandler`, so a

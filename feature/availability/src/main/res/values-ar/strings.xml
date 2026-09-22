@@ -14,6 +14,10 @@
     <string name="availability_connection_lost_body">سيضعك الخادم غير متاح خلال دقائق إن لم يُستعد الاتصال.</string>
 
 
+    <string name="availability_empty_title_waiting">بانتظار الطلبات</string>
+    <string name="availability_empty_title_no_branches">لا فروع مفتوحة قريبة</string>
+    <string name="availability_empty_title_paused">الطلبات متوقفة مؤقتاً</string>
+
     <string name="availability_branches_heading">فروعك المرتبطة</string>
     <string name="availability_branch_open">مفتوح</string>
     <string name="availability_branch_closed">مغلق</string>

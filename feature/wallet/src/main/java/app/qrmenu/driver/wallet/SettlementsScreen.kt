@@ -28,12 +28,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import android.content.res.Configuration
 import app.qrmenu.driver.designsystem.theme.DriverTheme
+import app.qrmenu.driver.designsystem.theme.Elevation
 import app.qrmenu.driver.designsystem.theme.Radius
 import app.qrmenu.driver.designsystem.theme.Spacing
 import app.qrmenu.driver.designsystem.theme.Stroke
 import app.qrmenu.driver.designsystem.theme.TouchTarget
 import app.qrmenu.driver.network.dto.SettlementDto
 import app.qrmenu.driver.network.errors.DriverApiError
+import app.qrmenu.driver.ui.components.DriverArt
+import app.qrmenu.driver.ui.components.DriverEmptyState
 import app.qrmenu.driver.ui.components.DriverErrorBanner
 import app.qrmenu.driver.ui.text.ltr
 
@@ -79,7 +82,12 @@ internal fun SettlementsScreen(
                 }
 
                 state.settlements.isEmpty() -> Column(modifier = Modifier.padding(Spacing.lg)) {
-                    EmptyStateCard(
+                    // Same ledger artwork as the book's own empty state
+                    // (task brief: `DriverArt.Wallet` for an empty ledger) —
+                    // a settlement history is the same kind of "nothing has
+                    // happened here yet" as the book above it.
+                    DriverEmptyState(
+                        art = DriverArt.Wallet,
                         title = stringResource(R.string.wallet_settlements_empty_title),
                         body = stringResource(R.string.wallet_settlements_empty_body),
                     )
@@ -87,7 +95,15 @@ internal fun SettlementsScreen(
 
                 else -> LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = Spacing.lg, vertical = Spacing.md),
+                    // Same generous bottom clearance as the book's list
+                    // (task brief's defect #1) — this list sits under the
+                    // same tab bar.
+                    contentPadding = PaddingValues(
+                        start = Spacing.lg,
+                        end = Spacing.lg,
+                        top = Spacing.md,
+                        bottom = Spacing.xxl,
+                    ),
                     verticalArrangement = Arrangement.spacedBy(Spacing.sm),
                 ) {
                     items(state.settlements, key = SettlementDto::id) { settlement ->
@@ -109,6 +125,7 @@ private fun SettlementRow(settlement: SettlementDto) {
         shape = RoundedCornerShape(Radius.card),
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(Stroke.hairline, MaterialTheme.colorScheme.outlineVariant),
+        shadowElevation = Elevation.card,
     ) {
         Column(
             modifier = Modifier.padding(Spacing.md),

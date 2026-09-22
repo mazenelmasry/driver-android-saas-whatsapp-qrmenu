@@ -5,4 +5,10 @@
 
     <string name="notifications_empty_title">لا شىء بعد</string>
     <string name="notifications_empty_body">سنخبرك هنا لحظة عرض أى طلب عليك.</string>
+
+    <string name="notifications_item_offer_title">عرض توصيل جديد</string>
+    <string name="notifications_item_offer_body">الطلب رقم %1$d</string>
+
+    <string name="notifications_error_body">تعذّر تحميل إشعاراتك.</string>
+    <string name="notifications_error_retry">حاول مرة أخرى</string>
 </resources>

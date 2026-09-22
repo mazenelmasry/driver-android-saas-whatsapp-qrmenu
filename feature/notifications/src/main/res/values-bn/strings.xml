@@ -5,4 +5,11 @@
 
     <string name="notifications_empty_title">এখনও কিছু নেই</string>
     <string name="notifications_empty_body">আপনাকে কোনও অর্ডার দেওয়া হলে সঙ্গে সঙ্গে এখানে জানানো হবে।</string>
+
+    <!-- ⏳ machine-translated, pending native review (CLAUDE.md, glossary). -->
+    <string name="notifications_item_offer_title">নতুন ডেলিভারি অফার</string>
+    <string name="notifications_item_offer_body">অর্ডার #%1$d</string>
+
+    <string name="notifications_error_body">আপনার বিজ্ঞপ্তি লোড করা যায়নি।</string>
+    <string name="notifications_error_retry">আবার চেষ্টা করুন</string>
 </resources>

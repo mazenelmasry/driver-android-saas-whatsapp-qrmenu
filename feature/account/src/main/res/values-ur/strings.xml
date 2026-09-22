@@ -29,6 +29,7 @@
     <string name="account_ui_scale_largest">سب سے بڑا</string>
     <string name="account_ui_scale_preview_branch">العليا شاخ</string>
     <string name="account_ui_scale_preview_fee">فیس %1$s</string>
+    <string name="account_ui_scale_preview_badge">معاینہ — یہ حقیقی آرڈر نہیں ہے</string>
 
     <string name="account_battery_row_label">بیٹری</string>
     <string name="account_battery_supporting">سو جانے والا فون آرڈر وصول کرنا بند کر دیتا ہے</string>
@@ -37,6 +38,23 @@
     <string name="account_sign_out_confirm_body">دوبارہ سائن ان کرنے کے لیے آپ کو اپنا فون نمبر درکار ہوگا۔</string>
     <string name="account_sign_out_confirm_confirm">سائن آؤٹ</string>
     <string name="account_sign_out_confirm_cancel">منسوخ کریں</string>
+
+    <string name="account_app_version">ورژن %1$s</string>
+
+    <string name="account_legal_section_title">قانونی اور معاونت</string>
+    <string name="account_privacy_policy">پرائیویسی پالیسی</string>
+    <string name="account_terms_of_service">شرائط و ضوابط</string>
+    <string name="account_help">مدد اور رہنمائی</string>
+    <string name="account_contact_support">سپورٹ سے رابطہ کریں</string>
+
+    <string name="account_delete_row_label">میرا اکاؤنٹ حذف کریں</string>
+    <string name="account_delete_pending_label">اکاؤنٹ حذف کرنے کی درخواست زیر جائزہ ہے</string>
+    <string name="account_delete_pending_supporting">ہم آپ کی درخواست کا جائزہ لے رہے ہیں۔ فیصلہ ہوتے ہی آپ کو مطلع کیا جائے گا۔</string>
+    <string name="account_delete_confirm_title">اپنا اکاؤنٹ حذف کریں؟</string>
+    <string name="account_delete_confirm_body">یہ پلیٹ فارم کو ایک درخواست بھیجتا ہے، فوری حذف نہیں — ہو سکتا ہے آپ کسی ریستوران کی جمع کردہ نقدی اپنے پاس رکھے ہوں، اور آپ کی ٹرپ ہسٹری بھی اسی ریستوران کی ہے۔ ایک ایڈمن آپ کی درخواست کا جائزہ لے کر یہ واضح ہونے کے بعد آپ کا اکاؤنٹ حذف کرے گا۔</string>
+    <string name="account_delete_confirm_reason_label">وجہ (اختیاری)</string>
+    <string name="account_delete_confirm_confirm">درخواست بھیجیں</string>
+    <string name="account_delete_confirm_cancel">منسوخ کریں</string>
 
     <string name="a11y_account_identity">آپ کا اکاؤنٹ</string>
 </resources>

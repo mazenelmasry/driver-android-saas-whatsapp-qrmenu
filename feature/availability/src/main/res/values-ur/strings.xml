@@ -15,6 +15,10 @@
     <string name="availability_connection_lost_body">اگر کنکشن بحال نہ ہوا تو سرور چند منٹوں میں آپ کو نامعلوم دستیاب کر دے گا۔</string>
 
 
+    <string name="availability_empty_title_waiting">آرڈرز کا انتظار</string>
+    <string name="availability_empty_title_no_branches">قریب کوئی شاخ کھلی نہیں</string>
+    <string name="availability_empty_title_paused">آفرز روک دی گئی ہیں</string>
+
     <string name="availability_branches_heading">آپ کی منسلک شاخیں</string>
     <string name="availability_branch_open">کھلا</string>
     <string name="availability_branch_closed">بند</string>

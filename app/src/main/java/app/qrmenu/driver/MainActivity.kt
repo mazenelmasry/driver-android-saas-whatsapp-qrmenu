@@ -10,8 +10,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import app.qrmenu.driver.offers.DeviceTokenViewModel
@@ -19,6 +21,7 @@ import app.qrmenu.driver.auth.AuthFlow
 import app.qrmenu.driver.auth.RedeemInviteFlow
 import app.qrmenu.driver.common.locale.SupportedLocales
 import app.qrmenu.driver.datastore.AppLocaleStore
+import app.qrmenu.driver.datastore.PlatformBrandingStore
 import app.qrmenu.driver.datastore.TokenStore
 import app.qrmenu.driver.datastore.UiScaleStore
 import app.qrmenu.driver.designsystem.theme.DriverTheme
@@ -44,6 +47,18 @@ class MainActivity : ComponentActivity() {
     lateinit var uiScaleStore: UiScaleStore
 
     /**
+     * The platform's accent, as last served by the admin panel.
+     *
+     * Injected HERE rather than read inside the signed-in shell because the
+     * theme wraps everything — sign-in and onboarding included — and a colour
+     * that only arrives after login would repaint the app in front of the
+     * driver. Plain SharedPreferences underneath, so it can answer on the
+     * first frame.
+     */
+    @Inject
+    lateinit var platformBrandingStore: PlatformBrandingStore
+
+    /**
      * Applies the stored language before any view is inflated.
      *
      * It reads [AppLocaleStore] STATICALLY rather than through Hilt: this runs
@@ -65,12 +80,49 @@ class MainActivity : ComponentActivity() {
             // app visibly resizes itself on every launch.
             val uiScale by uiScaleStore.scale.collectAsState(initial = uiScaleStore.current())
 
-            DriverTheme(uiScaleFactor = uiScale.factor) {
+            // 🔴 This is what makes one APK look like two platforms.
+            //
+            // Both flavours ship the SAME palette today, so without a seed the
+            // Taaj build and the Meniura build are pixel-identical apart from
+            // the name in the header. `DriverTheme` already derives a whole
+            // colour family from one seed, with a 4.5:1 contrast guard — so a
+            // platform recolours itself from the admin panel (`driver.accent_color`)
+            // and no driver has to install anything.
+            //
+            // An unset or malformed value seeds nothing and the flavour's own
+            // colours stand, which is every build's behaviour today.
+            val branding by platformBrandingStore.branding.collectAsState(
+                initial = platformBrandingStore.current(),
+            )
+            val accentSeed = remember(branding.accentColor) {
+                branding.accentColor?.let(::parseHexColorOrNull)
+            }
+
+            DriverTheme(accentSeed = accentSeed, uiScaleFactor = uiScale.factor) {
                 DriverApp(tokenStore)
             }
         }
     }
 }
+
+/**
+ * `#RRGGBB` to a [Color], or null for anything else.
+ *
+ * Deliberately strict and deliberately silent: this value is typed by hand
+ * into an admin form, and a half-parsed colour would tint the whole app some
+ * arbitrary shade rather than falling back to the brand the flavour ships.
+ * The backend validates the same shape on the way out; this is the second
+ * lock, because a cached value outlives the response that carried it.
+ */
+private fun parseHexColorOrNull(hex: String): Color? {
+    val cleaned = hex.trim().removePrefix("#")
+    if (cleaned.length != HEX_RGB_LENGTH) return null
+    val rgb = cleaned.toLongOrNull(radix = 16) ?: return null
+    return Color(rgb or OPAQUE_ALPHA)
+}
+
+private const val HEX_RGB_LENGTH = 6
+private const val OPAQUE_ALPHA = 0xFF000000L
 
 /**
  * What the app shows, and in what order it decides.

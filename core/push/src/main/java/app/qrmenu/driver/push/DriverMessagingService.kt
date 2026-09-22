@@ -25,6 +25,9 @@ class DriverMessagingService : FirebaseMessagingService() {
     @Inject
     lateinit var pushHandler: PushHandler
 
+    @Inject
+    lateinit var notificationHistoryRecorder: NotificationHistoryRecorder
+
     override fun onMessageReceived(message: RemoteMessage) {
         val payload = OfferPushPayload.from(message.data)
         if (payload == null) {
@@ -39,6 +42,13 @@ class DriverMessagingService : FirebaseMessagingService() {
             Log.w(TAG, "dropping push: offer ${payload.offerId} already expired at ${payload.expiresAt}")
             return
         }
+
+        // Fire-and-forget (see NotificationHistoryRecorder's own doc) —
+        // called before the ring so history reflects every live push that
+        // reached this device even if something below throws, but it never
+        // blocks or delays the ring itself: it launches on its own
+        // background scope and returns immediately.
+        notificationHistoryRecorder.recordOfferPush(payload)
 
         pushHandler.onOfferPush(payload)
     }

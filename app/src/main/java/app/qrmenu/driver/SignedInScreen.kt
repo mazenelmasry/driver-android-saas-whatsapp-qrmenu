@@ -3,6 +3,7 @@ package app.qrmenu.driver
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,6 +22,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
@@ -31,6 +33,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -40,6 +44,9 @@ import androidx.lifecycle.viewModelScope
 import app.qrmenu.driver.availability.AvailabilityRoute
 import app.qrmenu.driver.account.AccountRoute
 import app.qrmenu.driver.designsystem.theme.Spacing
+import app.qrmenu.driver.ui.components.LocalAppBanners
+import app.qrmenu.driver.ui.components.LocalPlatformBrand
+import app.qrmenu.driver.ui.components.LocalPlatformLogoUrl
 import app.qrmenu.driver.health.NotificationHealthBanner
 import app.qrmenu.driver.outbox.UnsentActionsBanner
 import app.qrmenu.driver.health.RequestNotificationPermissionOnce
@@ -97,6 +104,7 @@ fun SignedInScreen(
     onEnterInviteCode: () -> Unit,
     pendingOfferViewModel: PendingOfferViewModel = hiltViewModel(),
     heldTripViewModel: HeldTripViewModel = hiltViewModel(),
+    brandingViewModel: PlatformBrandingViewModel = hiltViewModel(),
 ) {
     var tab by rememberSaveable { mutableStateOf(SignedInTab.Availability) }
 
@@ -296,49 +304,64 @@ fun SignedInScreen(
                         selected = tab == entry,
                         onClick = { tab = entry },
                         icon = { Icon(entry.icon, contentDescription = null) },
-                        label = { Text(stringResource(entry.label)) },
+                        label = {
+                            // 🔴 One line, always.
+                            //
+                            // At 200% system font scale these four short words
+                            // wrapped onto two lines each, which grew the bar
+                            // tall enough to eat the bottom of every screen
+                            // above it — the cash-on-hand card was cut in half
+                            // on the device. A tab label is a signpost beside
+                            // an icon that already carries the meaning, so
+                            // clipping one is cheap; clipping the content is
+                            // not. (The project's no-truncation rule is about
+                            // restaurant and branch NAMES, which this is not.)
+                            Text(
+                                text = stringResource(entry.label),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center,
+                            )
+                        },
                     )
                 }
             }
         },
     ) { insets ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = insets.calculateBottomPadding())
-                // 🔴 The app-level banners below sit ABOVE each tab's own
-                // `DriverScreenScaffold`, which is where the status-bar inset
-                // was being applied — so the banners themselves had none and
-                // were drawn under the clock and the battery icon. Applied
-                // once here for the whole stack, then CONSUMED so the tab's
-                // scaffold does not add a second gap beneath it (the same
-                // pairing the active-trip branch above already documents).
-                .windowInsetsPadding(WindowInsets.statusBars)
-                .consumeWindowInsets(WindowInsets.statusBars),
-        ) {
-            // 🔴 Shown above whichever tab is on screen, on ALL four — a
-            // driver spends their entire shift on this bar, most of it on
-            // متاح waiting for the exact alert this is warning them might
-            // never arrive. Anchoring it to one tab would hide it the moment
-            // they switch away from it.
+        val platformBranding by brandingViewModel.branding.collectAsStateWithLifecycle()
+
+        // The red number on the bell. It was dead code until the notification
+        // history landed: `DriverHeader` has always drawn a badge, and nothing
+        // in the app ever supplied a count for it to draw.
+        val unreadNotifications by brandingViewModel.unreadNotifications
+            .collectAsStateWithLifecycle()
+
+        // The app-level banners no longer sit ABOVE the screen's title: they
+        // are handed to whichever `DriverScreenScaffold` is on screen, which
+        // renders them directly BELOW its coloured header. The complaint this
+        // answers was exact — the first thing the eye met on every screen was
+        // a warning, and the name of the screen came second.
+        val appBanners: @Composable ColumnScope.() -> Unit = {
+            // 🔴 Shown on ALL four tabs — a driver spends their entire shift on
+            // this bar, most of it on متاح waiting for the exact alert this is
+            // warning them might never arrive. Anchoring it to one tab would
+            // hide it the moment they switch away from it.
             NotificationHealthBanner()
 
-            // 🔴 Above the tabs for the same reason the health banner is: a
-            // queued delivery is money the restaurant has not been told
-            // about, and the driver must not have to be on one particular
-            // tab to learn of it. Renders nothing when the queue is empty,
-            // which is almost always.
+            // A queued delivery is money the restaurant has not been told
+            // about, and the driver must not have to be on one particular tab
+            // to learn of it. Renders nothing when the queue is empty, which
+            // is almost always.
             UnsentActionsBanner(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = Spacing.md, vertical = Spacing.xxs),
             )
 
-            // The dismissible "an update exists" notice — never shown here
+            // The dismissible "an update exists" notice — never reached here
             // when `updateRequirement` is anything but `NotRequired` (this
-            // Scaffold itself is unreachable otherwise, see the two early
-            // `return`s above), so it never competes with the wall or the
-            // trip-deferred notice for the driver's attention.
+            // Scaffold is unreachable otherwise, see the early returns above),
+            // so it never competes with the wall or the trip-deferred notice.
             val updateAvailability = rememberUpdateAvailability()
             val updateGateViewModel = rememberUpdateGateViewModel()
             UpdateBannerHost(
@@ -348,28 +371,74 @@ fun SignedInScreen(
                     .fillMaxWidth()
                     .padding(horizontal = Spacing.md, vertical = Spacing.xxs),
             )
+        }
 
+        // The platform's own name, from the flavour — see `LocalPlatformBrand`.
+        // Provided here rather than inside `:core:ui` because the flavour
+        // source sets live in `:app`, and one APK serves both platforms.
+        CompositionLocalProvider(
+            LocalAppBanners provides appBanners,
+            LocalPlatformBrand provides stringResource(R.string.app_name),
+            // The logo the admin panel serves, layered over the flavour's
+            // monogram. Null until it has ever loaded — and null forever on a
+            // deployment that never uploaded one, which must not be a visible
+            // hole in the header.
+            LocalPlatformLogoUrl provides platformBranding.logoUrl,
+        ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = insets.calculateBottomPadding()),
+        ) {
             Box(modifier = Modifier.weight(1f)) {
                 when (tab) {
                     SignedInTab.Availability -> AvailabilityTab(
                         noOrdersContext = noOrdersContext,
                         onOpenNotifications = { showingNotifications = true },
+                        unreadNotifications = unreadNotifications,
                     )
                     SignedInTab.Orders -> OrdersRoute(
                         // The way back into a trip the driver is already holding.
                         onOpenTrip = { activeTripId = it },
                         noOrdersContextOut = { noOrdersContext.value = it },
                         onOpenNotifications = { showingNotifications = true },
+                        unreadNotifications = unreadNotifications,
                     )
                     SignedInTab.Wallet -> WalletRoute(
                         onOpenNotifications = { showingNotifications = true },
+                        unreadNotifications = unreadNotifications,
                     )
                     SignedInTab.Account -> AccountRoute(
                         onSignedOut = onSignedOut,
                         onEnterInviteCode = onEnterInviteCode,
+                        // The bell was missing on this one tab out of four: a
+                        // driver who learns where it is finds it gone the
+                        // moment they open حسابى.
+                        onOpenNotifications = { showingNotifications = true },
+                        unreadNotifications = unreadNotifications,
+                        // The build, at the foot of the screen. `:app` is the
+                        // only module whose `BuildConfig` carries the version
+                        // the installer actually stamped, so it is passed down
+                        // rather than read from wherever the footer is drawn —
+                        // a second source would be a second answer.
+                        appVersionName = BuildConfig.VERSION_NAME,
+                        appVersionCode = BuildConfig.VERSION_CODE,
+                        // 🔴 Google Play refuses an app with accounts that
+                        // cannot reach its privacy policy from inside itself.
+                        // The links come from the platform's own settings
+                        // rather than the APK — this repo forbids a hardcoded
+                        // domain, and a platform that moves its policy page
+                        // must not have to ship a build to every driver.
+                        // Each row hides itself when its link is absent.
+                        privacyUrl = platformBranding.privacyUrl,
+                        termsUrl = platformBranding.termsUrl,
+                        helpUrl = platformBranding.helpUrl,
+                        supportWhatsApp = platformBranding.supportWhatsApp,
+                        supportEmail = platformBranding.supportEmail,
                     )
                 }
             }
+        }
         }
     }
 }
@@ -398,6 +467,7 @@ enum class SignedInTab(@StringRes val label: Int, val icon: ImageVector) {
 private fun AvailabilityTab(
     noOrdersContext: StateFlow<AvailabilityContextDto?>,
     onOpenNotifications: () -> Unit,
+    unreadNotifications: Int,
     viewModel: LocationWiringViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
@@ -422,6 +492,7 @@ private fun AvailabilityTab(
         connectionFailing = viewModel.connectionFailing,
         noOrdersContext = noOrdersContext,
         onOpenNotifications = onOpenNotifications,
+        unreadNotifications = unreadNotifications,
         warningSlot = {
             val state = permissions.state
             if (state.nextStep != LocationPermissionStep.DONE || state.foregroundOnlyLimited) {

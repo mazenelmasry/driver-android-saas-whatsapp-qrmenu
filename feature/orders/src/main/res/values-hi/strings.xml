@@ -9,6 +9,7 @@
     <string name="orders_mine_empty_title">हाथ में कोई ऑर्डर नहीं</string>
     <string name="orders_mine_empty_body">ऑफ़र के लिए उपलब्ध टैब देखें।</string>
 
+    <string name="orders_available_empty_title">अभी कोई ऑफ़र नहीं</string>
     <string name="orders_available_branches_heading">आपकी जुड़ी हुई शाखाएँ</string>
 
     <string name="orders_card_items_count">%1$d आइटम</string>

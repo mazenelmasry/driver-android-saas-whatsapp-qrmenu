@@ -15,6 +15,7 @@
 
     <!-- "المتاحة" — decision-47 reasons are rendered from :feature:availability's
          NoOrdersReason; this heading only introduces the branch list. -->
+    <string name="orders_available_empty_title">No offers right now</string>
     <string name="orders_available_branches_heading">Your linked branches</string>
 
     <string name="orders_card_items_count">%1$d items</string>

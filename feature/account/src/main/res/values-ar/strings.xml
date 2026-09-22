@@ -28,6 +28,7 @@
     <string name="account_ui_scale_largest">أكبر</string>
     <string name="account_ui_scale_preview_branch">فرع العليا</string>
     <string name="account_ui_scale_preview_fee">الأجرة %1$s</string>
+    <string name="account_ui_scale_preview_badge">معاينة — ليست طلباً حقيقياً</string>
 
     <string name="account_battery_row_label">البطارية</string>
     <string name="account_battery_supporting">الهاتف الذى ينام يتوقف عن استقبال الطلبات</string>
@@ -36,6 +37,23 @@
     <string name="account_sign_out_confirm_body">ستحتاج رقم جوالك لتسجيل الدخول مرة أخرى.</string>
     <string name="account_sign_out_confirm_confirm">تسجيل الخروج</string>
     <string name="account_sign_out_confirm_cancel">إلغاء</string>
+
+    <string name="account_app_version">الإصدار %1$s</string>
+
+    <string name="account_legal_section_title">قانونى ودعم</string>
+    <string name="account_privacy_policy">سياسة الخصوصية</string>
+    <string name="account_terms_of_service">شروط الاستخدام</string>
+    <string name="account_help">المساعدة والشرح</string>
+    <string name="account_contact_support">التواصل مع الدعم</string>
+
+    <string name="account_delete_row_label">حذف حسابى</string>
+    <string name="account_delete_pending_label">طلب حذف الحساب قيد المراجعة</string>
+    <string name="account_delete_pending_supporting">نراجع طلبك الآن، وسنُخطرك فور البت فيه.</string>
+    <string name="account_delete_confirm_title">حذف حسابك؟</string>
+    <string name="account_delete_confirm_body">هذا يرسل طلباً للمنصة، وليس حذفاً فورياً — قد تكون تحمل نقداً حصّلته لمطعم، وسجلّ رحلاتك يخصّ المطعم أيضاً. سيراجع أحد المسؤولين طلبك ويحذف حسابك بعد التأكّد من ذلك.</string>
+    <string name="account_delete_confirm_reason_label">السبب (اختيارى)</string>
+    <string name="account_delete_confirm_confirm">إرسال الطلب</string>
+    <string name="account_delete_confirm_cancel">إلغاء</string>
 
     <string name="a11y_account_identity">حسابك</string>
 </resources>

@@ -9,6 +9,7 @@
     <string name="orders_mine_empty_title">کوئی آرڈر نہیں</string>
     <string name="orders_mine_empty_body">پیشکشوں کے لیے دستیاب ٹیب دیکھیں۔</string>
 
+    <string name="orders_available_empty_title">فی الحال کوئی پیشکش نہیں</string>
     <string name="orders_available_branches_heading">آپ کی منسلک شاخیں</string>
 
     <string name="orders_card_items_count">%1$d اشیاء</string>

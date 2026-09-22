@@ -3,7 +3,9 @@ package app.qrmenu.driver.updater
 import android.content.Intent
 import android.content.res.Configuration
 import android.net.Uri
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +15,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -31,8 +34,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import app.qrmenu.driver.designsystem.theme.ControlSize
 import app.qrmenu.driver.designsystem.theme.DriverTheme
+import app.qrmenu.driver.designsystem.theme.Illustration
 import app.qrmenu.driver.designsystem.theme.Radius
 import app.qrmenu.driver.designsystem.theme.Spacing
 import app.qrmenu.driver.designsystem.theme.TouchTarget
@@ -62,12 +65,27 @@ fun BlockedUpdateScreen(info: UpdateInfo, modifier: Modifier = Modifier) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Icon(
-                imageVector = Icons.Filled.SystemUpdate,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(ControlSize.platformLogo),
-            )
+            // A soft brand-tinted disc behind the glyph — the same "art on a
+            // wash" family every empty state in the app uses (see
+            // `DriverArtwork` in :core:ui), so this wall reads as a
+            // considered screen rather than a generic system dialog. There is
+            // no drawn illustration for "an update exists" in that shared set
+            // (:core:ui is out of scope for this pass), so the disc carries
+            // the family resemblance and the system-update glyph stays —
+            // it is, after all, exactly what is being asked for.
+            Box(
+                modifier = Modifier
+                    .size(Illustration.canvas)
+                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.SystemUpdate,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(Illustration.canvas * ICON_TO_CANVAS_RATIO),
+                )
+            }
 
             Spacer(modifier = Modifier.height(Spacing.lg))
 
@@ -193,3 +211,6 @@ private fun BlockedUpdateScreenPreview_NoDownload() {
 @Preview(name = "ar dark", locale = "ar", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Preview(name = "en dark", locale = "en", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
 private annotation class BlockedUpdateScreenPreviews
+
+/** How much of the disc's own canvas the glyph fills — enough presence without touching the ring. */
+private const val ICON_TO_CANVAS_RATIO = 0.45f

@@ -7,6 +7,9 @@ import app.qrmenu.driver.datastore.TokenStore
 import app.qrmenu.driver.datastore.UiScale
 import app.qrmenu.driver.datastore.UiScaleStore
 import app.qrmenu.driver.network.api.AuthApi
+import app.qrmenu.driver.network.dto.DeletionRequestDto
+import app.qrmenu.driver.network.dto.RequestAccountDeletionRequest
+import app.qrmenu.driver.network.errors.DriverApiError
 import app.qrmenu.driver.network.errors.toDriverApiError
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -52,8 +55,12 @@ class AccountViewModel @Inject constructor(
 
     val uiScale: StateFlow<UiScale> = uiScaleStore.scale
 
+    private val _deletionRequest = MutableStateFlow(DeletionRequestUiState())
+    val deletionRequest: StateFlow<DeletionRequestUiState> = _deletionRequest.asStateFlow()
+
     init {
         load()
+        loadDeletionRequest()
     }
 
     /**
@@ -128,4 +135,68 @@ class AccountViewModel @Inject constructor(
             onSignedOut()
         }
     }
+
+    /**
+     * Reads whatever deletion request already exists (null when the driver
+     * has never filed one, or every prior one was rejected) — so the screen
+     * can show "under review" instead of offering the delete action again.
+     * Silent on failure: a driver whose screen otherwise loaded fine must not
+     * be blocked from anything else by this one secondary call failing.
+     */
+    fun loadDeletionRequest() {
+        viewModelScope.launch {
+            runCatching { authApi.accountDeletionRequest() }
+                .onSuccess { response ->
+                    _deletionRequest.update {
+                        it.copy(isLoading = false, request = response.deletionRequest, error = null)
+                    }
+                }
+                .onFailure {
+                    _deletionRequest.update { it.copy(isLoading = false) }
+                }
+        }
+    }
+
+    /**
+     * Files the account-deletion request. Idempotent server-side — a driver
+     * who taps twice (or reopens the screen mid-flight) gets the same pending
+     * request back rather than a second row — but [isSubmitting] still guards
+     * a genuine double-tap so the dialog cannot fire two requests at once.
+     */
+    fun requestAccountDeletion(reason: String?) {
+        if (_deletionRequest.value.isSubmitting) return
+        _deletionRequest.update { it.copy(isSubmitting = true, error = null) }
+        viewModelScope.launch {
+            val trimmedReason = reason?.trim()?.takeIf { it.isNotEmpty() }
+            runCatching { authApi.requestAccountDeletion(RequestAccountDeletionRequest(reason = trimmedReason)) }
+                .onSuccess { request ->
+                    _deletionRequest.update { it.copy(isSubmitting = false, request = request, error = null) }
+                }
+                .onFailure { thrown ->
+                    _deletionRequest.update { it.copy(isSubmitting = false, error = thrown.toDriverApiError()) }
+                }
+        }
+    }
+
+    /** Clears a failed submission's error, e.g. when the driver dismisses the dialog and reopens it. */
+    fun dismissDeletionError() {
+        _deletionRequest.update { it.copy(error = null) }
+    }
+}
+
+/**
+ * The Play-Store-required account-deletion request, as last known.
+ *
+ * [isLoading] guards only the FIRST read (before the driver ever opens the
+ * confirm dialog) — a request already loaded is never covered back up by a
+ * skeleton while [requestAccountDeletion] runs; that is what [isSubmitting]
+ * is for instead.
+ */
+data class DeletionRequestUiState(
+    val isLoading: Boolean = true,
+    val request: DeletionRequestDto? = null,
+    val isSubmitting: Boolean = false,
+    val error: DriverApiError? = null,
+) {
+    val isPending: Boolean get() = request?.status == "pending"
 }

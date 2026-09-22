@@ -64,6 +64,54 @@ data class BrandingDto(
     @SerialName("logo_url") val logoUrl: String? = null,
     /** Hex, e.g. `#B4471F`. The build flavour's colour is the fallback. */
     @SerialName("accent_color") val accentColor: String? = null,
+    /**
+     * The platform's published legal and support links.
+     *
+     * 🔴 Google Play refuses an app with accounts that does not reach its
+     * privacy policy from INSIDE the app, and expects a route to support and
+     * to account deletion in the same place. They come from the server rather
+     * than the APK for the same reason the name and logo do: a platform that
+     * moves its policy page must not have to ship a build to every driver's
+     * phone — and this repo forbids a hardcoded domain outright.
+     *
+     * Every one of them is nullable, and a row simply does not appear when
+     * its link is absent. A deployment that has configured none of them still
+     * gives the driver a working account screen.
+     */
+    @SerialName("privacy_url") val privacyUrl: String? = null,
+    @SerialName("terms_url") val termsUrl: String? = null,
+    @SerialName("help_url") val helpUrl: String? = null,
+    /** Digits only, ready for a `wa.me` link — never a formatted number. */
+    @SerialName("support_whatsapp") val supportWhatsApp: String? = null,
+    @SerialName("support_email") val supportEmail: String? = null,
+)
+
+/**
+ * `DeletionRequest` — the account-deletion request Google Play requires,
+ * reviewed by an admin rather than applied instantly (a driver may still be
+ * carrying a restaurant's cash, and the trip history belongs to the
+ * restaurant too). Deliberately carries no `admin_notes`/`processed_by` —
+ * those are for the admin panel only, never shown to the driver.
+ */
+@Serializable
+data class DeletionRequestDto(
+    val id: Long,
+    val status: String,
+    val reason: String? = null,
+    @SerialName("requested_at") val requestedAt: String,
+    @SerialName("processed_at") val processedAt: String? = null,
+)
+
+/** Body of `POST driver/account/deletion-request`. */
+@Serializable
+data class RequestAccountDeletionRequest(
+    val reason: String? = null,
+)
+
+/** `GET driver/account/deletion-request` response — null when never filed, or every prior one was rejected. */
+@Serializable
+data class DeletionRequestResponse(
+    @SerialName("deletion_request") val deletionRequest: DeletionRequestDto? = null,
 )
 
 /** `Branch`. Everything but id/name is nullable — a branch may have no coordinates yet. */

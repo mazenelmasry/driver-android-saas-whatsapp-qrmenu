@@ -29,6 +29,7 @@
     <string name="account_ui_scale_largest">সবচেয়ে বড়</string>
     <string name="account_ui_scale_preview_branch">আল ওলায়া শাখা</string>
     <string name="account_ui_scale_preview_fee">ফি %1$s</string>
+    <string name="account_ui_scale_preview_badge">প্রিভিউ — এটি আসল অর্ডার নয়</string>
 
     <string name="account_battery_row_label">ব্যাটারি</string>
     <string name="account_battery_supporting">ঘুমিয়ে থাকা ফোন অর্ডার গ্রহণ বন্ধ করে দেয়</string>
@@ -37,6 +38,23 @@
     <string name="account_sign_out_confirm_body">আবার সাইন ইন করতে আপনার ফোন নম্বর প্রয়োজন হবে।</string>
     <string name="account_sign_out_confirm_confirm">সাইন আউট</string>
     <string name="account_sign_out_confirm_cancel">বাতিল</string>
+
+    <string name="account_app_version">সংস্করণ %1$s</string>
+
+    <string name="account_legal_section_title">আইনি ও সহায়তা</string>
+    <string name="account_privacy_policy">গোপনীয়তা নীতি</string>
+    <string name="account_terms_of_service">ব্যবহারের শর্তাবলী</string>
+    <string name="account_help">সহায়তা ও নির্দেশিকা</string>
+    <string name="account_contact_support">সহায়তার সাথে যোগাযোগ করুন</string>
+
+    <string name="account_delete_row_label">আমার অ্যাকাউন্ট মুছে ফেলুন</string>
+    <string name="account_delete_pending_label">অ্যাকাউন্ট মুছে ফেলার অনুরোধ পর্যালোচনাধীন</string>
+    <string name="account_delete_pending_supporting">আমরা আপনার অনুরোধ পর্যালোচনা করছি। সিদ্ধান্ত হলে আপনাকে জানানো হবে।</string>
+    <string name="account_delete_confirm_title">আপনার অ্যাকাউন্ট মুছে ফেলবেন?</string>
+    <string name="account_delete_confirm_body">এটি প্ল্যাটফর্মে একটি অনুরোধ পাঠায়, তাৎক্ষণিক মুছে ফেলা নয় — আপনি হয়তো এখনও কোনো রেস্তোরাঁর সংগ্রহ করা নগদ বহন করছেন, এবং আপনার ট্রিপ ইতিহাসও সেই রেস্তোরাঁর। একজন অ্যাডমিন আপনার অনুরোধ পর্যালোচনা করে তা স্পষ্ট হলে আপনার অ্যাকাউন্ট মুছে ফেলবেন।</string>
+    <string name="account_delete_confirm_reason_label">কারণ (ঐচ্ছিক)</string>
+    <string name="account_delete_confirm_confirm">অনুরোধ পাঠান</string>
+    <string name="account_delete_confirm_cancel">বাতিল</string>
 
     <string name="a11y_account_identity">আপনার অ্যাকাউন্ট</string>
 </resources>

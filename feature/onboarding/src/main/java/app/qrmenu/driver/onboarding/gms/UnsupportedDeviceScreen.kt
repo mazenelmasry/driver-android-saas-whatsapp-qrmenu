@@ -1,6 +1,7 @@
 package app.qrmenu.driver.onboarding.gms
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,6 +25,9 @@ import app.qrmenu.driver.designsystem.theme.Radius
 import app.qrmenu.driver.designsystem.theme.Spacing
 import app.qrmenu.driver.designsystem.theme.TouchTarget
 import app.qrmenu.driver.onboarding.R
+import app.qrmenu.driver.ui.components.DriverArt
+import app.qrmenu.driver.ui.components.DriverArtwork
+import androidx.compose.ui.Alignment
 
 /**
  * Screen 18 — "جهاز غير مدعوم" in the driver CLAUDE.md screen map.
@@ -57,18 +61,34 @@ internal fun UnsupportedDeviceScreen(onContinue: () -> Unit) {
                 .padding(insets)
                 .padding(horizontal = Spacing.lg),
         ) {
-            Spacer(Modifier.size(Spacing.xxl))
+            Spacer(Modifier.size(Spacing.xl))
+
+            // 🔴 Artwork, not just two lines of text: this is one of the two
+            // screens a driver sees when they are stuck (the other is the
+            // update wall), and the brief is explicit that "stuck" screens
+            // must look considered rather than like an error page. The quiet
+            // bell is the literal shape of what this screen explains — no
+            // ringing, nothing more — so it is reused rather than invented.
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                DriverArtwork(art = DriverArt.QuietBell)
+            }
+
+            Spacer(Modifier.size(Spacing.lg))
 
             Text(
                 text = stringResource(R.string.unsupported_device_title),
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.size(Spacing.xs))
             Text(
                 text = stringResource(R.string.unsupported_device_subtitle),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
             )
 
             Spacer(Modifier.size(Spacing.xl))
@@ -113,18 +133,20 @@ internal fun UnsupportedDeviceScreen(onContinue: () -> Unit) {
     }
 }
 
-@Preview(name = "Unsupported device — light")
+@Preview(name = "ar", locale = "ar", showBackground = true)
+@Preview(name = "en", locale = "en", showBackground = true)
+@Preview(name = "ur", locale = "ur", showBackground = true)
+@Preview(name = "bn", locale = "bn", showBackground = true)
+@Preview(name = "hi", locale = "hi", showBackground = true)
+@Preview(
+    name = "ar dark",
+    locale = "ar",
+    showBackground = true,
+    uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES,
+)
 @Composable
-private fun UnsupportedDeviceScreenPreviewLight() {
-    DriverTheme(darkTheme = false) {
-        UnsupportedDeviceScreen(onContinue = {})
-    }
-}
-
-@Preview(name = "Unsupported device — dark")
-@Composable
-private fun UnsupportedDeviceScreenPreviewDark() {
-    DriverTheme(darkTheme = true) {
+private fun UnsupportedDeviceScreenPreview() {
+    DriverTheme {
         UnsupportedDeviceScreen(onContinue = {})
     }
 }

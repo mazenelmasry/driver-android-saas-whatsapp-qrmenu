@@ -7,6 +7,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -59,11 +60,15 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.qrmenu.driver.designsystem.theme.ControlSize
 import app.qrmenu.driver.designsystem.theme.DriverTheme
+import app.qrmenu.driver.designsystem.theme.Elevation
 import app.qrmenu.driver.designsystem.theme.Radius
 import app.qrmenu.driver.designsystem.theme.Spacing
+import app.qrmenu.driver.designsystem.theme.Stroke
 import app.qrmenu.driver.designsystem.theme.TouchTarget
 import app.qrmenu.driver.network.dto.DriverOrderDto
 import app.qrmenu.driver.network.errors.DriverApiError
+import app.qrmenu.driver.ui.components.DriverArt
+import app.qrmenu.driver.ui.components.DriverArtwork
 import app.qrmenu.driver.ui.components.DriverErrorBanner
 import app.qrmenu.driver.ui.text.ltr
 import java.time.Instant
@@ -243,6 +248,13 @@ private fun OfferDetailsCard(order: OfferSummary) {
     Surface(
         shape = RoundedCornerShape(Radius.card),
         color = MaterialTheme.colorScheme.surface,
+        // 🔴 Real depth, not a hairline: this card carries the one number a
+        // driver has 45 seconds to weigh, so it is lifted OFF the page rather
+        // than merely outlined — the same distinction [Elevation.cardSelected]
+        // exists to draw versus the flat [Elevation.card] every other panel
+        // in this app sits at.
+        shadowElevation = Elevation.cardSelected,
+        border = BorderStroke(Stroke.hairline, MaterialTheme.colorScheme.outlineVariant),
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(
@@ -492,19 +504,24 @@ private fun DeclineReasonOverlay(isActing: Boolean, onDismiss: () -> Unit, onCon
 
 @Composable
 private fun OfferOutcomeScreen(outcome: OfferOutcome) {
-    val (title, body) = when (outcome) {
+    val (art, title, body) = when (outcome) {
+        // Someone else already has the bag — the offer is gone, not merely closed.
         OfferOutcome.AlreadyClaimed ->
-            R.string.trip_outcome_already_claimed_title to R.string.trip_outcome_already_claimed_body
+            Triple(DriverArt.EmptyBag, R.string.trip_outcome_already_claimed_title, R.string.trip_outcome_already_claimed_body)
+        // The ring stopped — nothing decided it, time did.
         OfferOutcome.Expired ->
-            R.string.trip_outcome_expired_title to R.string.trip_outcome_expired_body
+            Triple(DriverArt.QuietBell, R.string.trip_outcome_expired_title, R.string.trip_outcome_expired_body)
+        // The order behind the offer no longer exists.
         OfferOutcome.OrderCancelled ->
-            R.string.trip_outcome_order_cancelled_title to R.string.trip_outcome_order_cancelled_body
+            Triple(DriverArt.EmptyBag, R.string.trip_outcome_order_cancelled_title, R.string.trip_outcome_order_cancelled_body)
+        // A ledger limit, not a road/order one.
         OfferOutcome.TooManyActiveOrders ->
-            R.string.trip_outcome_too_many_active_orders_title to R.string.trip_outcome_too_many_active_orders_body
+            Triple(DriverArt.Wallet, R.string.trip_outcome_too_many_active_orders_title, R.string.trip_outcome_too_many_active_orders_body)
         OfferOutcome.CashLimitExceeded ->
-            R.string.trip_outcome_cash_limit_exceeded_title to R.string.trip_outcome_cash_limit_exceeded_body
+            Triple(DriverArt.Wallet, R.string.trip_outcome_cash_limit_exceeded_title, R.string.trip_outcome_cash_limit_exceeded_body)
+        // The driver's own quiet no.
         OfferOutcome.Declined ->
-            R.string.trip_outcome_declined_title to R.string.trip_outcome_declined_body
+            Triple(DriverArt.QuietBell, R.string.trip_outcome_declined_title, R.string.trip_outcome_declined_body)
     }
 
     Column(
@@ -514,6 +531,8 @@ private fun OfferOutcomeScreen(outcome: OfferOutcome) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        DriverArtwork(art = art)
+        Spacer(modifier = Modifier.height(Spacing.md))
         Text(
             text = stringResource(title),
             style = MaterialTheme.typography.headlineSmall,

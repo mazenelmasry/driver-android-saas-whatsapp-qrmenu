@@ -19,5 +19,12 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.androidx.core.ktx)
 
+    // The platform logo in the screen header arrives from the admin panel over
+    // the network, and both platforms' logos are SVG — the same three artifacts
+    // `:feature:auth` already uses for the sign-in mark.
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
+    implementation(libs.coil.svg)
+
     testImplementation(libs.junit)
 }

@@ -7,6 +7,10 @@ android {
 }
 
 dependencies {
+    // For NotificationHistoryStore — the list's data source and the source
+    // of the ViewModel's unread-count exposure.
+    implementation(project(":core:database"))
+
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockk)

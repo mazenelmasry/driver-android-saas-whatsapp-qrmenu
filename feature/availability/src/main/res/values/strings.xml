@@ -19,6 +19,10 @@
     <string name="availability_connection_lost_body">The server will take you offline in a few minutes if the connection is not restored.</string>
 
 
+    <string name="availability_empty_title_waiting">Watching for orders</string>
+    <string name="availability_empty_title_no_branches">Nothing open nearby</string>
+    <string name="availability_empty_title_paused">Offers paused</string>
+
     <string name="availability_branches_heading">Your linked branches</string>
     <string name="availability_branch_open">Open</string>
     <string name="availability_branch_closed">Closed</string>

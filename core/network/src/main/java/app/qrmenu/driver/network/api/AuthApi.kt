@@ -3,12 +3,15 @@ package app.qrmenu.driver.network.api
 import app.qrmenu.driver.network.dto.AcceptedDto
 import app.qrmenu.driver.network.dto.AppVersionDto
 import app.qrmenu.driver.network.dto.BrandingDto
+import app.qrmenu.driver.network.dto.DeletionRequestDto
+import app.qrmenu.driver.network.dto.DeletionRequestResponse
 import app.qrmenu.driver.network.dto.DeviceTokenRequest
 import app.qrmenu.driver.network.dto.LoginRequest
 import app.qrmenu.driver.network.dto.LoginResponse
 import app.qrmenu.driver.network.dto.MeResponse
 import app.qrmenu.driver.network.dto.RedeemInviteRequest
 import app.qrmenu.driver.network.dto.RedeemInviteResponse
+import app.qrmenu.driver.network.dto.RequestAccountDeletionRequest
 import app.qrmenu.driver.network.dto.RequestOtpRequest
 import app.qrmenu.driver.network.dto.SetPasswordRequest
 import app.qrmenu.driver.network.dto.VerifyOtpRequest
@@ -102,6 +105,18 @@ interface AuthApi {
 
     @GET("driver/me")
     suspend fun me(): MeResponse
+
+    /**
+     * Files (or re-fetches) the Play-Store-required account-deletion request.
+     * Idempotent server-side: a driver with an already-pending request gets
+     * that same request back rather than a second row.
+     */
+    @POST("driver/account/deletion-request")
+    suspend fun requestAccountDeletion(@Body body: RequestAccountDeletionRequest): DeletionRequestDto
+
+    /** The current deletion request, if any — null when never filed or every prior one was rejected. */
+    @GET("driver/account/deletion-request")
+    suspend fun accountDeletionRequest(): DeletionRequestResponse
 
     /**
      * Authorises `private-driver.{own driverId}` for Reverb. Neither the session
