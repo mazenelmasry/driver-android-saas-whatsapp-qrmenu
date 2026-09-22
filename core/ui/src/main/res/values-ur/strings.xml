@@ -50,6 +50,10 @@
     <string name="availability_reason_has_active_trip">آپ کے پاس ایک آرڈر موجود ہے۔ نئے آفرز اس کے ختم ہونے تک رکے رہیں گے۔</string>
     <string name="availability_reason_nothing_pending">آپ تیار ہیں — بس فی الحال آپ کے لیے کوئی آرڈر نہیں ہے۔</string>
     <string name="availability_reason_unknown">فی الحال کوئی آرڈر نہیں۔</string>
+
+    <string name="cash_hold_banner_title">نقد کی حد پوری ہو گئی</string>
+    <string name="cash_hold_banner_body">نیچے دی گئی شاخ (شاخوں) پر نقد آرڈرز اس وقت تک روکے گئے ہیں جب تک آپ ان کا حساب نہ چکائیں۔</string>
+    <string name="cash_hold_branch_amount">آپ کے پاس %2$s میں سے %1$s ہے</string>
     <string name="a11y_open_notifications">اطلاعات</string>
 
     <!-- `issue.code` — the five reasons a driver can report WITHOUT moving the order (openapi/driver.v1.yaml). -->

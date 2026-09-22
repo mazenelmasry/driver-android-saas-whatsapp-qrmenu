@@ -3,8 +3,12 @@ package app.qrmenu.driver.availability
 import app.qrmenu.driver.network.api.AuthApi
 import app.qrmenu.driver.network.api.AvailabilityApi
 import app.qrmenu.driver.network.api.OrderApi
+import app.qrmenu.driver.network.dto.AvailabilityContextDto
 import app.qrmenu.driver.network.dto.AvailabilityRequest
 import app.qrmenu.driver.network.dto.AvailabilityResponse
+import app.qrmenu.driver.network.dto.AvailableOrdersResponse
+import app.qrmenu.driver.network.dto.CashHoldBranchDto
+import app.qrmenu.driver.network.dto.CashHoldDto
 import app.qrmenu.driver.network.dto.DriverDto
 import app.qrmenu.driver.network.dto.MeResponse
 import app.qrmenu.driver.network.errors.DriverApiError
@@ -211,5 +215,43 @@ class AvailabilityViewModelTest {
         dispatcher.scheduler.advanceUntilIdle()
 
         coVerify(exactly = 1) { availabilityApi.setAvailability(any()) }
+    }
+
+    // ── cash hold context ────────────────────────────────────────────────
+
+    /**
+     * `AvailabilityContextDto.cash_hold` sits beside `reason`, never inside a
+     * field the ViewModel picks apart — this guards that the whole DTO
+     * (`orderApi.available().context`) lands on `state.noOrdersContext`
+     * untouched, so `context.cashHold` is still there for `CashHoldBanner`
+     * when the screen reads it off state. This is exactly the class of bug
+     * being fixed: logic built (the banner) with no surface actually wired to it.
+     */
+    @Test
+    fun `the cash hold on the context survives into state, not just the reason`() = runTest(dispatcher) {
+        coEvery { authApi.me() } returns MeResponse(driver = offlineDriver)
+        val heldBranch = CashHoldBranchDto(
+            branchId = 7,
+            branchName = "فرع العليا",
+            companyId = 3,
+            companyName = "مطعم البيت السعيد",
+            cashOnHand = 620.0,
+            limit = 500.0,
+            currency = "SAR",
+        )
+        coEvery { orderApi.available() } returns AvailableOrdersResponse(
+            data = emptyList(),
+            context = AvailabilityContextDto(
+                isOnline = true,
+                reason = "nothing_pending",
+                cashHold = CashHoldDto(branches = listOf(heldBranch)),
+            ),
+        )
+
+        val model = viewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val cashHold = model.state.value.noOrdersContext?.cashHold
+        assertEquals(listOf(heldBranch), cashHold?.branches)
     }
 }

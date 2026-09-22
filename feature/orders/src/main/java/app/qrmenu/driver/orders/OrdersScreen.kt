@@ -40,6 +40,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import app.qrmenu.driver.ui.orders.CashHoldBanner
 import app.qrmenu.driver.ui.orders.NoOrdersReason
 import app.qrmenu.driver.ui.orders.messageResource
 import app.qrmenu.driver.ui.orders.noOrdersReason
@@ -211,6 +212,13 @@ private fun AvailableList(
                 if (listState.error != null) {
                     item { DriverErrorBanner(error = listState.error, onRetry = onRetry) }
                 }
+
+                // Deliberately independent of `orders`/`error`/`reason`: a driver
+                // over a branch's cash ceiling still sees card orders come through
+                // (so the list is not empty and `reason` is often `nothing_pending`,
+                // which reads as "all good, just wait") — that would be a lie for
+                // cash. Always shown while held, whether the list is empty or not.
+                item { CashHoldBanner(cashHold = context?.cashHold) }
 
                 // Decision 47: an empty "المتاحة" always names why — reused
                 // verbatim from :feature:availability rather than a second copy.

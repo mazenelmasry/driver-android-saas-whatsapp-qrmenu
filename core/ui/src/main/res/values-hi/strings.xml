@@ -50,6 +50,10 @@
     <string name="availability_reason_has_active_trip">आपके पास एक ऑर्डर है। नए ऑफ़र इसके पूरा होने तक रुके रहेंगे।</string>
     <string name="availability_reason_nothing_pending">आप तैयार हैं — बस अभी आपके लिए कोई ऑर्डर नहीं है।</string>
     <string name="availability_reason_unknown">अभी कोई ऑर्डर नहीं।</string>
+
+    <string name="cash_hold_banner_title">नकद की सीमा पूरी हो गई</string>
+    <string name="cash_hold_banner_body">नीचे दी गई शाखा(ओं) पर नकद ऑर्डर तब तक रुके रहेंगे जब तक आप उनका हिसाब नहीं चुकाते।</string>
+    <string name="cash_hold_branch_amount">आपके पास %2$s में से %1$s है</string>
     <string name="a11y_open_notifications">सूचनाएं</string>
 
     <!-- `issue.code` — the five reasons a driver can report WITHOUT moving the order (openapi/driver.v1.yaml). -->

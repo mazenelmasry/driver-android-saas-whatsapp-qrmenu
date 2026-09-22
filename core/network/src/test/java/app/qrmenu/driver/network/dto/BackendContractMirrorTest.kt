@@ -222,6 +222,31 @@ class BackendContractMirrorTest {
             "AvailabilityContext",
             violations,
         )
+        // `cash_hold` is an INLINE schema, not a $ref, so it has no name to
+        // mirror() by — and nested objects are not walked. Registered by hand
+        // because an unchecked row here is exactly the shape that decides
+        // whether a driver learns why cash orders stopped.
+        val cashHoldSchema = spec.getValue("components").jsonObject
+            .getValue("schemas").jsonObject
+            .getValue("AvailabilityContext").jsonObject
+            .getValue("properties").jsonObject
+            .getValue("cash_hold").jsonObject
+        mirrorAgainst(
+            "CashHoldDto",
+            CashHoldDto.serializer().descriptor,
+            cashHoldSchema,
+            "AvailabilityContext.cash_hold",
+            violations,
+        )
+        mirrorAgainst(
+            "CashHoldBranchDto",
+            CashHoldBranchDto.serializer().descriptor,
+            cashHoldSchema.getValue("properties").jsonObject
+                .getValue("branches").jsonObject
+                .getValue("items").jsonObject,
+            "AvailabilityContext.cash_hold.branches[]",
+            violations,
+        )
         mirror("LedgerSummaryDto", LedgerSummaryDto.serializer().descriptor, "LedgerSummary", violations)
         mirror("LedgerEntryDto", LedgerEntryDto.serializer().descriptor, "LedgerEntry", violations)
         mirror("SettlementDto", SettlementDto.serializer().descriptor, "Settlement", violations)

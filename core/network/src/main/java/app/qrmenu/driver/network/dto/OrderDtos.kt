@@ -164,6 +164,42 @@ data class AvailabilityContextDto(
      * a generic line instead of failing the decode.
      */
     val reason: String? = null,
+    /**
+     * Present ONLY while this driver is over at least one branch's cash ceiling.
+     *
+     * It sits BESIDE [reason], never replacing it: the ceiling hides UNPAID CASH
+     * orders only, so `nothing_pending` stays the honest reason while card orders
+     * keep arriving. Without this, the app tells a driver standing in the street
+     * the healthy story ("online, in range, just wait") when in fact no cash
+     * order will ever reach them again until they hand the money in.
+     */
+    @SerialName("cash_hold") val cashHold: CashHoldDto? = null,
+)
+
+/**
+ * Why cash orders are being withheld — one row PER BRANCH.
+ *
+ * Per branch and not one pair of numbers, because the cash is held per COMPANY
+ * (one purse per restaurant) while the ceiling is set per BRANCH: a driver over
+ * 500 at one branch may still be working normally for a 1000-ceiling branch of
+ * the same company.
+ */
+@Serializable
+data class CashHoldDto(
+    val branches: List<CashHoldBranchDto> = emptyList(),
+)
+
+@Serializable
+data class CashHoldBranchDto(
+    @SerialName("branch_id") val branchId: Long,
+    @SerialName("branch_name") val branchName: String,
+    @SerialName("company_id") val companyId: Long,
+    @SerialName("company_name") val companyName: String? = null,
+    /** Held for THIS branch's company — the figure the ceiling is compared against. */
+    @SerialName("cash_on_hand") val cashOnHand: Double,
+    /** This branch's own ceiling. Always > 0 (0 means "no ceiling" and never appears here). */
+    val limit: Double,
+    val currency: String,
 )
 
 /** A branch of an ACTIVE link, NAMED — so the driver can see the restaurant thinks they cover Riyadh while they are in Jeddah. */

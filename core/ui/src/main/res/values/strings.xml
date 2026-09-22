@@ -50,6 +50,11 @@
     <string name="availability_reason_has_active_trip">You have an order in hand. New offers pause until it is finished.</string>
     <string name="availability_reason_nothing_pending">You are ready — there is simply no order for you yet.</string>
     <string name="availability_reason_unknown">No orders right now.</string>
+
+    <!-- CashHoldBanner: `AvailabilityContextDto.cashHold` — the driver is over the cash ceiling at one or more branches, so cash orders there are paused until they settle up. Deliberately NOT worded like `availability_reason_nothing_pending`: that means "wait", this means "won't arrive until you act". -->
+    <string name="cash_hold_banner_title">Cash limit reached</string>
+    <string name="cash_hold_banner_body">Cash orders are paused at the branch(es) below until you settle up with them.</string>
+    <string name="cash_hold_branch_amount">Holding %1$s of %2$s</string>
     <string name="a11y_open_notifications">Notifications</string>
 
     <!-- `issue.code` — the five reasons a driver can report WITHOUT moving the order (openapi/driver.v1.yaml). -->

@@ -50,6 +50,10 @@
     <string name="availability_reason_has_active_trip">لديك طلب بحوزتك. العروض الجديدة متوقفة حتى تنهيه.</string>
     <string name="availability_reason_nothing_pending">أنت جاهز — لا يوجد طلب لك حالياً فقط.</string>
     <string name="availability_reason_unknown">لا طلبات حالياً.</string>
+
+    <string name="cash_hold_banner_title">وصلت الحد الأقصى للنقد</string>
+    <string name="cash_hold_banner_body">طلبات الدفع نقداً متوقفة عند الفرع (الفروع) أدناه حتى تسدّد لهم.</string>
+    <string name="cash_hold_branch_amount">معك %1$s من %2$s</string>
     <string name="a11y_open_notifications">الإشعارات</string>
 
     <!-- `issue.code` — الأسباب الخمسة التى يُبلّغها السائق بلا نقل حالة الطلب -->

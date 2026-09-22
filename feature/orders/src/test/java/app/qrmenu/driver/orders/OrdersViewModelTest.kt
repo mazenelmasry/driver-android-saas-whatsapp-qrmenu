@@ -4,6 +4,8 @@ import app.qrmenu.driver.network.api.OrderApi
 import app.qrmenu.driver.network.dto.AvailabilityContextDto
 import app.qrmenu.driver.network.dto.AvailableOrdersResponse
 import app.qrmenu.driver.network.dto.BranchDto
+import app.qrmenu.driver.network.dto.CashHoldBranchDto
+import app.qrmenu.driver.network.dto.CashHoldDto
 import app.qrmenu.driver.network.dto.DeliveryAddressDto
 import app.qrmenu.driver.network.dto.DriverOrderDto
 import app.qrmenu.driver.network.dto.MyOrdersResponse
@@ -117,6 +119,47 @@ class OrdersViewModelTest {
         assertNull(state.available.error)
         assertTrue(state.available.orders.isEmpty())
         assertEquals("offline", state.availableContext?.reason)
+    }
+
+    @Test
+    fun `a cash hold survives into state even when available orders are not empty`() = runTest(dispatcher) {
+        // The hold only withholds UNPAID CASH orders — card orders for the same
+        // branch still arrive, so `available.orders` can be non-empty while the
+        // driver is still held. The banner reads `availableContext?.cashHold`
+        // directly, independent of `orders`/`reason`, so this proves the DTO
+        // (not just an empty-list special case) survives repository → state.
+        val cardOrder = order(id = 42)
+        val heldContext = AvailabilityContextDto(
+            isOnline = true,
+            reason = "nothing_pending",
+            cashHold = CashHoldDto(
+                branches = listOf(
+                    CashHoldBranchDto(
+                        branchId = 1,
+                        branchName = "Al Olaya",
+                        companyId = 5,
+                        companyName = "Lauren",
+                        cashOnHand = 620.0,
+                        limit = 500.0,
+                        currency = "SAR",
+                    ),
+                ),
+            ),
+        )
+        coEvery { orderApi.mine() } returns MyOrdersResponse(data = emptyList())
+        coEvery { orderApi.available() } returns AvailableOrdersResponse(
+            data = listOf(cardOrder),
+            context = heldContext,
+        )
+
+        val model = viewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val state = model.state.value
+        assertTrue("card orders still arrive during a cash hold", state.available.orders.isNotEmpty())
+        assertEquals(heldContext.cashHold, state.availableContext?.cashHold)
+        assertEquals(1, state.availableContext?.cashHold?.branches?.size)
+        assertEquals("Al Olaya", state.availableContext?.cashHold?.branches?.first()?.branchName)
     }
 
     @Test

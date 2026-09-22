@@ -2054,6 +2054,58 @@
                         "nullable": true,
                         "description": "The restaurant's own radius (decision 26, 5 km by default)."
                     },
+                    "cash_hold": {
+                        "type": "object",
+                        "nullable": true,
+                        "additionalProperties": false,
+                        "required": [
+                            "branches"
+                        ],
+                        "description": "Present ONLY while the driver is over at least one branch's cash ceiling. Its PRESENCE is the flag — there is no `over_limit: false` form, because a block that has to be read twice to learn nothing is how the driver stops reading it.\nIt sits BESIDE `reason`, never replacing it: the ceiling hides UNPAID CASH orders only (DispatchPolicy::isUnderCashLimitFor), while card orders keep arriving, so `nothing_pending` is still the honest reason whenever nothing is pending. Without this block the driver is told the healthy story — \"online, in range, just wait\" — while no cash order will ever reach them again until they hand the money in.\nOne row PER BRANCH, because the two numbers come from different places: the cash is held per COMPANY (one purse per restaurant) and the ceiling is set per BRANCH. A driver over 500 at one branch may still be working normally for a 1000-ceiling branch of the same company, so a single pair of numbers here would be a second lie.\n",
+                        "properties": {
+                            "branches": {
+                                "type": "array",
+                                "minItems": 1,
+                                "items": {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "required": [
+                                        "branch_id",
+                                        "branch_name",
+                                        "company_id",
+                                        "cash_on_hand",
+                                        "limit",
+                                        "currency"
+                                    ],
+                                    "properties": {
+                                        "branch_id": {
+                                            "type": "integer"
+                                        },
+                                        "branch_name": {
+                                            "type": "string"
+                                        },
+                                        "company_id": {
+                                            "type": "integer"
+                                        },
+                                        "company_name": {
+                                            "type": "string"
+                                        },
+                                        "cash_on_hand": {
+                                            "type": "number",
+                                            "description": "Held for THIS branch's company — the figure the ceiling is compared against."
+                                        },
+                                        "limit": {
+                                            "type": "number",
+                                            "description": "This branch's own ceiling. Always > 0 (0 means \"no ceiling\" and never appears here)."
+                                        },
+                                        "currency": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
                     "reason": {
                         "type": "string",
                         "nullable": true,

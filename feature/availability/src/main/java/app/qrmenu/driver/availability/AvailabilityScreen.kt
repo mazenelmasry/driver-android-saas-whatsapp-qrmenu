@@ -61,6 +61,7 @@ import app.qrmenu.driver.network.dto.ContextBranchDto
 import app.qrmenu.driver.network.errors.DriverApiError
 import app.qrmenu.driver.network.errors.DriverErrorCode
 import app.qrmenu.driver.ui.components.DriverErrorBanner
+import app.qrmenu.driver.ui.orders.CashHoldBanner
 import app.qrmenu.driver.ui.text.ltr
 import java.time.Duration
 import java.time.Instant
@@ -186,6 +187,16 @@ internal fun AvailabilityScreen(
                         onToggle = onToggle,
                     )
                 }
+
+                // Always shown while the driver is over a branch's cash
+                // ceiling — independent of `NoOrdersReason`/`reason` on
+                // purpose (see the class doc on `CashHoldBanner`): an active
+                // trip or a populated order list does not make the hold any
+                // less true, so this is not folded into the reason card below
+                // and does not wait on it. `CashHoldBanner` itself renders
+                // nothing when there is no hold, so no extra guard is needed
+                // here.
+                item { CashHoldBanner(cashHold = context?.cashHold) }
 
                 item { warningSlot() }
 
