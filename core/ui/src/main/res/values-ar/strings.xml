@@ -53,7 +53,7 @@
 
     <string name="cash_hold_banner_title">وصلت الحد الأقصى للنقد</string>
     <string name="cash_hold_banner_body">طلبات الدفع نقداً متوقفة عند الفرع (الفروع) أدناه حتى تسدّد لهم.</string>
-    <string name="cash_hold_branch_amount">معك %1$s من %2$s</string>
+    <string name="cash_hold_branch_amount">معك %1$s — والحد %2$s</string>
     <string name="a11y_open_notifications">الإشعارات</string>
 
     <!-- `issue.code` — الأسباب الخمسة التى يُبلّغها السائق بلا نقل حالة الطلب -->

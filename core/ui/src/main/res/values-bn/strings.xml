@@ -53,7 +53,7 @@
 
     <string name="cash_hold_banner_title">নগদের সীমা পূর্ণ হয়েছে</string>
     <string name="cash_hold_banner_body">নিচের শাখা(গুলো)-তে নগদ অর্ডার স্থগিত আছে, যতক্ষণ না আপনি তাদের সাথে হিসাব মেটান।</string>
-    <string name="cash_hold_branch_amount">আপনার কাছে %2$s এর মধ্যে %1$s আছে</string>
+    <string name="cash_hold_branch_amount">আপনার কাছে %1$s আছে — সীমা %2$s</string>
     <string name="a11y_open_notifications">বিজ্ঞপ্তি</string>
 
     <!-- `issue.code` — the five reasons a driver can report WITHOUT moving the order (openapi/driver.v1.yaml). -->

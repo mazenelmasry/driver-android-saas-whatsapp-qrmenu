@@ -53,7 +53,7 @@
 
     <string name="cash_hold_banner_title">नकद की सीमा पूरी हो गई</string>
     <string name="cash_hold_banner_body">नीचे दी गई शाखा(ओं) पर नकद ऑर्डर तब तक रुके रहेंगे जब तक आप उनका हिसाब नहीं चुकाते।</string>
-    <string name="cash_hold_branch_amount">आपके पास %2$s में से %1$s है</string>
+    <string name="cash_hold_branch_amount">आपके पास %1$s है — सीमा %2$s</string>
     <string name="a11y_open_notifications">सूचनाएं</string>
 
     <!-- `issue.code` — the five reasons a driver can report WITHOUT moving the order (openapi/driver.v1.yaml). -->

@@ -53,7 +53,7 @@
 
     <string name="cash_hold_banner_title">نقد کی حد پوری ہو گئی</string>
     <string name="cash_hold_banner_body">نیچے دی گئی شاخ (شاخوں) پر نقد آرڈرز اس وقت تک روکے گئے ہیں جب تک آپ ان کا حساب نہ چکائیں۔</string>
-    <string name="cash_hold_branch_amount">آپ کے پاس %2$s میں سے %1$s ہے</string>
+    <string name="cash_hold_branch_amount">آپ کے پاس %1$s ہے — حد %2$s</string>
     <string name="a11y_open_notifications">اطلاعات</string>
 
     <!-- `issue.code` — the five reasons a driver can report WITHOUT moving the order (openapi/driver.v1.yaml). -->
