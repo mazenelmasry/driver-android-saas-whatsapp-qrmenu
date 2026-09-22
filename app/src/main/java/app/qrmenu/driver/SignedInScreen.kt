@@ -266,18 +266,19 @@ fun SignedInScreen(
             tab = SignedInTab.Orders
         }
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                // Consumed here, once, for the whole stack — `TripRoute`
-                // below applies this SAME inset again inside its own
-                // `DriverScreenScaffold`; without `consumeWindowInsets` the
-                // driver would see two status-bar-height gaps stacked when
-                // the banner is showing (one above it, one — spurious —
-                // between it and the trip screen).
-                .windowInsetsPadding(WindowInsets.statusBars)
-                .consumeWindowInsets(WindowInsets.statusBars),
-        ) {
+        // 🔴 No status-bar inset here any more.
+        //
+        // This branch used to pay it for the whole stack, from before the
+        // coloured header existed. Now `DriverHeader` pays it itself — so
+        // paying it out here too pushed the trip screen down and left a
+        // strip of bare window above the gradient, which on the device read
+        // as a white band across the top of a dark screen.
+        //
+        // The deferred-update notice goes through `LocalAppBanners` for the
+        // same reason every other app-level banner does: below the title,
+        // inside a frame that has already paid the inset, rather than above
+        // everything in a wrapper that has to remember to.
+        val tripBanners: @Composable ColumnScope.() -> Unit = {
             // The one place `DeferredForActiveTrip` is ever shown — see the
             // `updateRequirement` doc above. A trip in progress is the ONLY
             // reason this build is still allowed on screen at all right now.
@@ -288,6 +289,10 @@ fun SignedInScreen(
                         .padding(Spacing.sm),
                 )
             }
+        }
+
+        CompositionLocalProvider(LocalAppBanners provides tripBanners) {
+            Column(modifier = Modifier.fillMaxSize()) {
             Box(modifier = Modifier.weight(1f)) {
                 WithPlatformBrand(platformName, platformBranding.logoUrl) {
                 TripRoute(
@@ -305,6 +310,7 @@ fun SignedInScreen(
                     },
                 )
                 }
+            }
             }
         }
         return
