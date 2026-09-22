@@ -31,7 +31,19 @@ data class OfferSummary(
     val driverFee: Double,
     val cashToCollect: Double,
     val isPaidOnline: Boolean,
+    /**
+     * PIECES, not lines. `items.size` counted a line, so "6 family boxes"
+     * read exactly like one coffee — and the driver's real question in
+     * those 45 seconds is whether the load fits on the bike.
+     */
     val itemCount: Int,
+    /**
+     * The first few items as `2× Burger`, in order, for the compact line on
+     * the card. Empty when the order carries no item detail.
+     */
+    val itemPreview: List<OfferItem>,
+    /** How many items the preview had to leave out; 0 when it shows them all. */
+    val hiddenItemCount: Int,
     /** The absolute server instant the offer dies at — never re-derived from "45s from now". */
     val expiresAt: Instant,
 )
@@ -56,7 +68,20 @@ fun DriverOrderDto.toOfferSummary(): OfferSummary? {
         driverFee = driverFee,
         cashToCollect = cashToCollect,
         isPaidOnline = cashToCollect <= 0.0,
-        itemCount = items.size,
+        itemCount = items.sumOf { it.quantity.coerceAtLeast(0) },
+        itemPreview = items.take(OFFER_ITEM_PREVIEW_LIMIT).map { OfferItem(it.name, it.quantity) },
+        hiddenItemCount = (items.size - OFFER_ITEM_PREVIEW_LIMIT).coerceAtLeast(0),
         expiresAt = expiresAt,
     )
 }
+
+/** One line of the offer card's compact item preview. */
+data class OfferItem(val name: String, val quantity: Int)
+
+/**
+ * How many item lines the offer card shows before collapsing the rest into
+ * `+N`. Two fits on one line at the smallest UI scale a driver can pick
+ * without wrapping, and the offer card has 45 seconds of a driver's attention
+ * — a list they have to read is worse than a number they can glance at.
+ */
+private const val OFFER_ITEM_PREVIEW_LIMIT = 2

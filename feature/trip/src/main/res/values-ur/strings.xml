@@ -9,6 +9,8 @@
     <string name="trip_offer_cash_to_collect">وصول کریں %1$s</string>
     <string name="trip_offer_paid_online">آن لائن ادا شدہ</string>
     <string name="trip_offer_items_count">%1$d اشیاء</string>
+    <string name="trip_offer_item_line">%1$s× %2$s</string>
+    <string name="trip_offer_items_more">+%1$s مزید</string>
 
     <string name="trip_offer_accept">قبول کریں</string>
     <string name="trip_offer_decline">مسترد کریں</string>
@@ -39,6 +41,9 @@
     <string name="trip_title">ٹرپ</string>
     <string name="trip_area_label">ڈلیوری کا علاقہ</string>
     <string name="trip_address_label">پتہ</string>
+    <string name="trip_address_approximate_notice">گاہک کے فون سے تخمینی مقام — ان سے تصدیق کریں</string>
+    <string name="trip_action_open_customer_location">گاہک کا مقام کھولیں</string>
+    <string name="a11y_open_customer_location">گاہک کا شیئر کردہ مقام کھولیں</string>
     <string name="trip_recipient_label">ڈیلیوری کس کے لیے</string>
     <string name="trip_section_items_title">آرڈر</string>
     <string name="trip_section_note_title">گاہک کا نوٹ</string>

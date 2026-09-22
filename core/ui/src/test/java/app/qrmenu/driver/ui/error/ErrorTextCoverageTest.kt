@@ -58,7 +58,7 @@ class ErrorTextCoverageTest {
      */
     @Test
     fun `the contract's codes are all mapped`() {
-        assertEquals(28, DriverErrorCode.entries.size)
+        assertEquals(29, DriverErrorCode.entries.size)
         val declared = keysIn(stringsFor("en"))
         for (code in DriverErrorCode.entries) {
             assertTrue("No string for '${code.wire}'", "error_${code.wire}" in declared)

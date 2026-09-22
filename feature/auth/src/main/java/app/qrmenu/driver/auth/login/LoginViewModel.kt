@@ -169,18 +169,17 @@ class LoginViewModel @Inject constructor(
 
         val e164 = regions.toE164(region, current.nationalNumber)
         if (e164 == null) {
-            _state.update {
-                it.copy(
-                    error = DriverApiError.Api(
-                        httpStatus = 0,
-                        code = app.qrmenu.driver.network.errors.DriverErrorCode.InvalidCredentials,
-                        message = null,
-                        rawCode = null,
-                    ),
-                )
-            }
+            // 🔴 The number never left the phone, so nothing about the
+            // CREDENTIALS is known yet. Claiming "wrong phone or password"
+            // here sends the driver hunting a password that may be perfectly
+            // correct, and hides the one thing they can actually fix — which
+            // is why this marks the phone FIELD, the same way [continueToOtp]
+            // already does a few lines above, instead of raising a login
+            // error the server never returned.
+            _state.update { it.copy(phoneHint = PhoneHint.Invalid, error = null) }
             return
         }
+        _state.update { it.copy(phoneHint = null) }
 
         _state.update { it.copy(isSubmitting = true, error = null) }
 

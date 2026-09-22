@@ -9,6 +9,8 @@
     <string name="trip_offer_cash_to_collect">वसूल करें %1$s</string>
     <string name="trip_offer_paid_online">ऑनलाइन भुगतान किया गया</string>
     <string name="trip_offer_items_count">%1$d आइटम</string>
+    <string name="trip_offer_item_line">%1$s× %2$s</string>
+    <string name="trip_offer_items_more">+%1$s और</string>
 
     <string name="trip_offer_accept">स्वीकार करें</string>
     <string name="trip_offer_decline">अस्वीकार करें</string>
@@ -39,6 +41,9 @@
     <string name="trip_title">ट्रिप</string>
     <string name="trip_area_label">डिलीवरी क्षेत्र</string>
     <string name="trip_address_label">पता</string>
+    <string name="trip_address_approximate_notice">ग्राहक के फ़ोन से अनुमानित स्थान — उनसे पुष्टि करें</string>
+    <string name="trip_action_open_customer_location">ग्राहक का स्थान खोलें</string>
+    <string name="a11y_open_customer_location">ग्राहक द्वारा साझा किया गया स्थान खोलें</string>
     <string name="trip_recipient_label">किसे देना है</string>
     <string name="trip_section_items_title">ऑर्डर</string>
     <string name="trip_section_note_title">ग्राहक का नोट</string>

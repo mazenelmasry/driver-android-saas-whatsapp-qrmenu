@@ -10,6 +10,7 @@
 -->
 <resources>
     <string name="error_invalid_credentials">Wrong phone number or code.</string>
+    <string name="error_no_driver_account">No driver account uses this number yet, or you have not set a password. Ask the restaurant for an invite code, then tap "First time?" below.</string>
     <string name="error_otp_invalid">That code is not correct.</string>
     <string name="error_otp_expired">That code has expired. Ask for a new one.</string>
     <string name="error_too_many_attempts">Too many attempts. Wait a little and try again.</string>

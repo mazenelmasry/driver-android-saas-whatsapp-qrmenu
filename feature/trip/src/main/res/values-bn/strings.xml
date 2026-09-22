@@ -9,6 +9,8 @@
     <string name="trip_offer_cash_to_collect">সংগ্রহ %1$s</string>
     <string name="trip_offer_paid_online">অনলাইনে পরিশোধিত</string>
     <string name="trip_offer_items_count">%1$d আইটেম</string>
+    <string name="trip_offer_item_line">%1$s× %2$s</string>
+    <string name="trip_offer_items_more">+%1$s আরও</string>
 
     <string name="trip_offer_accept">গ্রহণ করুন</string>
     <string name="trip_offer_decline">প্রত্যাখ্যান করুন</string>
@@ -39,6 +41,9 @@
     <string name="trip_title">ট্রিপ</string>
     <string name="trip_area_label">ডেলিভারি এলাকা</string>
     <string name="trip_address_label">ঠিকানা</string>
+    <string name="trip_address_approximate_notice">গ্রাহকের ফোন থেকে আনুমানিক অবস্থান — তার সাথে নিশ্চিত করুন</string>
+    <string name="trip_action_open_customer_location">গ্রাহকের অবস্থান খুলুন</string>
+    <string name="a11y_open_customer_location">গ্রাহকের শেয়ার করা অবস্থান খুলুন</string>
     <string name="trip_recipient_label">যাকে দিতে হবে</string>
     <string name="trip_section_items_title">অর্ডার</string>
     <string name="trip_section_note_title">গ্রাহকের নোট</string>

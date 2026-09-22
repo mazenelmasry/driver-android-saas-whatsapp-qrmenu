@@ -8,6 +8,8 @@
     <string name="trip_offer_cash_to_collect">تحصيل %1$s</string>
     <string name="trip_offer_paid_online">مدفوع أونلاين</string>
     <string name="trip_offer_items_count">%1$d صنف</string>
+    <string name="trip_offer_item_line">%1$s× %2$s</string>
+    <string name="trip_offer_items_more">+%1$s غيرها</string>
 
     <string name="trip_offer_accept">قبول</string>
     <string name="trip_offer_decline">رفض</string>
@@ -39,6 +41,9 @@
     <string name="trip_title">الرحلة</string>
     <string name="trip_area_label">حى التوصيل</string>
     <string name="trip_address_label">العنوان</string>
+    <string name="trip_address_approximate_notice">موقع تقريبى من جوال العميل — تأكد منه معه</string>
+    <string name="trip_action_open_customer_location">افتح موقع العميل</string>
+    <string name="a11y_open_customer_location">افتح الموقع الذى شاركه العميل</string>
     <string name="trip_recipient_label">التسليم إلى</string>
     <string name="trip_section_items_title">الطلب</string>
     <string name="trip_section_note_title">ملاحظة العميل</string>

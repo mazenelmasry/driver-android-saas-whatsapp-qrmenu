@@ -49,6 +49,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -308,9 +309,35 @@ private fun OfferDetailsCard(order: OfferSummary) {
                 )
             }
 
+            // 🔴 What the driver actually has 45 seconds to decide: does
+            // this load fit on the bike? A bare count could not answer it —
+            // "6 family boxes" and one coffee both used to read "1 item".
+            // Names first, the piece count as the fallback when the server
+            // sent no detail. One line, never a list to read.
             MoneyChip(
                 icon = Icons.Filled.ReceiptLong,
-                text = stringResource(R.string.trip_offer_items_count, order.itemCount),
+                text = if (order.itemPreview.isEmpty()) {
+                    stringResource(R.string.trip_offer_items_count, order.itemCount)
+                } else {
+                    // Resolved through the Context, not `stringResource`: the
+                    // lambda `joinToString` takes is not a composable context.
+                    val resources = LocalContext.current.resources
+                    val shown = order.itemPreview.joinToString(separator = " · ") { item ->
+                        resources.getString(
+                            R.string.trip_offer_item_line,
+                            item.quantity.toString().ltr(),
+                            item.name,
+                        )
+                    }
+                    if (order.hiddenItemCount > 0) {
+                        shown + "  " + resources.getString(
+                            R.string.trip_offer_items_more,
+                            order.hiddenItemCount.toString().ltr(),
+                        )
+                    } else {
+                        shown
+                    }
+                },
             )
         }
     }
@@ -600,7 +627,9 @@ private val previewOrder = OfferSummary(
     driverFee = 7.5,
     cashToCollect = 45.0,
     isPaidOnline = false,
-    itemCount = 3,
+    itemCount = 9,
+    itemPreview = listOf(OfferItem("برجر لحم", 2), OfferItem("بطاطس كبير", 1)),
+    hiddenItemCount = 3,
     expiresAt = Instant.now().plusSeconds(32),
 )
 

@@ -10,6 +10,7 @@
 -->
 <resources>
     <string name="error_invalid_credentials">फ़ोन नंबर या कोड ग़लत है।</string>
+    <string name="error_no_driver_account">इस नंबर से कोई ड्राइवर खाता नहीं है, या आपने अभी पासवर्ड नहीं चुना। रेस्तराँ से आमंत्रण कोड माँगें, फिर नीचे «पहली बार?» दबाएँ।</string>
     <string name="error_otp_invalid">यह कोड सही नहीं है।</string>
     <string name="error_otp_expired">कोड की समय-सीमा ख़त्म हो गई। नया कोड लें।</string>
     <string name="error_too_many_attempts">बहुत ज़्यादा कोशिशें। थोड़ा रुककर दोबारा कोशिश करें।</string>

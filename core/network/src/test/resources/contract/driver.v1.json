@@ -1399,6 +1399,7 @@
                 "description": "The FROZEN list. A new code is added here AND to all five translations in the same change, or the driver is shown raw English. An unknown code must render a generic translated message and be logged to Sentry.\n",
                 "enum": [
                     "invalid_credentials",
+                    "no_driver_account",
                     "otp_invalid",
                     "otp_expired",
                     "too_many_attempts",
@@ -1927,6 +1928,21 @@
                                     "notes": {
                                         "type": "string",
                                         "nullable": true
+                                    },
+                                    "location_source": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "enum": [
+                                            "link",
+                                            "device",
+                                            "approx"
+                                        ],
+                                        "description": "Where `lat`/`lng` came from, so the app can be honest about how far to trust the pin. `link` — parsed from a map link the customer pasted (they picked a place). `device` — an explicit \"use my current location\" tap at checkout. `approx` — a SILENT best-effort GPS reading taken when the customer chose a delivery zone: that is the customer's PHONE at order time, which may be their office while they order delivery to home. A driver following an `approx` pin to the wrong building, believing it confirmed, is the exact failure this field exists to prevent, so the app MUST label it. `null` when there are no coordinates at all, and for orders created before this field shipped.\n"
+                                    },
+                                    "map_link": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "description": "The map link the customer pasted, verbatim, when they pasted one. The customer's own dropped pin beats any text search the app could build, and beats an `approx` reading — it is offered as \"open the customer's location\".\n\n🔴 The app opens it and NEVER renders it. A raw URL in the middle of an address line is noise a driver has to read past at a door, which is why the server stops putting it in `text` at all. Treat it as a capability, not as content.\n"
                                     }
                                 }
                             },

@@ -39,6 +39,7 @@ fun DriverApiError.messageResource(): Int = when (this) {
 @StringRes
 fun DriverErrorCode.messageResource(): Int = when (this) {
     DriverErrorCode.InvalidCredentials -> R.string.error_invalid_credentials
+    DriverErrorCode.NoDriverAccount -> R.string.error_no_driver_account
     DriverErrorCode.OtpInvalid -> R.string.error_otp_invalid
     DriverErrorCode.OtpExpired -> R.string.error_otp_expired
     DriverErrorCode.TooManyAttempts -> R.string.error_too_many_attempts

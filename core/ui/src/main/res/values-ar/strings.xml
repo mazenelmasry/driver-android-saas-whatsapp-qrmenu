@@ -10,6 +10,7 @@
 -->
 <resources>
     <string name="error_invalid_credentials">رقم الجوال أو الرمز غير صحيح.</string>
+    <string name="error_no_driver_account">لا يوجد حساب سائق بهذا الرقم، أو لم تختر كلمة مرورك بعد. اطلب من المطعم كود دعوة، ثم اضغط «أول مرة؟» بالأسفل.</string>
     <string name="error_otp_invalid">الرمز غير صحيح.</string>
     <string name="error_otp_expired">انتهت صلاحية الرمز. اطلب رمزاً جديداً.</string>
     <string name="error_too_many_attempts">محاولات كثيرة. انتظر قليلاً ثم حاول.</string>

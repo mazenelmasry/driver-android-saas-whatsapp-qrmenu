@@ -21,6 +21,16 @@ package app.qrmenu.driver.network.errors
  */
 enum class DriverErrorCode(val wire: String) {
     InvalidCredentials("invalid_credentials"),
+
+    /**
+     * The phone matches no driver identity — or one that never finished
+     * choosing a password. Distinct from [InvalidCredentials] because the
+     * remedy is completely different: not "retype it" but "get an invite
+     * and prove your phone". A restaurant that adds a driver in the
+     * company panel creates an order-assignment account, not a driver
+     * identity, and the password it hands over can never work here.
+     */
+    NoDriverAccount("no_driver_account"),
     OtpInvalid("otp_invalid"),
     OtpExpired("otp_expired"),
     TooManyAttempts("too_many_attempts"),

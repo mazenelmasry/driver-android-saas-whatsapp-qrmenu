@@ -101,6 +101,24 @@ data class DeliveryAddressDto(
     val lat: Double? = null,
     val lng: Double? = null,
     val notes: String? = null,
+    /**
+     * Where [lat]/[lng] came from — `link`, `device` or `approx`. Null when
+     * there are no coordinates, and for orders placed before the field shipped.
+     *
+     * 🔴 `approx` is a SILENT GPS reading taken when the customer picked a
+     * delivery zone: the customer's PHONE at order time, which may be their
+     * office while they order delivery to home. The trip screen MUST label it,
+     * or a driver follows it to the wrong building believing it confirmed.
+     */
+    @SerialName("location_source") val locationSource: String? = null,
+    /**
+     * The map link the customer pasted, verbatim. The customer's own dropped
+     * pin beats any text search — offered as "open the customer's location".
+     *
+     * 🔴 Opened, NEVER rendered: a raw URL on a driver's address line is noise
+     * they have to read past at a door.
+     */
+    @SerialName("map_link") val mapLink: String? = null,
 )
 
 /** `Offer`. */

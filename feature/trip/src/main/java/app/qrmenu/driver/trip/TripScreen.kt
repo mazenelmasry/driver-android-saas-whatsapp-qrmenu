@@ -17,12 +17,14 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -34,6 +36,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Payments
@@ -61,6 +64,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -260,7 +265,12 @@ private fun TripContent(
             // empty shell — when a zone was NOT shown up top (so this would
             // repeat the exact text already on screen) AND there are no notes.
             if (address != null && (order.zone != null || address.notes != null)) {
-                TripAddressCard(address = address, showAddressText = order.zone != null)
+                TripAddressCard(
+                    address = address,
+                    showAddressText = order.zone != null,
+                    isApproximateLocation = address.isApproximatePin(),
+                    showMapLink = address.shouldOfferMapLink(),
+                )
             }
 
             if (order.items.isNotEmpty()) {
@@ -318,7 +328,7 @@ private fun TripTopFacts(order: DriverOrderDto) {
                 )
             }
 
-            val area = order.zone?.name ?: order.deliveryAddress?.text
+            val area = order.zone?.name ?: stripMapLinks(order.deliveryAddress?.text)
             if (area != null) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
@@ -400,15 +410,18 @@ private fun QuickActionsRow(order: DriverOrderDto, context: Context) {
                 onClick = { safeStartActivity(context, dialIntent(phone)) },
             )
         }
-        val lat = order.deliveryAddress?.lat
-        val lng = order.deliveryAddress?.lng
-        if (lat != null && lng != null) {
+        // 🔴 Always rendered when there is ANY address information at all —
+        // see [NavigationTarget]'s own doc. `lat`/`lng` give turn-by-turn;
+        // bare text still opens a Maps search instead of leaving the driver
+        // with no way to get moving.
+        val navigationTarget = navigationTargetFor(order.deliveryAddress)
+        if (navigationTarget != NavigationTarget.None) {
             QuickActionButton(
                 icon = Icons.Filled.Navigation,
                 label = stringResource(R.string.trip_action_navigate),
                 contentDescription = stringResource(R.string.a11y_navigate_to_customer),
                 modifier = Modifier.weight(1f),
-                onClick = { safeStartActivity(context, navigationIntent(context, lat, lng)) },
+                onClick = { navigationIntent(context, navigationTarget)?.let { safeStartActivity(context, it) } },
             )
         }
     }
@@ -425,11 +438,27 @@ private fun QuickActionButton(
     OutlinedButton(
         onClick = onClick,
         shape = RoundedCornerShape(Radius.card),
+        // The row's own padding, not the button's: four weighted buttons at
+        // the default inset leave almost no text width, which is what cut
+        // "واتساب" short and left the two call buttons reading the
+        // same word.
+        contentPadding = PaddingValues(horizontal = Spacing.xxs, vertical = Spacing.xs),
         modifier = modifier.heightIn(min = TouchTarget.primaryPhysical),
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(imageVector = icon, contentDescription = contentDescription, modifier = Modifier.size(ControlSize.inlineIcon))
-            Text(text = label, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+            // 🔴 Wraps instead of truncating. Adding the navigation button
+            // took this row from three buttons to four, and at four
+            // `maxLines = 1` clipped "اتصال بالعميل" and "اتصال بالفرع"
+            // down to the same word — two different phone numbers behind one
+            // label, at a door, in a hurry. This project does not truncate
+            // names for exactly this reason.
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 2,
+                textAlign = TextAlign.Center,
+            )
         }
     }
 }
@@ -471,9 +500,29 @@ private fun TripRecipientCard(name: String) {
  * this same [DeliveryAddressDto.text] as its "delivery area" line (no zone
  * name to show instead) — see the call site's own doc. The card is not shown
  * at all when that would leave it with nothing else to say; see the call site.
+ *
+ * Both [DeliveryAddressDto.text] and [DeliveryAddressDto.notes] go through
+ * [stripMapLinks] before being rendered — defence in depth against a raw URL
+ * a customer pasted into their address ending up on a driver's screen (see
+ * that helper's own doc); the backend's own fix does not cover orders already
+ * in the database.
+ *
+ * 🔴 [isApproximateLocation] labels a pin the customer never actually
+ * placed: `location_source == "approx"` is a SILENT GPS reading taken when
+ * they picked a delivery zone — their PHONE at order time, which may be their
+ * office while they order delivery to home. Unlabelled, a driver follows it to
+ * the wrong building believing it confirmed, which is the whole reason the
+ * contract carries the source rather than just the coordinates.
  */
 @Composable
-private fun TripAddressCard(address: DeliveryAddressDto, showAddressText: Boolean) {
+private fun TripAddressCard(
+    address: DeliveryAddressDto,
+    showAddressText: Boolean,
+    isApproximateLocation: Boolean = false,
+    showMapLink: Boolean = false,
+) {
+    val context = LocalContext.current
+    val a11yOpenCustomerLocation = stringResource(R.string.a11y_open_customer_location)
     Surface(shape = RoundedCornerShape(Radius.card), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(Spacing.md), verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
             Text(
@@ -482,10 +531,62 @@ private fun TripAddressCard(address: DeliveryAddressDto, showAddressText: Boolea
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             if (showAddressText) {
-                Text(text = address.text, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+                stripMapLinks(address.text)?.let {
+                    Text(text = it, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+                }
             }
-            address.notes?.let {
+            if (isApproximateLocation) {
+                // The icon carries the signal; the colour stays calm on
+                // purpose. A red caption here would be dishonest — an
+                // approximate pin is a caveat, not a failure — and a driver
+                // who sees red on an ordinary delivery learns to skip red.
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.xxs),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(ControlSize.inlineIcon),
+                    )
+                    Text(
+                        text = stringResource(R.string.trip_address_approximate_notice),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            stripMapLinks(address.notes)?.let {
                 Text(text = it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+
+            // 🔴 Offered only when it BEATS the navigate button beside it
+            // — see [shouldOfferMapLink]. It lives here rather than in the
+            // quick-actions row because a fifth weighted button would squeeze
+            // all five below a thumb's width on a phone, and because this is
+            // the card the driver is already reading the address on.
+            //
+            // The URL is opened, never shown: `text` is deliberately scrubbed
+            // of it just above.
+            if (showMapLink) {
+                address.openableMapLink()?.let { link ->
+                    OutlinedButton(
+                        onClick = { safeStartActivity(context, mapLinkIntent(link)) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = TouchTarget.primaryPhysical)
+                            .semantics { contentDescription = a11yOpenCustomerLocation },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.LocationOn,
+                            contentDescription = null,
+                            modifier = Modifier.size(ControlSize.inlineIcon),
+                        )
+                        Spacer(modifier = Modifier.width(Spacing.xs))
+                        Text(text = stringResource(R.string.trip_action_open_customer_location))
+                    }
+                }
             }
         }
     }
@@ -1062,10 +1163,28 @@ private fun whatsAppIntent(phone: String): Intent {
 }
 
 /**
- * External navigation ONLY — no in-app map (driver-ui-standards). Google Maps
- * turn-by-turn first; a driver without it installed falls back to Waze,
- * which speaks the same `lat,lng` language.
+ * External navigation ONLY — no in-app map (driver-ui-standards). Returns
+ * `null` only for [NavigationTarget.None] — callers gate the button itself on
+ * that case, so in practice this always returns an [Intent] when called.
+ *
+ * 🔴 "Open the customer's own dropped pin" (a map link the customer pasted)
+ * would be the most accurate option of all — more accurate than any text
+ * search — but is NOT implemented: it needs a map-link field on
+ * [app.qrmenu.driver.network.dto.DeliveryAddressDto] that does not exist
+ * today, and adding one is out of scope for `:feature:trip` (touches
+ * `core/network` and the OpenAPI contract, both forbidden here). TODO: once
+ * such a field ships, add a `NavigationTarget.MapLink(url)` case here that
+ * opens it directly via `ACTION_VIEW` — never display the raw URL, only open
+ * it (see [stripMapLinks]'s own doc on why a raw URL must never reach the
+ * screen).
  */
+private fun navigationIntent(context: Context, target: NavigationTarget): Intent? = when (target) {
+    is NavigationTarget.Coordinates -> navigationIntent(context, target.lat, target.lng)
+    is NavigationTarget.TextSearch -> navigationSearchIntent(context, target.query)
+    NavigationTarget.None -> null
+}
+
+/** Google Maps turn-by-turn first; a driver without it installed falls back to Waze, which speaks the same `lat,lng` language. */
 private fun navigationIntent(context: Context, lat: Double, lng: Double): Intent {
     val google = Intent(Intent.ACTION_VIEW, Uri.parse("google.navigation:q=$lat,$lng")).apply {
         setPackage("com.google.android.apps.maps")
@@ -1076,6 +1195,42 @@ private fun navigationIntent(context: Context, lat: Double, lng: Double): Intent
         Intent(Intent.ACTION_VIEW, Uri.parse("https://waze.com/ul?ll=$lat,$lng&navigate=yes"))
     }
 }
+
+/**
+ * No coordinates to hand a turn-by-turn intent, only address text — a Maps
+ * text search still gets the driver most of the way there instead of leaving
+ * the "Navigate" button absent entirely. `Uri.encode` — not raw string
+ * concatenation — so Arabic text and spaces in the address survive as a valid
+ * URL (verified against an Arabic address in [NavigationTargetTest]).
+ *
+ * Uses the `https://www.google.com/maps/search/?api=1&query=` form (Google's
+ * documented Maps URL scheme) rather than `geo:0,0?q=`: the https form is
+ * guaranteed to open Google Maps directly (via `setPackage` below) when it is
+ * installed, while `geo:` is a generic Android URI any app declaring itself a
+ * geo handler can claim, which is a worse guarantee for a driver who needs
+ * Maps or Waze specifically, not whatever else registered for `geo:`.
+ */
+private fun navigationSearchIntent(context: Context, query: String): Intent {
+    val url = "https://www.google.com/maps/search/?api=1&query=${Uri.encode(query)}"
+    val google = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+        setPackage("com.google.android.apps.maps")
+    }
+    return if (google.resolveActivity(context.packageManager) != null) {
+        google
+    } else {
+        // No Google Maps installed — let the system chooser (or Waze, if it
+        // registered for https Maps search links) handle it.
+        Intent(Intent.ACTION_VIEW, Uri.parse(url))
+    }
+}
+
+/**
+ * Opens the map link the customer pasted, in whatever app claims it. No
+ * `setPackage`: a shortened Google link resolves through the browser or Maps
+ * depending on what the driver has, and forcing one of them turns a working
+ * pin into a dead button.
+ */
+private fun mapLinkIntent(url: String): Intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
 
 private fun safeStartActivity(context: Context, intent: Intent) {
     runCatching { context.startActivity(intent) }

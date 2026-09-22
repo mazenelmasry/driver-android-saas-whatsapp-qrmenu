@@ -10,6 +10,7 @@
 -->
 <resources>
     <string name="error_invalid_credentials">ফোন নম্বর বা কোড ভুল।</string>
+    <string name="error_no_driver_account">এই নম্বরে কোনও ড্রাইভার অ্যাকাউন্ট নেই, অথবা আপনি এখনও পাসওয়ার্ড বেছে নেননি। রেস্তোরাঁর কাছ থেকে আমন্ত্রণ কোড চান, তারপর নীচে «প্রথমবার?» চাপুন।</string>
     <string name="error_otp_invalid">এই কোডটি সঠিক নয়।</string>
     <string name="error_otp_expired">কোডের মেয়াদ শেষ। নতুন কোড নিন।</string>
     <string name="error_too_many_attempts">অনেকবার চেষ্টা হয়েছে। একটু অপেক্ষা করে আবার চেষ্টা করুন।</string>
