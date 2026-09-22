@@ -1,16 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- taaj brand colours — the single place this brand's palette is set.
-     Mirrors the taaj landing page theme. Surfaces are derived by lerping
-     between `surface` (paper) and `ink` in DriverTheme, so every container
-     role belongs to the brand. -->
+     Taken from taaj.me itself (GET /api/v1/landing → settings.site):
+     primary_color #F59E0B, secondary_color #EA580C.
+
+     🔴 They are assigned the OTHER way round here, on purpose. The header
+     fills the top of the screen with `primary` and puts white on it, and
+     white on #F59E0B measures about 2:1 — unreadable in sunlight, which is
+     where this app is used. #EA580C is the darker of the platform's own two
+     oranges, so it carries the white and the amber becomes the accent it
+     already is on the website's buttons.
+
+     Surfaces are derived by lerping between `surface` (paper) and `ink` in
+     DriverTheme, so every container role belongs to the brand. -->
 <resources>
-    <color name="driver_brand_primary">#C2410C</color>
+    <color name="driver_brand_primary">#EA580C</color>
     <color name="driver_brand_on_primary">#FFFFFF</color>
-    <color name="driver_brand_primary_container">#FFE7D1</color>
-    <color name="driver_brand_on_primary_container">#6B2A09</color>
-    <color name="driver_brand_secondary">#D97706</color>
+    <color name="driver_brand_primary_container">#FFE5D0</color>
+    <color name="driver_brand_on_primary_container">#7A2E06</color>
+    <color name="driver_brand_secondary">#F59E0B</color>
     <color name="driver_brand_secondary_container">#FEF0C7</color>
-    <color name="driver_brand_on_secondary_container">#6B3A06</color>
+    <color name="driver_brand_on_secondary_container">#7A4E04</color>
     <color name="driver_brand_surface">#FBF8F3</color>
     <color name="driver_brand_ink">#211D17</color>
 </resources>

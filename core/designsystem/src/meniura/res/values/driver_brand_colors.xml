@@ -1,16 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- meniura brand colours — the single place this brand's palette is set.
-     Mirrors the meniura landing page theme. Surfaces are derived by lerping
-     between `surface` (paper) and `ink` in DriverTheme, so every container
-     role belongs to the brand. -->
+     Taken from meniura.com itself (GET /api/v1/landing → settings.site):
+     primary_color #1F403F (deep olive-green), secondary_color #918862
+     (khaki), ink #080808.
+
+     🔴 This is what finally tells the two builds apart. Until now both
+     flavours shipped the SAME nine colours, so the Taaj app and the Meniura
+     app were pixel-identical except for the name in the header — which is
+     not a brand, it is a label.
+
+     White on #1F403F measures about 11:1, so the header is comfortably
+     legible in sunlight; the containers below are tints of the same two
+     hues, and the paper is warmed very slightly so the olive reads as
+     deliberate rather than as grey.
+
+     Surfaces are derived by lerping between `surface` (paper) and `ink` in
+     DriverTheme, so every container role belongs to the brand. -->
 <resources>
-    <color name="driver_brand_primary">#C2410C</color>
+    <color name="driver_brand_primary">#1F403F</color>
     <color name="driver_brand_on_primary">#FFFFFF</color>
-    <color name="driver_brand_primary_container">#FFE7D1</color>
-    <color name="driver_brand_on_primary_container">#6B2A09</color>
-    <color name="driver_brand_secondary">#D97706</color>
-    <color name="driver_brand_secondary_container">#FEF0C7</color>
-    <color name="driver_brand_on_secondary_container">#6B3A06</color>
-    <color name="driver_brand_surface">#FBF8F3</color>
-    <color name="driver_brand_ink">#211D17</color>
+    <color name="driver_brand_primary_container">#D9E6E3</color>
+    <color name="driver_brand_on_primary_container">#102625</color>
+    <color name="driver_brand_secondary">#918862</color>
+    <color name="driver_brand_secondary_container">#EFEADB</color>
+    <color name="driver_brand_on_secondary_container">#453F2B</color>
+    <color name="driver_brand_surface">#F7F6F1</color>
+    <color name="driver_brand_ink">#14150F</color>
 </resources>

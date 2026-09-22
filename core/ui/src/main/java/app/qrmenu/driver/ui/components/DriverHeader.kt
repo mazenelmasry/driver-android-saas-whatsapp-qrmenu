@@ -112,9 +112,22 @@ fun DriverHeader(
     //
     // Two stops of the SAME family either way: a gradient the driver cannot
     // name is a gradient that reads as depth rather than as decoration.
-    val base = if (isDark) scheme.primaryContainer else scheme.primary
+    // 🔴 And `primaryContainer` alone is not enough either, for the opposite
+    // reason: a brand that is ALREADY dark (Meniura's olive #1F403F) has a
+    // container 45% of the way to black, which on a near-black page is a band
+    // you cannot see. So the dark header is pulled part of the way back
+    // towards the lightened `primary` — far enough to read as a block of
+    // colour against the page, nowhere near far enough to glare at a driver
+    // working at night. A light brand (Taaj's orange) lands darker than its
+    // own hue; a dark brand lands lighter. Both end up ON the page rather
+    // than in it.
+    val base = if (isDark) {
+        lerp(scheme.primaryContainer, scheme.primary, DARK_HEADER_LIFT)
+    } else {
+        scheme.primary
+    }
     val highlight = if (isDark) {
-        lerp(scheme.primaryContainer, scheme.secondaryContainer, HIGHLIGHT_MIX)
+        lerp(base, scheme.secondaryContainer, HIGHLIGHT_MIX)
     } else {
         lerp(scheme.primary, scheme.secondary, HIGHLIGHT_MIX)
     }
@@ -370,6 +383,7 @@ private fun Color.luminance(): Float = 0.299f * red + 0.587f * green + 0.114f * 
 
 private const val MAX_BADGE = 9
 private const val HIGHLIGHT_MIX = 0.28f
+private const val DARK_HEADER_LIFT = 0.35f
 private const val SUBTITLE_ALPHA = 0.82f
 private const val BELL_WELL_ALPHA = 0.16f
 private const val BRAND_MARK_ALPHA = 0.22f
