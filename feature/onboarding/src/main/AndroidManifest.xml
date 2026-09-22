@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Package visibility (Android 11+ / targetSdk 30+): `getApplicationInfo` for
+    another app throws NameNotFoundException unless the caller DECLARES that it
+    asks about that package — even when the app is installed.
+
+    Without this, `Context.googleServicesPresence()` would answer NotInstalled
+    on every modern device, and the app would tell every single driver that
+    their phone cannot receive offers. A false alarm shown to 100% of users is
+    worse than never having built the warning at all.
+
+    Declared here, in the module that asks the question, rather than in :app —
+    the query belongs to the code that performs it.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <queries>
+        <package android:name="com.google.android.gms" />
+    </queries>
+
+</manifest>

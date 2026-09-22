@@ -9,4 +9,9 @@
     <string name="language_title">अपनी भाषा चुनें</string>
     <string name="language_subtitle">आप इसे बाद में सेटिंग्स से बदल सकते हैं।</string>
     <string name="language_continue">जारी रखें</string>
+
+    <string name="unsupported_device_title">इस डिवाइस पर नए ऑर्डर की घंटी नहीं बज सकती</string>
+    <string name="unsupported_device_subtitle">आपके फ़ोन में Google Play सेवाएं नहीं हैं, या वे बंद हैं।</string>
+    <string name="unsupported_device_explanation">ऐप पूरी तरह से काम करेगा। बस नए ऑफ़र पर घंटी नहीं बजेगी — ऐप खुला रखें और सूची खुद देखते रहें।</string>
+    <string name="unsupported_device_continue">समझ गया, जारी रखें</string>
 </resources>

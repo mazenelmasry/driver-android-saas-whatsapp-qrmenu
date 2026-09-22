@@ -9,4 +9,9 @@
     <string name="language_title">اختر لغتك</string>
     <string name="language_subtitle">يمكنك تغييرها لاحقاً من الإعدادات.</string>
     <string name="language_continue">متابعة</string>
+
+    <string name="unsupported_device_title">قد لا تصلك رنّة عند وصول طلب جديد</string>
+    <string name="unsupported_device_subtitle">هذا الجهاز بلا خدمات جوجل (Google Play)، أو أنها معطّلة.</string>
+    <string name="unsupported_device_explanation">التطبيق سيعمل بشكل كامل، لكنه لن يرنّ عند وصول عرض جديد — اترك التطبيق مفتوحاً وتابع القائمة بنفسك.</string>
+    <string name="unsupported_device_continue">تمام، متابعة</string>
 </resources>

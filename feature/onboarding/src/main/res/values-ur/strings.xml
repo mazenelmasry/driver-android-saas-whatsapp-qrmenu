@@ -9,4 +9,9 @@
     <string name="language_title">اپنی زبان منتخب کریں</string>
     <string name="language_subtitle">آپ اسے بعد میں ترتیبات سے تبدیل کر سکتے ہیں۔</string>
     <string name="language_continue">جاری رکھیں</string>
+
+    <string name="unsupported_device_title">اس ڈیوائس پر نئے آرڈر کی گھنٹی نہیں بج سکتی</string>
+    <string name="unsupported_device_subtitle">آپ کے فون میں گوگل پلے سروسز موجود نہیں، یا وہ بند ہیں۔</string>
+    <string name="unsupported_device_explanation">ایپ مکمل طور پر کام کرے گی۔ بس نئی پیشکش پر گھنٹی نہیں بجے گی — ایپ کھلی رکھیں اور خود فہرست دیکھتے رہیں۔</string>
+    <string name="unsupported_device_continue">سمجھ گیا، جاری رکھیں</string>
 </resources>

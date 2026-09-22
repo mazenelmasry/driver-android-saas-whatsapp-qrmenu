@@ -9,4 +9,9 @@
     <string name="language_title">আপনার ভাষা বেছে নিন</string>
     <string name="language_subtitle">আপনি পরে সেটিংস থেকে এটি পরিবর্তন করতে পারবেন।</string>
     <string name="language_continue">চালিয়ে যান</string>
+
+    <string name="unsupported_device_title">এই ডিভাইসে হয়তো নতুন অর্ডারের রিং শোনা যাবে না</string>
+    <string name="unsupported_device_subtitle">আপনার ফোনে গুগল প্লে সার্ভিস নেই, অথবা তা বন্ধ আছে।</string>
+    <string name="unsupported_device_explanation">অ্যাপটি পুরোপুরি কাজ করবে। শুধু নতুন অর্ডারের জন্য রিং শুনতে পাবেন না — অ্যাপটি খোলা রাখুন এবং নিজে তালিকা দেখে নিন।</string>
+    <string name="unsupported_device_continue">বুঝেছি, চালিয়ে যান</string>
 </resources>

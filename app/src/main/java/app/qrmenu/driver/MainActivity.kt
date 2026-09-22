@@ -22,6 +22,9 @@ import app.qrmenu.driver.datastore.AppLocaleStore
 import app.qrmenu.driver.datastore.TokenStore
 import app.qrmenu.driver.datastore.UiScaleStore
 import app.qrmenu.driver.designsystem.theme.DriverTheme
+import app.qrmenu.driver.health.GoogleServicesNoticeStore
+import app.qrmenu.driver.onboarding.gms.UnsupportedDeviceRoute
+import app.qrmenu.driver.onboarding.gms.UnsupportedDeviceViewModel
 import app.qrmenu.driver.onboarding.language.LanguageRoute
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -97,6 +100,33 @@ private fun DriverApp(tokenStore: TokenStore) {
                 // it, rather than leaving the previous locale's strings on
                 // screen until the next process start.
                 (context as? ComponentActivity)?.recreate()
+            },
+        )
+        return
+    }
+
+    // Screen 18 — the phone has no working Google Mobile Services, so FCM will
+    // never fire on it and no offer will ever RING.
+    //
+    // 🔴 A warning, never a gate: `:core:push` already polls every 15s as the
+    // second arm of the "صفر إشعار ضائع" architecture, so the app works
+    // end-to-end on such a phone. The driver just has to watch the list
+    // instead of waiting for a sound, and has to be TOLD that — otherwise
+    // they conclude the app is broken and stop using it.
+    //
+    // Placed after the language pick (a warning nobody can read is not a
+    // warning) and before sign-in, so it is the first thing a driver on one of
+    // these phones learns rather than something they discover by missing work.
+    var gmsNoticeAcknowledged by rememberSaveable {
+        mutableStateOf(GoogleServicesNoticeStore.hasAcknowledged(context))
+    }
+    val gmsViewModel: UnsupportedDeviceViewModel = hiltViewModel()
+
+    if (gmsViewModel.shouldWarn && !gmsNoticeAcknowledged) {
+        UnsupportedDeviceRoute(
+            onContinue = {
+                GoogleServicesNoticeStore.markAcknowledged(context)
+                gmsNoticeAcknowledged = true
             },
         )
         return

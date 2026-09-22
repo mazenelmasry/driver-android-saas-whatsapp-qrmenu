@@ -9,4 +9,16 @@
     <string name="language_title">Choose your language</string>
     <string name="language_subtitle">You can change it later from Settings.</string>
     <string name="language_continue">Continue</string>
+
+    <!--
+      Screen 18 in the CLAUDE.md screen map — shown once, right after the
+      language picker, ONLY when the device has no working Google Mobile
+      Services. This is a warning, never a gate: :core:push already falls
+      back to a 15s poll when FCM never fires, so the app keeps working —
+      the driver just has to watch the list instead of waiting for a ring.
+    -->
+    <string name="unsupported_device_title">Notifications may not ring on this device</string>
+    <string name="unsupported_device_subtitle">Your phone is missing Google Play services, or they\'re turned off.</string>
+    <string name="unsupported_device_explanation">The app still works fully. You just won\'t hear a ring for new offers — keep the app open and check the list yourself.</string>
+    <string name="unsupported_device_continue">Got it, continue</string>
 </resources>
