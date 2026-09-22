@@ -55,6 +55,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
+import android.app.Activity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -117,12 +118,34 @@ fun AccountRoute(
     val language by viewModel.language.collectAsStateWithLifecycle()
     val uiScale by viewModel.uiScale.collectAsStateWithLifecycle()
 
+    val context = LocalContext.current
+
     AccountScreen(
         me = me,
         language = language,
         uiScale = uiScale,
         onRefresh = viewModel::refresh,
-        onSelectLanguage = viewModel::selectLanguage,
+        onSelectLanguage = { code ->
+            viewModel.selectLanguage(code)
+            // 🔴 Storing the language is not applying it.
+            //
+            // The locale reaches the UI through `MainActivity.attachBaseContext`,
+            // which runs once per Activity creation — so without this the driver
+            // picks a language, the sheet closes, and every string on screen stays
+            // exactly as it was until the process next dies. Which looks, entirely
+            // reasonably, like the picker is broken.
+            //
+            // `AppCompatDelegate.setApplicationLocales` inside `LocaleManager.set`
+            // does not cover it either: this app's Activity is a plain
+            // `ComponentActivity`, not an `AppCompatActivity`, so there is no
+            // delegate to act on it.
+            //
+            // The first-run picker already does exactly this at its own call site
+            // (see `MainActivity`'s LanguageRoute). It belongs HERE rather than at
+            // this route's call site so that a future screen reusing `AccountRoute`
+            // cannot forget it — which is how this was missed the first time.
+            (context as? Activity)?.recreate()
+        },
         onSelectUiScale = viewModel::selectUiScale,
         onSignOut = { viewModel.signOut(onSignedOut) },
         onEnterInviteCode = onEnterInviteCode,
