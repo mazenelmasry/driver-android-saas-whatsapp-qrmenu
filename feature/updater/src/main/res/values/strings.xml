@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ⏳ ur / bn / hi are written by the agent and still need a native speaker before
+  launch (CLAUDE.md, glossary). ar / en are final.
+-->
+<resources>
+    <!-- Screen 17 — full-screen, no way past it. -->
+    <string name="updater_blocked_title">Update required</string>
+    <string name="updater_blocked_body">This version of the app can no longer be used. Update to keep taking trips.</string>
+    <string name="updater_blocked_version_label">Required version: %1$s</string>
+    <string name="updater_blocked_notes_label">What changed</string>
+    <string name="updater_blocked_download_action">Download the update</string>
+    <string name="updater_blocked_no_download">Ask your restaurant for the update link.</string>
+
+    <!-- Shown ABOVE the active trip screen, not instead of it — the driver keeps working. -->
+    <string name="updater_deferred_title">Update needed after this delivery</string>
+    <string name="updater_deferred_body">Finish this trip first — the app will block further trips until you update.</string>
+
+    <!-- Dismissible banner, current build is still usable. -->
+    <string name="updater_banner_title">A new version is available</string>
+    <string name="updater_banner_body">%1$s is ready to install.</string>
+    <string name="updater_banner_update_action">Update</string>
+    <string name="updater_banner_dismiss_action">Not now</string>
+    <string name="updater_a11y_dismiss_banner">Dismiss update banner</string>
+</resources>

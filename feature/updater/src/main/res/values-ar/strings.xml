@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="updater_blocked_title">التحديث إلزامى</string>
+    <string name="updater_blocked_body">لم يعد بإمكانك استخدام هذا الإصدار من التطبيق. حدّثه لتستمر فى استلام الرحلات.</string>
+    <string name="updater_blocked_version_label">الإصدار المطلوب: %1$s</string>
+    <string name="updater_blocked_notes_label">ما الجديد</string>
+    <string name="updater_blocked_download_action">تحميل التحديث</string>
+    <string name="updater_blocked_no_download">اطلب رابط التحديث من مطعمك.</string>
+
+    <string name="updater_deferred_title">التحديث مطلوب بعد هذا التسليم</string>
+    <string name="updater_deferred_body">أنهِ هذه الرحلة أولاً — سيمنعك التطبيق من رحلة جديدة حتى تحدّثه.</string>
+
+    <string name="updater_banner_title">يتوفّر إصدار جديد</string>
+    <string name="updater_banner_body">%1$s جاهز للتثبيت.</string>
+    <string name="updater_banner_update_action">تحديث</string>
+    <string name="updater_banner_dismiss_action">ليس الآن</string>
+    <string name="updater_a11y_dismiss_banner">إغلاق بانر التحديث</string>
+</resources>

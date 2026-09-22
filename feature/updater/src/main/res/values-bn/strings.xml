@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="updater_blocked_title">আপডেট আবশ্যক</string>
+    <string name="updater_blocked_body">অ্যাপের এই সংস্করণ আর ব্যবহার করা যাবে না। ট্রিপ চালিয়ে যেতে আপডেট করুন।</string>
+    <string name="updater_blocked_version_label">প্রয়োজনীয় সংস্করণ: %1$s</string>
+    <string name="updater_blocked_notes_label">নতুন কী আছে</string>
+    <string name="updater_blocked_download_action">আপডেট ডাউনলোড করুন</string>
+    <string name="updater_blocked_no_download">আপডেট লিংকের জন্য আপনার রেস্তোরাঁকে জিজ্ঞাসা করুন।</string>
+
+    <string name="updater_deferred_title">এই ডেলিভারির পর আপডেট প্রয়োজন</string>
+    <string name="updater_deferred_body">প্রথমে এই ট্রিপ শেষ করুন — আপডেট না করা পর্যন্ত অ্যাপ নতুন ট্রিপ দেবে না।</string>
+
+    <string name="updater_banner_title">নতুন সংস্করণ উপলব্ধ</string>
+    <string name="updater_banner_body">%1$s ইনস্টলের জন্য প্রস্তুত।</string>
+    <string name="updater_banner_update_action">আপডেট করুন</string>
+    <string name="updater_banner_dismiss_action">এখন না</string>
+    <string name="updater_a11y_dismiss_banner">আপডেট ব্যানার বন্ধ করুন</string>
+</resources>

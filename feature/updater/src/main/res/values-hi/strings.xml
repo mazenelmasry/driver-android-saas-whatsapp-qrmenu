@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="updater_blocked_title">अपडेट ज़रूरी है</string>
+    <string name="updater_blocked_body">ऐप का यह वर्शन अब इस्तेमाल नहीं किया जा सकता। ट्रिप जारी रखने के लिए अपडेट करें।</string>
+    <string name="updater_blocked_version_label">ज़रूरी वर्शन: %1$s</string>
+    <string name="updater_blocked_notes_label">क्या नया है</string>
+    <string name="updater_blocked_download_action">अपडेट डाउनलोड करें</string>
+    <string name="updater_blocked_no_download">अपडेट लिंक के लिए अपने रेस्टोरेंट से पूछें।</string>
+
+    <string name="updater_deferred_title">इस डिलीवरी के बाद अपडेट ज़रूरी है</string>
+    <string name="updater_deferred_body">पहले यह ट्रिप पूरी करें — अपडेट होने तक ऐप नई ट्रिप नहीं देगा।</string>
+
+    <string name="updater_banner_title">नया वर्शन उपलब्ध है</string>
+    <string name="updater_banner_body">%1$s इंस्टॉल के लिए तैयार है।</string>
+    <string name="updater_banner_update_action">अपडेट करें</string>
+    <string name="updater_banner_dismiss_action">अभी नहीं</string>
+    <string name="updater_a11y_dismiss_banner">अपडेट बैनर बंद करें</string>
+</resources>

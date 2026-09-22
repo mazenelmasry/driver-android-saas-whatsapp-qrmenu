@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="updater_blocked_title">اپ ڈیٹ ضروری ہے</string>
+    <string name="updater_blocked_body">ایپ کا یہ ورژن اب استعمال نہیں ہو سکتا۔ ٹرپس جاری رکھنے کے لیے اپ ڈیٹ کریں۔</string>
+    <string name="updater_blocked_version_label">مطلوبہ ورژن: %1$s</string>
+    <string name="updater_blocked_notes_label">کیا نیا ہے</string>
+    <string name="updater_blocked_download_action">اپ ڈیٹ ڈاؤن لوڈ کریں</string>
+    <string name="updater_blocked_no_download">اپ ڈیٹ لنک کے لیے اپنے ریستوراں سے رابطہ کریں۔</string>
+
+    <string name="updater_deferred_title">اس ڈیلیوری کے بعد اپ ڈیٹ درکار ہے</string>
+    <string name="updater_deferred_body">پہلے یہ ٹرپ مکمل کریں — اپ ڈیٹ تک ایپ نئی ٹرپ نہیں دے گی۔</string>
+
+    <string name="updater_banner_title">نیا ورژن دستیاب ہے</string>
+    <string name="updater_banner_body">%1$s انسٹال کے لیے تیار ہے۔</string>
+    <string name="updater_banner_update_action">اپ ڈیٹ کریں</string>
+    <string name="updater_banner_dismiss_action">ابھی نہیں</string>
+    <string name="updater_a11y_dismiss_banner">اپ ڈیٹ بینر بند کریں</string>
+</resources>

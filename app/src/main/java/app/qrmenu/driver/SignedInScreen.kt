@@ -3,8 +3,13 @@ package app.qrmenu.driver
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.AccountBalanceWallet
@@ -30,9 +35,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import app.qrmenu.driver.availability.AvailabilityRoute
 import app.qrmenu.driver.account.AccountRoute
+import app.qrmenu.driver.designsystem.theme.Spacing
 import app.qrmenu.driver.health.NotificationHealthBanner
 import app.qrmenu.driver.health.RequestNotificationPermissionOnce
 import app.qrmenu.driver.notifications.NotificationCenterRoute
@@ -45,6 +52,13 @@ import app.qrmenu.driver.network.dto.DriverOrderDto
 import app.qrmenu.driver.orders.OrdersRoute
 import app.qrmenu.driver.trip.OfferRoute
 import app.qrmenu.driver.trip.TripRoute
+import app.qrmenu.driver.updater.BlockedUpdateScreen
+import app.qrmenu.driver.updater.UpdateBannerHost
+import app.qrmenu.driver.updater.UpdateDeferredBanner
+import app.qrmenu.driver.updater.UpdateRequirement
+import app.qrmenu.driver.updater.rememberUpdateAvailability
+import app.qrmenu.driver.updater.rememberUpdateGateViewModel
+import app.qrmenu.driver.updater.rememberUpdateRequirement
 import app.qrmenu.driver.wallet.WalletRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -81,8 +95,84 @@ fun SignedInScreen(
     onSignedOut: () -> Unit,
     onEnterInviteCode: () -> Unit,
     pendingOfferViewModel: PendingOfferViewModel = hiltViewModel(),
+    heldTripViewModel: HeldTripViewModel = hiltViewModel(),
 ) {
     var tab by rememberSaveable { mutableStateOf(SignedInTab.Availability) }
+
+    // 🔴 What `accept` on the offer screen hands back: the ASSIGNED shape
+    // (customer + full address already included — see `DriverOrderDto`'s own
+    // doc) for the trip the driver now holds. Week 5's trip screen reads it
+    // directly, so accepting an offer does not cost a second network round
+    // trip for data the response already carried.
+    // The trip is addressed by its ID, which `rememberSaveable` carries through
+    // process death — the seed DTO is only an optimisation that spares the
+    // screen one request, so it may be lost without the driver losing the
+    // trip. Holding ONLY the DTO (it is not Parcelable) meant a driver whose
+    // app was killed mid-delivery had no route back to "picked up" at all.
+    //
+    // Hoisted above every other `remember`/early-return in this function
+    // (moved here from beside the offer/trip overlays below) so the screen
+    // 17 update gate — which needs to know "is a trip in this driver's
+    // hands?" before it decides whether to block — can read it without
+    // itself sitting inside the trip branch it is deciding about.
+    var activeTripId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var activeTripSeed by remember { mutableStateOf<DriverOrderDto?>(null) }
+
+    // 🔴 `activeTripId` alone answers "is a route open to a trip right now?",
+    // NOT "does this driver hold one?" — on a cold start (process killed,
+    // phone rebooted mid-shift, floor raised while backgrounded) it is
+    // `null` for the SAME reason a genuinely trip-free driver's is: nothing
+    // has asked yet. Reading that `null` as "no trip" is exactly the device
+    // bug this fixes — a driver `out_for_delivery` was walled off before the
+    // screen that would have proven otherwise ever got to load. `HeldTripViewModel`
+    // asks `driver/orders/mine` — exempted from the version floor server-side
+    // for precisely this — and resolves the ambiguity from the server instead
+    // of assuming an answer from unloaded UI state.
+    val heldTripProbe by heldTripViewModel.probe.collectAsStateWithLifecycle()
+
+    // The instant the probe confirms a held trip, adopt it as the SAME
+    // `activeTripId`/`activeTripSeed` the offer-accept path already uses —
+    // a cold start with a trip in progress should resume the trip screen,
+    // not merely avoid blocking while leaving the driver stranded on the
+    // tab bar. `activeTripId == null` guards against overwriting a trip the
+    // driver already navigated into some other way (offer just accepted,
+    // Orders tab already opened it) with a slower-to-resolve probe result.
+    LaunchedEffect(heldTripProbe) {
+        val held = (heldTripProbe as? HeldTripProbe.Resolved)?.order
+        if (held != null && activeTripId == null) {
+            activeTripId = held.id
+            activeTripSeed = held
+        }
+    }
+
+    // Tri-state, not a fallback to `false`: `true` once a trip is confirmed
+    // held (either route above), `false` only once the probe has CONFIRMED
+    // there is none, and `null` — unknown — for every moment before that
+    // answer exists (including a failed/offline lookup, which never resolves
+    // to `Resolved` — see `HeldTripViewModel`). `UpdateDecision.requirement`
+    // treats `null` the same as `true`: unanswerable means allowed, never
+    // means blocked.
+    val hasActiveTrip: Boolean? = when {
+        activeTripId != null -> true
+        heldTripProbe is HeldTripProbe.Resolved -> false
+        else -> null
+    }
+
+    // Screen 17 (CLAUDE.md § خريطة الشاشات / التوزيع والتحديث الذاتى) — the
+    // one thing allowed to outrank even the ringing offer below: a build the
+    // backend has stopped serving gets no further screens, full stop, UNLESS
+    // this driver is holding a trip right now, or it is not yet known
+    // whether they are — in which case `:feature:updater` hands back
+    // `DeferredForActiveTrip`/`DeferredUnknown` instead of `Blocked` and this
+    // early-return does not fire. The trip branch further down renders
+    // `UpdateDeferredBanner` over a CONFIRMED held trip; the unknown case
+    // renders nothing extra and simply waits — there is no trip screen open
+    // yet to caption, and no confirmed absence to act on.
+    val updateRequirement = rememberUpdateRequirement(hasActiveTrip = hasActiveTrip)
+    if (updateRequirement is UpdateRequirement.Blocked) {
+        BlockedUpdateScreen(info = updateRequirement.info)
+        return
+    }
 
     // Fires at most once per app run (CLAUDE.md §🔔) — placed unconditionally
     // here, ABOVE every early `return` below, because `SignedInScreen` itself
@@ -123,19 +213,6 @@ fun SignedInScreen(
     // every time an offer arrives stops trusting the app.
     val pendingOffer by pendingOfferViewModel.pending.collectAsState()
 
-    // 🔴 What `accept` on the offer screen hands back: the ASSIGNED shape
-    // (customer + full address already included — see `DriverOrderDto`'s own
-    // doc) for the trip the driver now holds. Week 5's trip screen reads it
-    // directly, so accepting an offer does not cost a second network round
-    // trip for data the response already carried.
-    // The trip is addressed by its ID, which `rememberSaveable` carries through
-    // process death — the seed DTO is only an optimisation that spares the
-    // screen one request, so it may be lost without the driver losing the
-    // trip. Holding ONLY the DTO (it is not Parcelable) meant a driver whose
-    // app was killed mid-delivery had no route back to "picked up" at all.
-    var activeTripId by rememberSaveable { mutableStateOf<Long?>(null) }
-    var activeTripSeed by remember { mutableStateOf<DriverOrderDto?>(null) }
-
     pendingOffer?.let { offer ->
         OfferRoute(
             orderId = offer.orderId,
@@ -167,19 +244,46 @@ fun SignedInScreen(
             activeTripSeed = null
             tab = SignedInTab.Orders
         }
-        TripRoute(
-            orderId = tripId,
-            // Only hand over a seed that is actually THIS order — after
-            // process death the id survives and the seed does not, and a
-            // stale seed would render someone else's address.
-            initialOrder = activeTripSeed?.takeIf { it.id == tripId },
-            onOpenNotifications = { showingNotifications = true },
-            onExit = {
-                activeTripId = null
-                activeTripSeed = null
-                tab = SignedInTab.Orders
-            },
-        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                // Consumed here, once, for the whole stack — `TripRoute`
+                // below applies this SAME inset again inside its own
+                // `DriverScreenScaffold`; without `consumeWindowInsets` the
+                // driver would see two status-bar-height gaps stacked when
+                // the banner is showing (one above it, one — spurious —
+                // between it and the trip screen).
+                .windowInsetsPadding(WindowInsets.statusBars)
+                .consumeWindowInsets(WindowInsets.statusBars),
+        ) {
+            // The one place `DeferredForActiveTrip` is ever shown — see the
+            // `updateRequirement` doc above. A trip in progress is the ONLY
+            // reason this build is still allowed on screen at all right now.
+            if (updateRequirement is UpdateRequirement.DeferredForActiveTrip) {
+                UpdateDeferredBanner(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(Spacing.sm),
+                )
+            }
+            Box(modifier = Modifier.weight(1f)) {
+                TripRoute(
+                    orderId = tripId,
+                    // Only hand over a seed that is actually THIS order —
+                    // after process death the id survives and the seed does
+                    // not, and a stale seed would render someone else's
+                    // address.
+                    initialOrder = activeTripSeed?.takeIf { it.id == tripId },
+                    onOpenNotifications = { showingNotifications = true },
+                    onExit = {
+                        activeTripId = null
+                        activeTripSeed = null
+                        tab = SignedInTab.Orders
+                    },
+                )
+            }
+        }
         return
     }
 
@@ -208,6 +312,21 @@ fun SignedInScreen(
             // never arrive. Anchoring it to one tab would hide it the moment
             // they switch away from it.
             NotificationHealthBanner()
+
+            // The dismissible "an update exists" notice — never shown here
+            // when `updateRequirement` is anything but `NotRequired` (this
+            // Scaffold itself is unreachable otherwise, see the two early
+            // `return`s above), so it never competes with the wall or the
+            // trip-deferred notice for the driver's attention.
+            val updateAvailability = rememberUpdateAvailability()
+            val updateGateViewModel = rememberUpdateGateViewModel()
+            UpdateBannerHost(
+                availability = updateAvailability,
+                onDismiss = { latestVersionCode -> updateGateViewModel.dismissBanner(latestVersionCode) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Spacing.md, vertical = Spacing.xxs),
+            )
 
             Box(modifier = Modifier.weight(1f)) {
                 when (tab) {

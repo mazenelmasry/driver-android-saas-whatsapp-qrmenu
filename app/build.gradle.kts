@@ -209,6 +209,7 @@ dependencies {
     implementation(project(":feature:notifications"))
     implementation(project(":feature:account"))
     implementation(project(":feature:wallet"))
+    implementation(project(":feature:updater"))
     // :app now hosts composables that resolve their own ViewModels (the tab
     // scaffold). Feature modules get this from the convention plugin; :app is
     // an application module and does not.
