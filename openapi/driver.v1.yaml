@@ -381,6 +381,23 @@ paths:
     get:
       tags: [auth]
       summary: The driver, their restaurant links and current availability
+      description: >
+        Like every other route behind a session, this carries `X-App-Version`
+        and may answer `426 app_update_required` when the running build is below
+        the configured floor. The body then names the floor
+        (`min_version_code`), and `GET /driver/app-version` — which is public
+        precisely so it stays reachable from the blocked screen — says where to
+        get the new build.
+
+
+        Two routes are deliberately EXEMPT from that refusal and never answer
+        426: `POST /driver/auth/logout` and `DELETE /driver/device-token`.
+        Signing out of the build being replaced, and clearing its push
+        registration first, are exactly what an out-of-date driver must still be
+        able to do; gating them makes the update harder, which is the opposite
+        of the point.
+      parameters:
+        - $ref: '#/components/parameters/AppVersion'
       responses:
         '200':
           description: OK
@@ -396,6 +413,16 @@ paths:
                     type: array
                     items: { $ref: '#/components/schemas/RestaurantLink' }
         '401': { $ref: '#/components/responses/Error' }
+        '426':
+          description: >
+            `app_update_required` — this build is below `min_version_code`.
+            Declared here because this is the call the app makes to ask "am I
+            still good?", but ANY route behind a session can answer it except
+            the two exemptions named above. The body carries `min_version_code`
+            alongside the usual `code` and `message`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
 
   /driver/broadcasting/auth:
     post:
@@ -901,6 +928,32 @@ components:
         A client-generated key, stable across retries of the SAME command. A
         repeat returns the same 200 body rather than acting twice.
       schema: { type: string, minLength: 8, maxLength: 128 }
+    AppVersion:
+      name: X-App-Version
+      in: header
+      required: false
+      description: >
+        The running build's INTEGER `versionCode` — never the version name.
+        Compared as a string, "1.10.0" sorts before "1.9.0" and would refuse the
+        driver already on the newest build, so the name is carried separately
+        (`X-App-Version-Name`) for logs and crash reports and is never compared.
+
+
+        Sent on EVERY request by the client, including the public ones. The
+        server reads it in two places: it records the build on the session token,
+        and `driver.client` refuses anything below the configured floor with
+        `426 app_update_required`.
+
+
+        OPTIONAL on purpose, and an unreadable value means "do not judge this
+        build" rather than "old". A stripped or malformed header must never be
+        the reason a driver standing at a customer's door cannot deliver — and
+        a proxy that drops unknown headers would otherwise strand a whole fleet.
+
+
+        The floor itself ships unset, so nothing is refused until a platform
+        owner sets one deliberately.
+      schema: { type: integer, minimum: 1 }
 
   responses:
     Accepted:
