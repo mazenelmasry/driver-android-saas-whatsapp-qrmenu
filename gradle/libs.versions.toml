@@ -84,6 +84,10 @@ espresso = "3.6.1"
 mockk = "1.13.13"
 turbine = "1.2.0"
 coroutines-test = "1.9.0"
+# JVM Room DAO tests (:core:database) need a real android.database.sqlite —
+# Robolectric is the only thing in this catalog that provides one without an
+# instrumented device/emulator, matching Room 2.6.1 (pre-KMP/bundled-SQLite).
+robolectric = "4.14.1"
 
 # Quality
 detekt = "1.23.7"
@@ -213,6 +217,7 @@ mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 mockk-android = { group = "io.mockk", name = "mockk-android", version.ref = "mockk" }
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines-test" }
+robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 
 # Benchmark
 androidx-benchmark-macro = { group = "androidx.benchmark", name = "benchmark-macro-junit4", version.ref = "benchmark-macro" }
