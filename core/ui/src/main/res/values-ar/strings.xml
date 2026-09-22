@@ -55,6 +55,7 @@
     <string name="cash_hold_banner_body">طلبات الدفع نقداً متوقفة عند الفرع (الفروع) أدناه حتى تسدّد لهم.</string>
     <string name="cash_hold_branch_amount">معك %1$s — والحد %2$s</string>
     <string name="a11y_open_notifications">الإشعارات</string>
+    <string name="a11y_back">رجوع</string>
 
     <!-- `issue.code` — الأسباب الخمسة التى يُبلّغها السائق بلا نقل حالة الطلب -->
     <string name="issue_reason_customer_unreachable">العميل لا يردّ</string>

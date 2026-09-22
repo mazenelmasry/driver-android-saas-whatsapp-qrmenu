@@ -55,6 +55,7 @@
     <string name="cash_hold_banner_body">नीचे दी गई शाखा(ओं) पर नकद ऑर्डर तब तक रुके रहेंगे जब तक आप उनका हिसाब नहीं चुकाते।</string>
     <string name="cash_hold_branch_amount">आपके पास %1$s है — सीमा %2$s</string>
     <string name="a11y_open_notifications">सूचनाएं</string>
+    <string name="a11y_back">वापस</string>
 
     <!-- `issue.code` — the five reasons a driver can report WITHOUT moving the order (openapi/driver.v1.yaml). -->
     <string name="issue_reason_customer_unreachable">ग्राहक जवाब नहीं दे रहा</string>

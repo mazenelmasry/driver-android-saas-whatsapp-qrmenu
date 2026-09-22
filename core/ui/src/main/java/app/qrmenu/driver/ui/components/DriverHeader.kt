@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -84,6 +85,13 @@ fun DriverHeader(
     subtitle: String? = null,
     unreadNotifications: Int = 0,
     onOpenNotifications: (() -> Unit)? = null,
+    /**
+     * Set on a screen that was opened FROM somewhere and hands the driver
+     * back — the notification centre, a trip. A tab root leaves it null: the
+     * bar is its way back, and an arrow beside a tab title would offer an
+     * exit that does not exist.
+     */
+    onBack: (() -> Unit)? = null,
     /** Anything the screen wants inside the colour — a tab row, a chip row. */
     belowTitle: (@Composable ColumnScope.() -> Unit)? = null,
 ) {
@@ -127,6 +135,18 @@ fun DriverHeader(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
             ) {
+                onBack?.let {
+                    IconButton(onClick = it, modifier = Modifier.size(TouchTarget.compact)) {
+                        Icon(
+                            // AutoMirrored: the arrow points the other way in
+                            // Arabic and Urdu, and this app is RTL-first.
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.a11y_back),
+                            tint = onHeader,
+                        )
+                    }
+                }
+
                 Column(modifier = Modifier.weight(1f)) {
                     PlatformLockup(onHeader = onHeader)
 

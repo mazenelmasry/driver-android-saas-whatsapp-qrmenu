@@ -190,6 +190,16 @@ fun SignedInScreen(
     // overlay (offer, trip, notification centre) is showing when it fires.
     RequestNotificationPermissionOnce()
 
+    // 🔴 Read HERE, above every early `return` below, because the platform's
+    // identity belongs to all of them — not just to the tab bar. The
+    // notification centre shipped without it for exactly this reason: it
+    // returns before the tabs are ever composed, so a provider placed down
+    // there reached every screen except the ones layered over it.
+    val platformBranding by brandingViewModel.branding.collectAsStateWithLifecycle()
+    val unreadNotifications by brandingViewModel.unreadNotifications
+        .collectAsStateWithLifecycle()
+    val platformName = stringResource(R.string.app_name)
+
     // The "why is المتاحة empty" context (decision 47) is owned by
     // `:feature:orders`'s `OrdersRoute`, but `AvailabilityRoute`'s existing
     // `noOrdersContext` slot needs the SAME value even while the Orders tab is
@@ -210,7 +220,9 @@ fun SignedInScreen(
         // system pops the whole Activity and the driver is thrown out of the
         // app instead of back to the tab they came from.
         BackHandler { showingNotifications = false }
-        NotificationCenterRoute(onBack = { showingNotifications = false })
+        WithPlatformBrand(platformName, platformBranding.logoUrl) {
+            NotificationCenterRoute(onBack = { showingNotifications = false })
+        }
         return
     }
 
@@ -277,6 +289,7 @@ fun SignedInScreen(
                 )
             }
             Box(modifier = Modifier.weight(1f)) {
+                WithPlatformBrand(platformName, platformBranding.logoUrl) {
                 TripRoute(
                     orderId = tripId,
                     // Only hand over a seed that is actually THIS order —
@@ -291,6 +304,7 @@ fun SignedInScreen(
                         tab = SignedInTab.Orders
                     },
                 )
+                }
             }
         }
         return
@@ -328,14 +342,6 @@ fun SignedInScreen(
             }
         },
     ) { insets ->
-        val platformBranding by brandingViewModel.branding.collectAsStateWithLifecycle()
-
-        // The red number on the bell. It was dead code until the notification
-        // history landed: `DriverHeader` has always drawn a badge, and nothing
-        // in the app ever supplied a count for it to draw.
-        val unreadNotifications by brandingViewModel.unreadNotifications
-            .collectAsStateWithLifecycle()
-
         // The app-level banners no longer sit ABOVE the screen's title: they
         // are handed to whichever `DriverScreenScaffold` is on screen, which
         // renders them directly BELOW its coloured header. The complaint this
@@ -373,24 +379,14 @@ fun SignedInScreen(
             )
         }
 
-        // The platform's own name, from the flavour — see `LocalPlatformBrand`.
-        // Provided here rather than inside `:core:ui` because the flavour
-        // source sets live in `:app`, and one APK serves both platforms.
-        CompositionLocalProvider(
-            LocalAppBanners provides appBanners,
-            LocalPlatformBrand provides stringResource(R.string.app_name),
-            // The logo the admin panel serves, layered over the flavour's
-            // monogram. Null until it has ever loaded — and null forever on a
-            // deployment that never uploaded one, which must not be a visible
-            // hole in the header.
-            LocalPlatformLogoUrl provides platformBranding.logoUrl,
-        ) {
+        CompositionLocalProvider(LocalAppBanners provides appBanners) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(bottom = insets.calculateBottomPadding()),
         ) {
             Box(modifier = Modifier.weight(1f)) {
+                WithPlatformBrand(platformName, platformBranding.logoUrl) {
                 when (tab) {
                     SignedInTab.Availability -> AvailabilityTab(
                         noOrdersContext = noOrdersContext,
@@ -437,10 +433,37 @@ fun SignedInScreen(
                         supportEmail = platformBranding.supportEmail,
                     )
                 }
+                }
             }
         }
         }
     }
+}
+
+/**
+ * Hands the platform's identity to whatever is drawn inside.
+ *
+ * A helper rather than one provider around the whole screen, because this
+ * function answers with early `return`s — an overlay seizes the screen and
+ * hands it back — and a `return` cannot cross a lambda. So each branch that
+ * draws something wraps itself, and a branch that forgets shows a header with
+ * no brand, which is exactly the bug the notification centre had.
+ *
+ * The name comes from the flavour (`:app` owns those source sets; `:core:ui`
+ * is built once for both platforms and must not know either name). The logo
+ * comes from the admin panel and may be null forever.
+ */
+@Composable
+private fun WithPlatformBrand(
+    name: String,
+    logoUrl: String?,
+    content: @Composable () -> Unit,
+) {
+    CompositionLocalProvider(
+        LocalPlatformBrand provides name,
+        LocalPlatformLogoUrl provides logoUrl,
+        content = content,
+    )
 }
 
 enum class SignedInTab(@StringRes val label: Int, val icon: ImageVector) {

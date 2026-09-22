@@ -56,6 +56,7 @@
     <string name="cash_hold_banner_body">Cash orders are paused at the branch(es) below until you settle up with them.</string>
     <string name="cash_hold_branch_amount">Holding %1$s — limit %2$s</string>
     <string name="a11y_open_notifications">Notifications</string>
+    <string name="a11y_back">Back</string>
 
     <!-- `issue.code` — the five reasons a driver can report WITHOUT moving the order (openapi/driver.v1.yaml). -->
     <string name="issue_reason_customer_unreachable">Customer not answering</string>

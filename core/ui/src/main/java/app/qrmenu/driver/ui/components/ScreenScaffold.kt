@@ -55,6 +55,8 @@ fun DriverScreenScaffold(
     subtitle: String? = null,
     unreadNotifications: Int = 0,
     onOpenNotifications: (() -> Unit)? = null,
+    /** Set on a screen opened from somewhere; null on a tab root. */
+    onBack: (() -> Unit)? = null,
     /** Content placed INSIDE the coloured block, under the title — a tab row. */
     belowTitle: (@Composable ColumnScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
@@ -73,6 +75,7 @@ fun DriverScreenScaffold(
             subtitle = subtitle,
             unreadNotifications = unreadNotifications,
             onOpenNotifications = onOpenNotifications,
+            onBack = onBack,
             belowTitle = belowTitle,
         )
 

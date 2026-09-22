@@ -51,6 +51,7 @@ import app.qrmenu.driver.designsystem.theme.Spacing
 import app.qrmenu.driver.designsystem.theme.TouchTarget
 import app.qrmenu.driver.ui.components.DriverArt
 import app.qrmenu.driver.ui.components.DriverEmptyState
+import app.qrmenu.driver.ui.components.DriverScreenScaffold
 
 /**
  * The notification centre — what reached this driver while they were riding.
@@ -83,58 +84,49 @@ private fun NotificationCenterScreen(
     onBack: () -> Unit,
     onRetry: () -> Unit,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(horizontal = Spacing.md),
+    // 🔴 Wears the SAME coloured header as every other screen.
+    //
+    // It used to draw its own: a bare back arrow and a word on plain paper,
+    // with no status-bar inset at all — so on the device the title sat
+    // literally touching the top edge of the glass, and the one screen a
+    // driver reaches from every tab was the one screen that looked like a
+    // different app. `DriverHeader` gained an `onBack` slot for exactly this;
+    // it pays the inset itself and keeps the brand block unbroken.
+    //
+    // No bell here: this IS the bell's destination, and an affordance that
+    // reopens the screen you are on is noise.
+    DriverScreenScaffold(
+        title = stringResource(R.string.notifications_title),
+        onBack = onBack,
     ) {
-        Row(
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = Spacing.xs),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                .fillMaxSize()
+                .padding(horizontal = Spacing.md),
         ) {
-            IconButton(onClick = onBack, modifier = Modifier.size(TouchTarget.compact)) {
-                Icon(
-                    // AutoMirrored: the arrow has to point the other way in
-                    // Arabic and Urdu, and this app is RTL-first.
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.notifications_back),
-                    tint = MaterialTheme.colorScheme.onBackground,
-                )
-            }
-            Text(
-                text = stringResource(R.string.notifications_title),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-        }
+            when {
+                state.isLoading -> NotificationsLoadingSkeleton()
 
-        when {
-            state.isLoading -> NotificationsLoadingSkeleton()
+                state.error -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    NotificationsErrorBanner(onRetry = onRetry)
+                }
 
-            state.error -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                NotificationsErrorBanner(onRetry = onRetry)
-            }
+                state.items.isEmpty() -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    DriverEmptyState(
+                        art = DriverArt.QuietBell,
+                        title = stringResource(R.string.notifications_empty_title),
+                        body = stringResource(R.string.notifications_empty_body),
+                    )
+                }
 
-            state.items.isEmpty() -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                DriverEmptyState(
-                    art = DriverArt.QuietBell,
-                    title = stringResource(R.string.notifications_empty_title),
-                    body = stringResource(R.string.notifications_empty_body),
-                )
-            }
-
-            else -> LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(vertical = Spacing.md),
-                verticalArrangement = Arrangement.spacedBy(Spacing.sm),
-            ) {
-                items(state.items, key = { it.id }) { notification ->
-                    NotificationHistoryCard(notification)
+                else -> LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(vertical = Spacing.md),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+                ) {
+                    items(state.items, key = { it.id }) { notification ->
+                        NotificationHistoryCard(notification)
+                    }
                 }
             }
         }
