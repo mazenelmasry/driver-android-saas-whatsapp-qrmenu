@@ -20,7 +20,13 @@ import java.time.format.DateTimeParseException
  */
 object TokenExpiry {
 
-    /** The contract's token lifetime. Renewal is the server's business; this is the ceiling. */
+    /**
+     * The contract's token lifetime. Renewal is the server's business — the
+     * client never extends a deadline on its own; it only ever mirrors the
+     * `X-Driver-Token-Expires-At` the server reports (see
+     * `SessionRenewalInterceptor`). This constant exists purely as the
+     * documented ceiling, matching `driver.token_days` in the backend.
+     */
     const val LIFETIME_DAYS: Long = 30
 
     /**

@@ -83,6 +83,13 @@ internal fun OtpScreen(
     isAutoVerifying: Boolean,
     /** This build has no Firebase project wired in (see `DriverPhoneVerifier`). */
     isFirebaseUnavailable: Boolean,
+    /**
+     * The process died mid-wait and there is no `verificationId` to restore —
+     * a request may or may not have reached Firebase. The code cells are
+     * replaced with a plain "request a new code" prompt rather than a field
+     * with nothing to check what is typed against.
+     */
+    needsFreshCode: Boolean,
     error: DriverApiError?,
 ) {
     Scaffold { insets ->
@@ -131,6 +138,17 @@ internal fun OtpScreen(
                 // them empty for a moment before whisking the driver away
                 // reads as a glitch, not as "this happened for you".
                 AutoVerifyingIndicator()
+            } else if (needsFreshCode) {
+                // 🔴 No `verificationId` survived — a code field here would
+                // accept six digits that can never be checked against
+                // anything. "Request a new code" below (the same resend
+                // button as always) is the one way out.
+                Text(
+                    text = stringResource(R.string.otp_session_lost),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
             } else {
                 DigitCellsField(
                     value = code,
@@ -198,7 +216,11 @@ internal fun OtpScreen(
 
                 Spacer(Modifier.height(Spacing.xl))
 
-                Button(
+                // Nothing was typed into anything (see `needsFreshCode` above) —
+                // a "Confirm" button here would only ever be a disabled button
+                // sitting under a message that already told the driver what to
+                // do instead.
+                if (!needsFreshCode) Button(
                     onClick = onVerify,
                     enabled = !isSubmitting && code.length == OTP_LENGTH,
                     modifier = Modifier
@@ -281,6 +303,7 @@ private fun OtpScreenPreview() {
             isSubmitting = false,
             isAutoVerifying = false,
             isFirebaseUnavailable = false,
+            needsFreshCode = false,
             error = null,
         )
     }
@@ -301,6 +324,7 @@ private fun OtpScreenAutoVerifyingPreview() {
             isSubmitting = true,
             isAutoVerifying = true,
             isFirebaseUnavailable = false,
+            needsFreshCode = false,
             error = null,
         )
     }
@@ -321,6 +345,28 @@ private fun OtpScreenFirebaseUnavailablePreview() {
             isSubmitting = false,
             isAutoVerifying = false,
             isFirebaseUnavailable = true,
+            needsFreshCode = false,
+            error = null,
+        )
+    }
+}
+
+@Preview(name = "needs fresh code", locale = "ar", showBackground = true)
+@Composable
+private fun OtpScreenNeedsFreshCodePreview() {
+    DriverTheme {
+        OtpScreen(
+            phone = "+966501234567",
+            code = "",
+            onCodeChange = {},
+            onVerify = {},
+            onResend = {},
+            onChangeNumber = {},
+            resendInSeconds = 0,
+            isSubmitting = false,
+            isAutoVerifying = false,
+            isFirebaseUnavailable = false,
+            needsFreshCode = true,
             error = null,
         )
     }

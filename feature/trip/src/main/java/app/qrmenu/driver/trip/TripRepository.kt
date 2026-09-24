@@ -6,6 +6,7 @@ import app.qrmenu.driver.database.entity.DriverActionType
 import app.qrmenu.driver.datastore.TokenStore
 import app.qrmenu.driver.network.api.OrderApi
 import app.qrmenu.driver.network.dto.AcceptedDto
+import app.qrmenu.driver.network.dto.BreadcrumbsRequest
 import app.qrmenu.driver.network.dto.DeliveredRequest
 import app.qrmenu.driver.network.dto.DeliveredResponse
 import app.qrmenu.driver.network.dto.DriverOrderDto
@@ -176,7 +177,16 @@ class TripRepository @Inject constructor(
         val pending = outboxDao.observePendingForDriver(currentDriverId).first()
         for (action in pending) {
             val succeeded = runCatching { replay(action) }.isSuccess
-            if (!succeeded) break
+            // 🔴 A stuck `Breadcrumbs` row never blocks this drain — see
+            // [DriverActionType.Breadcrumbs]'s own doc: unlike
+            // picked-up/delivered/issue for ONE order, breadcrumb batches
+            // carry no cross-row ordering guarantee this loop has to protect
+            // (`:core:location`'s BreadcrumbCollector already retries them
+            // independently on its own timer). Breaking here on a breadcrumb
+            // failure would let an unrelated dead zone stall a queued
+            // `delivered` behind it — the exact loss this whole table exists
+            // to prevent, for the row that matters most.
+            if (!succeeded && action.action_type != DriverActionType.Breadcrumbs) break
         }
     }
 
@@ -194,6 +204,17 @@ class TripRepository @Inject constructor(
                 DriverActionType.Issue -> {
                     val body = json.decodeFromString(IssueRequest.serializer(), action.payload_json)
                     orderApi.issue(id = action.order_id, idempotencyKey = action.idempotency_key, body = body)
+                }
+                DriverActionType.Breadcrumbs -> {
+                    // Belt-and-braces only — the primary drain for this type
+                    // is `:core:location`'s `BreadcrumbOutbox`/`BreadcrumbCollector`,
+                    // entirely self-contained and running on its own timer
+                    // regardless of whether the trip screen is even open. This
+                    // branch exists so a row THAT drain's own attempt left
+                    // behind is still swept up whenever a trip command
+                    // succeeds, the screen reopens, or `OutboxFlushWorker` runs.
+                    val body = json.decodeFromString(BreadcrumbsRequest.serializer(), action.payload_json)
+                    orderApi.breadcrumbs(id = action.order_id, idempotencyKey = action.idempotency_key, body = body)
                 }
             }
             outboxDao.acknowledge(action.idempotency_key)

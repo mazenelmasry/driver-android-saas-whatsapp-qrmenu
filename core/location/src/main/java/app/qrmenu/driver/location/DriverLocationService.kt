@@ -13,6 +13,7 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.getSystemService
+import app.qrmenu.driver.location.upload.BreadcrumbCollector
 import app.qrmenu.driver.location.upload.LocationPointBatcher
 import app.qrmenu.driver.location.upload.LocationUploader
 import app.qrmenu.driver.network.dto.LocationPointDto
@@ -53,6 +54,7 @@ class DriverLocationService : Service() {
     @Inject lateinit var batcher: LocationPointBatcher
     @Inject lateinit var uploader: LocationUploader
     @Inject lateinit var tripActivity: DriverTripActivityState
+    @Inject lateinit var breadcrumbs: BreadcrumbCollector
     @Inject lateinit var fusedClient: FusedLocationProviderClient
 
     private val serviceScope = CoroutineScope(SupervisorJob())
@@ -65,16 +67,25 @@ class DriverLocationService : Service() {
             val location = result.lastLocation ?: return
             isMoving = LocationCadencePolicy.isMoving(location.speed)
 
-            batcher.enqueue(
-                LocationPointDto(
-                    lat = location.latitude,
-                    lng = location.longitude,
-                    accuracy = location.accuracy.toDouble(),
-                    speed = location.speed.toDouble(),
-                    heading = if (location.hasBearing()) location.bearing.toDouble() else null,
-                    recordedAt = deviceTimeIso8601WithOffset(),
-                ),
+            val point = LocationPointDto(
+                lat = location.latitude,
+                lng = location.longitude,
+                accuracy = location.accuracy.toDouble(),
+                speed = location.speed.toDouble(),
+                heading = if (location.hasBearing()) location.bearing.toDouble() else null,
+                recordedAt = deviceTimeIso8601WithOffset(),
             )
+
+            batcher.enqueue(point)
+
+            // 🔴 The SAME fix, not a second GPS request — see BreadcrumbCollector's
+            // own doc. Only fed to the trip trail while a trip is active
+            // (picked up → delivered); an idle/available driver's fixes still
+            // go to [batcher] above (the live "where is the driver right
+            // now" feed) but never to the durable breadcrumb queue.
+            tripActivity.activeOrderId.value?.let { orderId ->
+                breadcrumbs.record(orderId, point)
+            }
 
             reconcileRequestInterval()
         }

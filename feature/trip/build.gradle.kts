@@ -17,6 +17,12 @@ dependencies {
     // network call is even attempted.
     implementation(project(":core:database"))
 
+    // DriverTripActivityState — TripViewModel is the one place that knows
+    // when this driver's trip moves past pickup and when it ends, which is
+    // exactly what gates :core:location's breadcrumb collection (see that
+    // class's own doc).
+    implementation(project(":core:location"))
+
     // Background drain of that outbox. The module that OWNS the queue owns
     // its draining — :app only registers the Hilt worker factory, it does not
     // know what a trip command is.

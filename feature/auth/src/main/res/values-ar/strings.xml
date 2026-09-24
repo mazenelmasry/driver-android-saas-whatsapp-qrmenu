@@ -25,6 +25,7 @@
     <string name="otp_subtitle">أرسلنا رمزاً برسالة إلى %1$s</string>
     <string name="otp_resend">أعِد الإرسال</string>
     <string name="otp_resend_in">أعِد الإرسال بعد %1$d ث</string>
+    <string name="otp_session_lost">فقدنا تتبع ذلك الرمز. اطلب رمزاً جديداً.</string>
     <string name="otp_verify">تأكيد</string>
     <string name="otp_change_number">تغيير الرقم</string>
     <string name="set_password_title">اختر كلمة مرور</string>

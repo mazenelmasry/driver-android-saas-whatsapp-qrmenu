@@ -4,6 +4,7 @@ import app.qrmenu.driver.database.dao.DriverActionOutboxDao
 import app.qrmenu.driver.trip.outbox.OutboxFlushScheduler
 import app.qrmenu.driver.database.entity.DriverActionOutboxEntity
 import app.qrmenu.driver.database.entity.DriverActionType
+import app.qrmenu.driver.location.DriverTripActivityState
 import app.qrmenu.driver.datastore.TokenStore
 import app.qrmenu.driver.network.api.OrderApi
 import app.qrmenu.driver.network.dto.AcceptedDto
@@ -163,7 +164,8 @@ class TripViewModelTest {
     private fun viewModel(
         outboxDao: DriverActionOutboxDao = FakeDriverActionOutboxDao(),
         scheduler: OutboxFlushScheduler = RecordingFlushScheduler(),
-    ): TripViewModel = TripViewModel(TripRepository(orderApi, outboxDao, scheduler, fakeTokenStore()))
+        tripActivity: DriverTripActivityState = DriverTripActivityState(),
+    ): TripViewModel = TripViewModel(TripRepository(orderApi, outboxDao, scheduler, fakeTokenStore()), tripActivity)
 
     // ───────────────────────── seeded start makes no network call ─────────────────────────
 
@@ -223,6 +225,91 @@ class TripViewModelTest {
         val content = model.state.value.phase as TripPhase.Content
         assertEquals("out_for_delivery", content.order.status)
         assertEquals("2026-09-21T10:00:00Z", content.order.pickedUpAt)
+    }
+
+    // ───────────────────────── breadcrumb collection window (task brief: picked up → delivered) ─────────────────────────
+
+    @Test
+    fun `pick-up arms breadcrumb collection for this order`() = runTest(dispatcher) {
+        coEvery { orderApi.pickedUp(7, any(), any()) } returns assignedOrder(
+            status = "out_for_delivery",
+            pickedUpAt = "2026-09-21T10:00:00Z",
+        )
+        val tripActivity = DriverTripActivityState()
+        val model = viewModel(tripActivity = tripActivity)
+        model.start(7, seed = assignedOrder(status = "ready"))
+        dispatcher.scheduler.runCurrent()
+        assertNull("not armed before pick-up", tripActivity.activeOrderId.value)
+
+        model.pickUp(7)
+        dispatcher.scheduler.runCurrent()
+
+        assertEquals(7L, tripActivity.activeOrderId.value)
+        assertTrue(tripActivity.hasActiveTrip.value)
+    }
+
+    @Test
+    fun `resuming a trip already past pickup re-arms breadcrumb collection`() = runTest(dispatcher) {
+        coEvery { orderApi.order(7) } returns assignedOrder(
+            status = "out_for_delivery",
+            pickedUpAt = "2026-09-21T10:00:00Z",
+        )
+        val tripActivity = DriverTripActivityState()
+        val model = viewModel(tripActivity = tripActivity)
+
+        // No seed — the cold-start / process-death path (see `start`'s own doc).
+        model.start(7)
+        dispatcher.scheduler.runCurrent()
+
+        assertEquals(7L, tripActivity.activeOrderId.value)
+    }
+
+    @Test
+    fun `a trip not yet picked up never arms breadcrumb collection`() = runTest(dispatcher) {
+        val tripActivity = DriverTripActivityState()
+        val model = viewModel(tripActivity = tripActivity)
+
+        model.start(7, seed = assignedOrder(status = "ready"))
+        dispatcher.scheduler.runCurrent()
+
+        assertNull(tripActivity.activeOrderId.value)
+        assertFalse(tripActivity.hasActiveTrip.value)
+    }
+
+    @Test
+    fun `delivered disarms breadcrumb collection even though picked_up_at is still set`() = runTest(dispatcher) {
+        val deliveredOrder = assignedOrder(status = "delivered", pickedUpAt = "2026-09-21T10:00:00Z")
+        coEvery { orderApi.delivered(7, any(), any()) } returns DeliveredResponse(
+            order = deliveredOrder,
+            ledger = LedgerSummaryDto(companyId = 1, currency = "SAR", earnedToday = 6.0, cashOnHand = 40.0, net = -34.0, cashLimit = null),
+        )
+        val tripActivity = DriverTripActivityState()
+        val model = viewModel(tripActivity = tripActivity)
+        model.start(7, seed = assignedOrder(status = "out_for_delivery", pickedUpAt = "2026-09-21T10:00:00Z"))
+        dispatcher.scheduler.runCurrent()
+        assertEquals(7L, tripActivity.activeOrderId.value)
+
+        model.openDeliverySheet()
+        model.confirmDelivery(7, isCashOrder = true, cashToCollect = 40.0)
+        dispatcher.scheduler.runCurrent()
+
+        assertNull(tripActivity.activeOrderId.value)
+        assertFalse(tripActivity.hasActiveTrip.value)
+    }
+
+    @Test
+    fun `the restaurant cancelling a held trip disarms breadcrumb collection`() = runTest(dispatcher) {
+        coEvery { orderApi.order(7) } returns assignedOrder(status = "cancelled", pickedUpAt = "2026-09-21T10:00:00Z")
+        val tripActivity = DriverTripActivityState()
+        val model = viewModel(tripActivity = tripActivity)
+        model.start(7, seed = assignedOrder(status = "out_for_delivery", pickedUpAt = "2026-09-21T10:00:00Z"))
+        dispatcher.scheduler.runCurrent()
+        assertEquals(7L, tripActivity.activeOrderId.value)
+
+        model.refreshQuietly(7)
+        dispatcher.scheduler.runCurrent()
+
+        assertNull(tripActivity.activeOrderId.value)
     }
 
     // ───────────────────────── the restaurant ends a trip out from under the driver ─────────────────────────

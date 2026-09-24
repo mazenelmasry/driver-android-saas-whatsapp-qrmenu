@@ -3,6 +3,7 @@ package app.qrmenu.driver.trip
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.qrmenu.driver.database.entity.DriverActionType
+import app.qrmenu.driver.location.DriverTripActivityState
 import app.qrmenu.driver.network.dto.DeliveredResponse
 import app.qrmenu.driver.network.dto.DriverIssueCode
 import app.qrmenu.driver.network.dto.DriverOrderDto
@@ -137,6 +138,11 @@ data class TripUiState(
 @HiltViewModel
 class TripViewModel @Inject constructor(
     private val repository: TripRepository,
+    // 🔴 Gates :core:location's breadcrumb trail collection (see that
+    // class's own doc) to picked-up → delivered — this ViewModel is the one
+    // place that knows both edges of that window. Never read back from here;
+    // this class only ever writes to it.
+    private val tripActivity: DriverTripActivityState,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(TripUiState())
@@ -195,6 +201,7 @@ class TripViewModel @Inject constructor(
         hasStarted = true
         if (seed != null) {
             _state.update { it.copy(phase = seed.toTripPhase()) }
+            syncTripActivity(orderId, seed)
         } else {
             load(orderId)
         }
@@ -227,11 +234,35 @@ class TripViewModel @Inject constructor(
         _state.update { it.copy(phase = TripPhase.Loading) }
         viewModelScope.launch {
             runCatching { repository.fetch(orderId) }
-                .onSuccess { dto -> _state.update { it.copy(phase = dto.toTripPhase()) } }
+                .onSuccess { dto ->
+                    _state.update { it.copy(phase = dto.toTripPhase()) }
+                    syncTripActivity(orderId, dto)
+                }
                 .onFailure { thrown ->
                     _state.update { it.copy(phase = TripPhase.LoadFailed(thrown.toDriverApiError())) }
                 }
         }
+    }
+
+    /**
+     * The single place [tripActivity] is derived from a fresh [DriverOrderDto] —
+     * mirrors [toTripPhase]'s own "one decision point" rationale, so a
+     * resumed trip (cold start, [load]), a hand-off seed ([start]) and a
+     * successful pick-up (below) all arm/leave breadcrumb collection the same
+     * way: active the moment [DriverOrderDto.pickedUpAt] is set, off the
+     * moment the restaurant ends the trip out from under the driver.
+     *
+     * Deliberately NOT called from [confirmDelivery]'s success branch — the
+     * delivered order's own `picked_up_at` stays non-null (it already
+     * happened), so this derivation alone would wrongly leave collection
+     * armed after the trip is actually over. That call site clears
+     * [tripActivity] directly instead — see its own comment.
+     */
+    private fun syncTripActivity(orderId: Long, order: DriverOrderDto) {
+        val phase = order.toTripPhase()
+        tripActivity.setActiveOrder(
+            if (phase is TripPhase.Content && order.pickedUpAt != null) orderId else null,
+        )
     }
 
     // ───────────────────────────── picked-up ─────────────────────────────
@@ -281,6 +312,12 @@ class TripViewModel @Inject constructor(
 
                     if (phase is TripPhase.Resolved) {
                         _state.update { it.copy(phase = phase) }
+                        // The restaurant ended a trip this driver was still
+                        // tracking — stop collecting for it (task brief's
+                        // "picked up → delivered" window; a cancelled/rejected
+                        // order is neither, and has no `delivered` call of its
+                        // own to clear this from).
+                        tripActivity.setActiveOrder(null)
                     }
                 }
         }
@@ -297,6 +334,8 @@ class TripViewModel @Inject constructor(
                 .onSuccess { dto ->
                     pickedUpKey = null
                     _state.update { it.copy(phase = dto.toTripPhase()) }
+                    // Arms breadcrumb collection — task brief's "picked up".
+                    syncTripActivity(orderId, dto)
                     flushQueuedActions()
                 }
                 .onFailure { thrown ->
@@ -398,6 +437,14 @@ class TripViewModel @Inject constructor(
                             deliveredResult = response,
                         )
                     }
+                    // Task brief's "delivered" — the trip is over, so
+                    // breadcrumb collection stops HERE, not by re-deriving
+                    // from `pickedUpAt` (see [syncTripActivity]'s own doc for
+                    // why that alone would leave it wrongly armed).
+                    // BreadcrumbCollector flushes whatever this trip still
+                    // had buffered the moment this flips to `null` — see its
+                    // own doc on the trip-boundary listener.
+                    tripActivity.setActiveOrder(null)
                     flushQueuedActions()
                 }
                 .onFailure { thrown ->

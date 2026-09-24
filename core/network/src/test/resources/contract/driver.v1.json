@@ -556,7 +556,7 @@
                     "auth"
                 ],
                 "summary": "The driver, their restaurant links and current availability",
-                "description": "Like every other route behind a session, this carries `X-App-Version` and may answer `426 app_update_required` when the running build is below the configured floor. The body then names the floor (`min_version_code`), and `GET /driver/app-version` — which is public precisely so it stays reachable from the blocked screen — says where to get the new build.\n\nTwo routes are deliberately EXEMPT from that refusal and never answer 426: `POST /driver/auth/logout` and `DELETE /driver/device-token`. Signing out of the build being replaced, and clearing its push registration first, are exactly what an out-of-date driver must still be able to do; gating them makes the update harder, which is the opposite of the point.\n",
+                "description": "Like every other route behind a session, this carries `X-App-Version` and may answer `426 app_update_required` when the running build is below the configured floor. The body then names the floor (`min_version_code`), and `GET /driver/app-version` — which is public precisely so it stays reachable from the blocked screen — says where to get the new build.\n\nTwo routes are deliberately EXEMPT from that refusal and never answer 426: `POST /driver/auth/logout` and `DELETE /driver/device-token`. Signing out of the build being replaced, and clearing its push registration first, are exactly what an out-of-date driver must still be able to do; gating them makes the update harder, which is the opposite of the point.\n\nAlso like every other route behind a session, the response carries `X-Driver-Token-Expires-At` (see `components.headers.DriverTokenExpiresAt`) — declared explicitly here as the reference example, but present on every `driver.auth`-protected response, not just this one.\n",
                 "parameters": [
                     {
                         "$ref": "#/components/parameters/AppVersion"
@@ -565,6 +565,11 @@
                 "responses": {
                     "200": {
                         "description": "OK",
+                        "headers": {
+                            "X-Driver-Token-Expires-At": {
+                                "$ref": "#/components/headers/DriverTokenExpiresAt"
+                            }
+                        },
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1426,7 +1431,16 @@
             "driverToken": {
                 "type": "http",
                 "scheme": "bearer",
-                "description": "A `DriverToken` (sha256 at rest) bound to `driver_id`. Not Sanctum, and not interchangeable with the POS staff token.\n"
+                "description": "A `DriverToken` (sha256 at rest) bound to `driver_id`. Not Sanctum, and not interchangeable with the POS staff token.\n\nThe token lives `driver.token_days` (30 by default) and RENEWS ON USE: every authenticated response carries the CURRENT deadline back in `X-Driver-Token-Expires-At` (see `components.headers.DriverTokenExpiresAt`) — the client must read this, never assume or locally extend a deadline of its own, because the server is the only authority on when the token actually dies. The renewal itself only ever happens server-side, inside `driver.token_renew_within_days` (7 by default) of the current deadline, and only on a request the token successfully authenticated — it can make the deadline later, never the reason a still-valid token is rejected.\n"
+            }
+        },
+        "headers": {
+            "DriverTokenExpiresAt": {
+                "description": "The `DriverToken`'s CURRENT `expires_at`, ISO-8601 with a UTC offset — present on every response behind `driver.auth`, whether or not this particular request happened to renew it (see `driverToken` security scheme above). The client's own local copy of the deadline must always be replaced by this value, never extended locally: this backend, not the client, decides when the session actually dies.\n",
+                "schema": {
+                    "type": "string",
+                    "format": "date-time"
+                }
             }
         },
         "parameters": {

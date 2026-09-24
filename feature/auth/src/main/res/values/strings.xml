@@ -25,6 +25,7 @@
     <string name="otp_subtitle">We sent a code by SMS to %1$s</string>
     <string name="otp_resend">Send again</string>
     <string name="otp_resend_in">Send again in %1$d s</string>
+    <string name="otp_session_lost">We lost track of that code. Request a new one.</string>
     <string name="otp_verify">Confirm</string>
     <string name="otp_change_number">Change number</string>
     <string name="set_password_title">Choose a password</string>

@@ -57,4 +57,32 @@ object LocationConstants {
      * against the same number a reviewer would check the backend against.
      */
     const val SERVER_HEARTBEAT_TIMEOUT_MS: Long = 180_000L
+
+    /**
+     * `POST driver/orders/{id}/breadcrumbs` (`openapi/driver.v1.yaml` /
+     * `BreadcrumbsRequest`, backend `app/Http/Requests/Driver/BreadcrumbsRequest.php`):
+     * `points` is capped at 240 per request. Unlike [MAX_BATCH_POINTS] (the
+     * LIVE `driver/location` feed, capped at 60 by a different endpoint), a
+     * breadcrumb batch settles a dispute after the fact — not "where is the
+     * driver right now" — so there is no reason to drop the oldest points the
+     * way [app.qrmenu.driver.location.upload.LocationPointBatcher] does; the
+     * durable outbox row this cap bounds is instead flushed before it can
+     * fill (see [BREADCRUMB_FLUSH_INTERVAL_MS]).
+     */
+    const val MAX_BREADCRUMB_BATCH_POINTS: Int = 240
+
+    /**
+     * How often a trip's accumulated breadcrumbs are written to the durable
+     * offline queue (`driver_actions_outbox`) and given one best-effort send
+     * attempt — CLAUDE.md's "نقطة/دقيقة تُحفظ" trail does not need to reach
+     * the server any faster than this to do its job (settling "the driver
+     * never arrived" disputes, not live tracking — that is [UPLOAD_INTERVAL_MS]'s
+     * job). Every point is already durable to Room the instant a batch is
+     * cut, so this interval only trades off "how much of the trail could be
+     * lost to a process death that outruns a flush" against "how often a
+     * moving driver's queue is touched" — at the MOVING tier (7s) that is
+     * under 9 points per flush, a batch worth writing once rather than once
+     * per fix.
+     */
+    const val BREADCRUMB_FLUSH_INTERVAL_MS: Long = 60_000L
 }

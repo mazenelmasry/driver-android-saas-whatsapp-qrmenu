@@ -25,6 +25,7 @@
     <string name="otp_subtitle">ہم نے %1$s پر ایس ایم ایس سے کوڈ بھیجا ہے</string>
     <string name="otp_resend">دوبارہ بھیجیں</string>
     <string name="otp_resend_in">%1$d سیکنڈ بعد دوبارہ بھیجیں</string>
+    <string name="otp_session_lost">ہم اس کوڈ کا سراغ کھو بیٹھے۔ نیا کوڈ طلب کریں۔</string>
     <string name="otp_verify">تصدیق کریں</string>
     <string name="otp_change_number">نمبر تبدیل کریں</string>
     <string name="set_password_title">پاس ورڈ منتخب کریں</string>

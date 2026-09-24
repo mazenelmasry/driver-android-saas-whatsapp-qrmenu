@@ -15,6 +15,12 @@ dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:ui"))
 
+    // The trip breadcrumb trail is queued in the SAME `driver_actions_outbox`
+    // table `:feature:trip`'s picked-up/delivered/issue commands use — see
+    // BreadcrumbOutbox's own doc for why reusing that table (rather than a
+    // new one) was the point, not an accident.
+    implementation(project(":core:database"))
+
     implementation(libs.play.services.location)
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.android)

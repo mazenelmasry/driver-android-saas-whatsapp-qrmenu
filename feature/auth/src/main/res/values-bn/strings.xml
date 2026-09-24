@@ -25,6 +25,7 @@
     <string name="otp_subtitle">আমরা %1$s নম্বরে এসএমএসে একটি কোড পাঠিয়েছি</string>
     <string name="otp_resend">আবার পাঠান</string>
     <string name="otp_resend_in">%1$d সেকেন্ড পরে আবার পাঠান</string>
+    <string name="otp_session_lost">আমরা সেই কোডের হদিস হারিয়ে ফেলেছি। একটি নতুন কোড চান।</string>
     <string name="otp_verify">নিশ্চিত করুন</string>
     <string name="otp_change_number">নম্বর পরিবর্তন করুন</string>
     <string name="set_password_title">একটি পাসওয়ার্ড বাছুন</string>

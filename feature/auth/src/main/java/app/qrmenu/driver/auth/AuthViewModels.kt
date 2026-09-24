@@ -17,6 +17,7 @@ import app.qrmenu.driver.network.dto.SetPasswordRequest
 import app.qrmenu.driver.network.dto.VerifyOtpRequest
 import app.qrmenu.driver.network.errors.DriverApiError
 import app.qrmenu.driver.network.errors.toDriverApiError
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -55,6 +56,18 @@ data class OtpUiState(
      * retry will ever fix it.
      */
     val isFirebaseUnavailable: Boolean = false,
+    /**
+     * The OS killed this process mid-wait, and what came back after
+     * [OtpViewModel]'s [SavedStateHandle] was restored was a phone with NO
+     * `verificationId` to go with it — a request was in flight when the
+     * process died, so it is unknown whether Firebase ever sent anything.
+     *
+     * Distinct from [isFirebaseUnavailable] (nothing will ever work here) and
+     * from [error] (a normal, retryable failure): this is "we do not know
+     * whether a code is on the way — tap 'send again' to be sure", not a
+     * generic error banner over an empty code field.
+     */
+    val needsFreshCode: Boolean = false,
     val error: DriverApiError? = null,
 ) {
     companion object {
@@ -72,9 +85,39 @@ class OtpViewModel @Inject constructor(
     private val authApi: AuthApi,
     private val tokenStore: TokenStore,
     private val phoneVerifier: DriverPhoneVerifier,
+    private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(OtpUiState())
+    /**
+     * 🔴 Process death loses the in-memory [OtpUiState] the same way it loses
+     * every other `ViewModel` — but [AuthStepSaver] already carried the PHONE
+     * back through `rememberSaveable`, so the very next thing that happens is
+     * [start] being called again for it. Without persisting these two here as
+     * well, that restart looked "fine" (a new SMS just went out) right up
+     * until the backend's rate limiter or a flaky connection meant the SECOND
+     * request never produced a `verificationId` — at which point a driver
+     * holding a perfectly valid code from the FIRST request had no way to
+     * submit it.
+     *
+     * [KEY_PHONE] is compared against the phone [start] is called with rather
+     * than trusted blindly: a driver who tapped "change number" and came back
+     * for a DIFFERENT phone must never have this stale id offered up for it.
+     */
+    private var pendingVerificationId: String?
+        get() = savedStateHandle[KEY_VERIFICATION_ID]
+        set(value) {
+            savedStateHandle[KEY_VERIFICATION_ID] = value
+        }
+
+    private var pendingPhone: String?
+        get() = savedStateHandle[KEY_PHONE]
+        set(value) {
+            savedStateHandle[KEY_PHONE] = value
+        }
+
+    private val _state = MutableStateFlow(
+        OtpUiState(verificationId = savedStateHandle[KEY_VERIFICATION_ID]),
+    )
     val state: StateFlow<OtpUiState> = _state.asStateFlow()
 
     /** Held from [start] so an auto-verify can complete the flow without the driver tapping anything. */
@@ -83,7 +126,10 @@ class OtpViewModel @Inject constructor(
     private var hasRequested = false
 
     /**
-     * Sends the first code, once, when the screen opens.
+     * Sends the first code, once, when the screen opens — UNLESS a restart
+     * already restored a `verificationId` for this exact phone, in which case
+     * the code Firebase already sent is still good and a second SMS would
+     * only waste it (and the rate limit).
      *
      * 🔴 Firebase does NOT send anything when the restaurant adds a driver — the
      * app asks, and until it does no SMS exists. That is why the previous screen
@@ -107,6 +153,25 @@ class OtpViewModel @Inject constructor(
         onConfirmedCallback = onConfirmed
         if (hasRequested) return
         hasRequested = true
+
+        val restoredId = pendingVerificationId
+        if (pendingPhone == phone && restoredId != null) {
+            _state.update { it.copy(verificationId = restoredId, needsFreshCode = false, error = null) }
+            return
+        }
+
+        if (pendingPhone == phone && restoredId == null) {
+            // A request for THIS phone was in flight when the process died —
+            // it may or may not have reached Firebase. Rather than guess
+            // (auto-resending spends an SMS if it did; staying silent strands
+            // the driver if it did not), surface a clear "request a new code"
+            // path and let them decide.
+            _state.update { it.copy(needsFreshCode = true, resendInSeconds = 0) }
+            return
+        }
+
+        pendingPhone = phone
+        pendingVerificationId = null
         sendCode(phone, activity)
     }
 
@@ -114,6 +179,7 @@ class OtpViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching { authApi.requestOtp(RequestOtpRequest(phone)) }
                 .onSuccess {
+                    _state.update { it.copy(needsFreshCode = false) }
                     startCooldown()
                     listenForVerification(phone, activity)
                 }
@@ -128,8 +194,11 @@ class OtpViewModel @Inject constructor(
         viewModelScope.launch {
             phoneVerifier.verificationEvents(activity, phone).collect { outcome ->
                 when (outcome) {
-                    is PhoneVerificationOutcome.CodeSent -> _state.update {
-                        it.copy(verificationId = outcome.verificationId, error = null)
+                    is PhoneVerificationOutcome.CodeSent -> {
+                        pendingVerificationId = outcome.verificationId
+                        _state.update {
+                            it.copy(verificationId = outcome.verificationId, error = null)
+                        }
                     }
 
                     is PhoneVerificationOutcome.AutoVerified -> {
@@ -218,6 +287,11 @@ class OtpViewModel @Inject constructor(
                         expiresAtMillis = TokenExpiry.parseExpiresAt(response.expiresAt),
                     )
                 }
+                // The verification this phone/id pair was for is spent — a
+                // future ConfirmPhone (a second restaurant's invite, later)
+                // must never see this as something to restore.
+                pendingPhone = null
+                pendingVerificationId = null
                 _state.update { it.copy(isSubmitting = false, isAutoVerifying = false) }
                 onConfirmedCallback?.invoke(response.needsPassword, response.restaurants.isNotEmpty())
             }.onFailure { thrown ->
@@ -243,6 +317,8 @@ class OtpViewModel @Inject constructor(
 
     private companion object {
         const val TAG = "OtpViewModel"
+        const val KEY_VERIFICATION_ID = "otp_verification_id"
+        const val KEY_PHONE = "otp_pending_phone"
     }
 }
 

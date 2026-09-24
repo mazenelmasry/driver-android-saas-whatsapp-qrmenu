@@ -3,6 +3,7 @@ package app.qrmenu.driver.auth
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -118,25 +119,47 @@ fun AuthFlow(onSignedIn: () -> Unit) {
             },
         )
 
-        is AuthStep.ConfirmPhone -> ConfirmPhoneRoute(
-            phone = current.phone,
-            onConfirmed = { needsPassword, hasRestaurants ->
-                step = when {
-                    needsPassword -> AuthStep.ChoosePassword(current.phone, hasRestaurants)
-                    hasRestaurants -> AuthStep.SignIn.also { onSignedIn() }
-                    else -> AuthStep.RedeemInvite
-                }
-            },
-            onChangeNumber = { step = AuthStep.SignIn },
-        )
+        is AuthStep.ConfirmPhone -> {
+            // 🔴 With no `BackHandler` here, system/gesture back on this
+            // screen fell through to whatever owns the Activity — which,
+            // mid sign-in, is nothing: it closed the app. Phone entry
+            // ("change number") is exactly where back should land, so this
+            // reuses that same transition rather than inventing a second one.
+            BackHandler { step = AuthStep.SignIn }
+            ConfirmPhoneRoute(
+                phone = current.phone,
+                onConfirmed = { needsPassword, hasRestaurants ->
+                    step = when {
+                        needsPassword -> AuthStep.ChoosePassword(current.phone, hasRestaurants)
+                        hasRestaurants -> AuthStep.SignIn.also { onSignedIn() }
+                        else -> AuthStep.RedeemInvite
+                    }
+                },
+                onChangeNumber = { step = AuthStep.SignIn },
+            )
+        }
 
-        is AuthStep.ChoosePassword -> ChoosePasswordRoute(
-            onSaved = {
-                step = if (current.hasRestaurants) AuthStep.SignIn.also { onSignedIn() } else AuthStep.RedeemInvite
-            },
-        )
+        is AuthStep.ChoosePassword -> {
+            // Back to `ConfirmPhone` would re-run its `LaunchedEffect(phone)`
+            // and ask for ANOTHER SMS for a phone that is already verified —
+            // this step only exists because it just was. Back to `SignIn`
+            // costs nothing (the phone stays verified server-side) and does
+            // not spend a code the driver has no use for retyping.
+            BackHandler { step = AuthStep.SignIn }
+            ChoosePasswordRoute(
+                onSaved = {
+                    step = if (current.hasRestaurants) AuthStep.SignIn.also { onSignedIn() } else AuthStep.RedeemInvite
+                },
+            )
+        }
 
-        AuthStep.RedeemInvite -> InviteCodeRoute(onRedeemed = onSignedIn)
+        AuthStep.RedeemInvite -> {
+            // Same reasoning as `ChoosePassword` above: the phone is already
+            // proved, there is nothing to re-verify, and `SignIn` is the one
+            // step every path here can always retreat to.
+            BackHandler { step = AuthStep.SignIn }
+            InviteCodeRoute(onRedeemed = onSignedIn)
+        }
     }
 }
 
@@ -172,6 +195,7 @@ private fun ConfirmPhoneRoute(
         isSubmitting = state.isSubmitting,
         isAutoVerifying = state.isAutoVerifying,
         isFirebaseUnavailable = state.isFirebaseUnavailable,
+        needsFreshCode = state.needsFreshCode,
         error = state.error,
     )
 }

@@ -10,6 +10,7 @@ import app.qrmenu.driver.network.interceptors.DnsRetryInterceptor
 import app.qrmenu.driver.network.interceptors.DriverAuthInterceptor
 import app.qrmenu.driver.network.interceptors.LocaleInterceptor
 import app.qrmenu.driver.network.interceptors.SessionExpiryInterceptor
+import app.qrmenu.driver.network.interceptors.SessionRenewalInterceptor
 import app.qrmenu.driver.network.interceptors.UpdateRequiredInterceptor
 import dagger.Module
 import dagger.Provides
@@ -52,6 +53,7 @@ object NetworkModule {
         locale: LocaleInterceptor,
         appVersion: AppVersionInterceptor,
         sessionExpiry: SessionExpiryInterceptor,
+        sessionRenewal: SessionRenewalInterceptor,
         updateRequired: UpdateRequiredInterceptor,
     ): OkHttpClient = OkHttpClient.Builder()
         // A phone on mobile data: long enough to survive a lift or a tunnel,
@@ -68,6 +70,9 @@ object NetworkModule {
         // After `auth`, so it can see whether the request it is judging was
         // actually signed — an unsigned 401 is an answer, not an expiry.
         .addInterceptor(sessionExpiry)
+        // Same reasoning as `sessionExpiry`: only reads the response, only
+        // acts on a request it can see was signed.
+        .addInterceptor(sessionRenewal)
         // A 426 can arrive on any protected route regardless of session state,
         // so position relative to `sessionExpiry` does not matter — both only
         // read the response, neither short-circuits the other.
