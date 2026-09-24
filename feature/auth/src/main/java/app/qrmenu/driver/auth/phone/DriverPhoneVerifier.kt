@@ -51,6 +51,13 @@ sealed interface PhoneVerificationOutcome {
      */
     data class AutoVerified(val idToken: String) : PhoneVerificationOutcome
 
+    /**
+     * Android read the SMS itself and this is the code in it — emitted just
+     * before [AutoVerified] so the six boxes fill in front of the driver
+     * instead of sitting empty while the sign-in finishes behind them.
+     */
+    data class CodeRetrieved(val code: String) : PhoneVerificationOutcome
+
     /** The SMS is away. [verificationId] is what [DriverPhoneVerifier.confirmCode] needs next. */
     data class CodeSent(val verificationId: String) : PhoneVerificationOutcome
 

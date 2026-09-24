@@ -22,6 +22,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -125,6 +126,25 @@ class OtpViewModel @Inject constructor(
 
     private var hasRequested = false
 
+    private var verificationJob: Job? = null
+
+    /**
+     * Forgets this confirmation entirely — called when the driver LEAVES the
+     * step (back, "change number"), never on a rotation. The ViewModel is
+     * scoped to the whole sign-in route, so without this a driver who went
+     * back and returned found the old digits, the old error, and no new SMS
+     * (`hasRequested` still true) — a dead end (S25, 2026-09-25).
+     */
+    fun reset() {
+        verificationJob?.cancel()
+        verificationJob = null
+        hasRequested = false
+        onConfirmedCallback = null
+        pendingPhone = null
+        pendingVerificationId = null
+        _state.value = OtpUiState()
+    }
+
     /**
      * Sends the first code, once, when the screen opens — UNLESS a restart
      * already restored a `verificationId` for this exact phone, in which case
@@ -191,7 +211,8 @@ class OtpViewModel @Inject constructor(
 
     /** Collects Firebase's stream of events for the life of this screen. */
     private fun listenForVerification(phone: String, activity: Activity) {
-        viewModelScope.launch {
+        verificationJob?.cancel()
+        verificationJob = viewModelScope.launch {
             phoneVerifier.verificationEvents(activity, phone).collect { outcome ->
                 when (outcome) {
                     is PhoneVerificationOutcome.CodeSent -> {
@@ -199,6 +220,10 @@ class OtpViewModel @Inject constructor(
                         _state.update {
                             it.copy(verificationId = outcome.verificationId, error = null)
                         }
+                    }
+
+                    is PhoneVerificationOutcome.CodeRetrieved -> _state.update {
+                        it.copy(code = outcome.code.filter(Char::isDigit).take(OTP_LENGTH), error = null)
                     }
 
                     is PhoneVerificationOutcome.AutoVerified -> {

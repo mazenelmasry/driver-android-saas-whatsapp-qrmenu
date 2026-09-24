@@ -5,6 +5,10 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.Lifecycle
+import androidx.compose.runtime.DisposableEffect
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -27,10 +31,10 @@ import androidx.core.app.ActivityCompat
 class LocationPermissionFlowState internal constructor(
     initialState: LocationPermissionState,
     initialForegroundPermanentlyDenied: Boolean,
-    private val requestForeground: () -> Unit,
-    private val requestBackground: () -> Unit,
-    private val requestNotifications: () -> Unit,
-    private val openAppSettings: () -> Unit,
+    internal var requestForeground: () -> Unit,
+    internal var requestBackground: () -> Unit,
+    internal var requestNotifications: () -> Unit,
+    internal var openAppSettings: () -> Unit,
 ) {
     var state: LocationPermissionState by mutableStateOf(initialState)
         internal set
@@ -121,6 +125,7 @@ fun rememberLocationPermissionFlow(): LocationPermissionFlowState {
             )
             if (hasRequestedForeground && !canStillShowRationale) {
                 foregroundPermanentlyDenied = true
+                flowState.foregroundPermanentlyDenied = true
             }
         }
         hasRequestedForeground = true
@@ -134,16 +139,31 @@ fun rememberLocationPermissionFlow(): LocationPermissionFlowState {
         ActivityResultContracts.RequestPermission(),
     ) { flowState.state = LocationPermissions.readState(context) }
 
-    return remember(foregroundLauncher, backgroundLauncher, notificationsLauncher, foregroundPermanentlyDenied) {
-        LocationPermissionFlowState(
-            initialState = flowState.state,
-            initialForegroundPermanentlyDenied = foregroundPermanentlyDenied,
-            requestForeground = { foregroundLauncher.launch(LocationPermissions.FOREGROUND) },
-            requestBackground = { backgroundLauncher.launch(LocationPermissions.BACKGROUND) },
-            requestNotifications = {
-                LocationPermissions.NOTIFICATIONS?.let { notificationsLauncher.launch(it) }
-            },
-            openAppSettings = { context.startActivity(LocationPermissions.appSettingsIntent(context)) },
-        )
+    // 🔴 ONE state object, written by the launchers AND read by the screen.
+    // This used to return a SECOND instance built from a snapshot of the first:
+    // the launchers kept updating the first while the screen read the second,
+    // so after a grant the banner stayed «الموقع مغلق», its button re-asked a
+    // permission already granted (a silent no-op), and — worst — tracking never
+    // started until the app was reopened (S25, 2026-09-25).
+    flowState.requestForeground = { foregroundLauncher.launch(LocationPermissions.FOREGROUND) }
+    flowState.requestBackground = { backgroundLauncher.launch(LocationPermissions.BACKGROUND) }
+    flowState.requestNotifications = {
+        LocationPermissions.NOTIFICATIONS?.let { notificationsLauncher.launch(it) }
     }
+    flowState.openAppSettings = { context.startActivity(LocationPermissions.appSettingsIntent(context)) }
+
+    // Android pushes no event when the driver grants from the system settings
+    // screen (the permanently-denied path) — re-read on every return.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                flowState.state = LocationPermissions.readState(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    return flowState
 }

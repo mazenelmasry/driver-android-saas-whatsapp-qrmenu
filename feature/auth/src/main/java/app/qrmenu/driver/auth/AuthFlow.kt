@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -183,6 +184,12 @@ private fun ConfirmPhoneRoute(
     // Arriving here IS the request — see OtpViewModel.start. Keyed on the phone
     // so correcting the number and coming back sends to the new one.
     LaunchedEffect(phone) { viewModel.start(phone, activity, onConfirmed) }
+
+    // Leaving the step (not a rotation) must not leave its state behind for
+    // the next visit — see OtpViewModel.reset.
+    DisposableEffect(viewModel) {
+        onDispose { if (!activity.isChangingConfigurations) viewModel.reset() }
+    }
 
     OtpScreen(
         phone = phone,

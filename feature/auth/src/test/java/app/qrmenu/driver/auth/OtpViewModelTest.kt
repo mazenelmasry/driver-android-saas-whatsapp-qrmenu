@@ -183,4 +183,44 @@ class OtpViewModelTest {
         assertNull(handle.get<String>("otp_verification_id"))
         assertNull(handle.get<String>("otp_pending_phone"))
     }
+
+    /** Android read the SMS: the digits must appear in the boxes, not stay blank behind a sign-in. */
+    @Test
+    fun `a retrieved code fills the boxes`() = runTest(dispatcher) {
+        coEvery { authApi.requestOtp(RequestOtpRequest(phone)) } returns AcceptedDto(ok = true)
+        every { phoneVerifier.verificationEvents(activity, phone) } returns flowOf(
+            PhoneVerificationOutcome.CodeSent("vid-1"),
+            PhoneVerificationOutcome.CodeRetrieved("277260"),
+        )
+
+        val model = viewModel()
+        model.start(phone, activity) { _, _ -> }
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals("277260", model.state.value.code)
+    }
+
+    /**
+     * Leaving the step and coming back must start over: before [OtpViewModel.reset]
+     * the old digits and error were still there and no new SMS was requested.
+     */
+    @Test
+    fun `reset forgets the old attempt so a return visit requests a new code`() = runTest(dispatcher) {
+        coEvery { authApi.requestOtp(RequestOtpRequest(phone)) } returns AcceptedDto(ok = true)
+        every { phoneVerifier.verificationEvents(activity, phone) } returns
+            flowOf(PhoneVerificationOutcome.CodeSent("vid-1"))
+
+        val model = viewModel()
+        model.start(phone, activity) { _, _ -> }
+        dispatcher.scheduler.advanceUntilIdle()
+        model.onCodeChange("123456")
+
+        model.reset()
+        assertEquals("", model.state.value.code)
+        assertNull(model.state.value.verificationId)
+
+        model.start(phone, activity) { _, _ -> }
+        dispatcher.scheduler.advanceUntilIdle()
+        coVerify(exactly = 2) { authApi.requestOtp(RequestOtpRequest(phone)) }
+    }
 }

@@ -2,6 +2,8 @@ package app.qrmenu.driver.auth.phone
 
 import android.app.Activity
 import android.content.Context
+import android.util.Log
+import java.util.concurrent.atomic.AtomicBoolean
 import app.qrmenu.driver.network.errors.DriverApiError
 import app.qrmenu.driver.network.errors.DriverErrorCode
 import com.google.firebase.FirebaseApp
@@ -54,22 +56,41 @@ class FirebaseDriverPhoneVerifier @Inject constructor(
 
             val auth = FirebaseAuth.getInstance()
 
+            // 🔴 Firebase can report the SAME SMS as completed twice: on a
+            // sideloaded build Play Integrity fails and Firebase re-runs the
+            // verification through reCAPTCHA, and auto-retrieval then answers
+            // both sessions. The first sign-in consumes the code, the second
+            // fails with ERROR_SESSION_EXPIRED — and its failure used to close
+            // this channel, cancelling the first (successful) sign-in before
+            // its token ever reached the backend. The driver saw «الرمز غير
+            // صحيح» for a code Firebase had just accepted (S25, 2026-09-25).
+            // Only the first completion is acted on, and a late failure after
+            // it is ignored.
+            val completionClaimed = AtomicBoolean(false)
+
             val callbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
 
                 // Android read the SMS itself (auto-retrieval) or Play Services
                 // instant-verified the number — the driver never saw a code to
                 // type, so the credential arrives here fully formed.
                 override fun onVerificationCompleted(credential: PhoneAuthCredential) {
+                    if (!completionClaimed.compareAndSet(false, true)) return
+                    credential.smsCode?.let { trySend(PhoneVerificationOutcome.CodeRetrieved(it)) }
                     launch {
                         val result = signInAndGetIdToken(auth, credential)
                         result
                             .onSuccess { token -> trySend(PhoneVerificationOutcome.AutoVerified(token)) }
-                            .onFailure { thrown -> trySend(PhoneVerificationOutcome.Failed(thrown.toPhoneVerificationError())) }
+                            .onFailure { thrown ->
+                                logFailure("auto-verify sign-in", thrown)
+                                trySend(PhoneVerificationOutcome.Failed(thrown.toPhoneVerificationError()))
+                            }
                         close()
                     }
                 }
 
                 override fun onVerificationFailed(exception: FirebaseException) {
+                    logFailure("verifyPhoneNumber", exception)
+                    if (completionClaimed.get()) return
                     trySend(PhoneVerificationOutcome.Failed(exception.toPhoneVerificationError()))
                     close()
                 }
@@ -99,6 +120,21 @@ class FirebaseDriverPhoneVerifier @Inject constructor(
     override suspend fun confirmCode(verificationId: String, code: String): Result<String> {
         val credential = PhoneAuthProvider.getCredential(verificationId, code)
         return signInAndGetIdToken(FirebaseAuth.getInstance(), credential)
+            .onFailure { thrown -> logFailure("confirmCode", thrown) }
+    }
+
+    /**
+     * Every Firebase rejection is logged by class, error code and message —
+     * never the phone, the code or a token. A mapped «الرمز غير صحيح» on its
+     * own hid WHICH Firebase failure it was (found on the S25, 2026-09-25).
+     */
+    private fun logFailure(step: String, thrown: Throwable) {
+        val code = (thrown as? FirebaseAuthException)?.errorCode
+        Log.w(TAG, "$step failed: ${thrown::class.java.simpleName} code=$code: ${thrown.message}")
+    }
+
+    private companion object {
+        const val TAG = "PhoneVerifier"
     }
 
     private suspend fun signInAndGetIdToken(
