@@ -2,6 +2,8 @@ package app.qrmenu.driver.account
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.qrmenu.driver.database.dao.DriverActionOutboxDao
+import app.qrmenu.driver.database.dao.NotificationHistoryDao
 import app.qrmenu.driver.datastore.LocaleManager
 import app.qrmenu.driver.datastore.TokenStore
 import app.qrmenu.driver.datastore.UiScale
@@ -39,10 +41,24 @@ class AccountViewModel @Inject constructor(
     private val tokenStore: TokenStore,
     private val localeManager: LocaleManager,
     private val uiScaleStore: UiScaleStore,
+    private val notificationHistoryDao: NotificationHistoryDao,
+    outboxDao: DriverActionOutboxDao,
 ) : ViewModel() {
 
     private val _me = MutableStateFlow(AccountUiState())
     val me: StateFlow<AccountUiState> = _me.asStateFlow()
+
+    /**
+     * Whether THIS driver still has trip commands queued for the server —
+     * backs the distinct warning in [SignOutConfirmDialog]: a driver signing
+     * out on a phone that will be handed to someone else should know some
+     * actions haven't reached the restaurant yet, not just tap through a
+     * generic confirmation.
+     */
+    val hasUnsentActions: StateFlow<Boolean> =
+        outboxDao.observePendingCountForDriver(tokenStore.driverId.value)
+            .map { it > 0 }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     /** The driver's chosen language, or the app default while nothing has been explicitly picked. */
     val language: StateFlow<String> = localeManager.language
@@ -127,11 +143,21 @@ class AccountViewModel @Inject constructor(
      * a driver on a dead network must still be able to get off a shared
      * phone. Reaching the server is best-effort; [onSignedOut] runs only
      * after [tokenStore] is actually empty.
+     *
+     * 🔴 Also purges `notification_history` — a shared device's NEXT driver
+     * must not see the previous driver's offers/notifications. The offline
+     * outbox is deliberately NOT touched here: a queued row can be unsent,
+     * money-affecting state (see `DriverActionOutboxEntity`'s class doc), and
+     * it is now stamped with its owning driver id and skipped by anyone
+     * else's session (see [TripRepository.flushPending]'s own doc) — it does
+     * not need clearing to stay private, and clearing it would destroy the
+     * only record of a delivery that hasn't reached the server yet.
      */
     fun signOut(onSignedOut: () -> Unit) {
         viewModelScope.launch {
             runCatching { authApi.logout() }
             tokenStore.clear()
+            runCatching { notificationHistoryDao.clearAll() }
             onSignedOut()
         }
     }

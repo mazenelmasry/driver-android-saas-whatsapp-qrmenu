@@ -39,7 +39,12 @@ class AddressTextTest {
     }
 
     @Test
-    fun `blank input stays as-is`() {
-        assertEquals("", stripMapLinks(""))
+    fun `empty input becomes null`() {
+        assertNull(stripMapLinks(""))
+    }
+
+    @Test
+    fun `whitespace-only input becomes null`() {
+        assertNull(stripMapLinks("   "))
     }
 }

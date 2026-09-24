@@ -1,11 +1,13 @@
 package app.qrmenu.driver.auth
 
 import android.app.Activity
+import android.util.Log
 import app.qrmenu.driver.auth.invite.InviteCodeSanitizer
 import app.qrmenu.driver.auth.login.MIN_PASSWORD_LENGTH
 import app.qrmenu.driver.auth.otp.OTP_LENGTH
 import app.qrmenu.driver.auth.phone.DriverPhoneVerifier
 import app.qrmenu.driver.auth.phone.PhoneVerificationOutcome
+import app.qrmenu.driver.auth.phone.toPhoneVerificationError
 import app.qrmenu.driver.common.session.TokenExpiry
 import app.qrmenu.driver.datastore.TokenStore
 import app.qrmenu.driver.network.api.AuthApi
@@ -183,8 +185,15 @@ class OtpViewModel @Inject constructor(
             phoneVerifier.confirmCode(verificationId, current.code)
                 .onSuccess { idToken -> finishWithIdToken(phone, idToken) }
                 .onFailure { thrown ->
+                    // 🔴 A FIREBASE failure, so the Firebase mapper — never the
+                    // network one. `toDriverApiError()` knows nothing about
+                    // Firebase exceptions and turned a mistyped code, an expired
+                    // session, or a code typed into a session it does not belong
+                    // to into «حدث خطأ ما» (found on a real release build on the
+                    // S25, 2026-09-23). The auto-verified path already used this.
+                    val error = thrown.toPhoneVerificationError().alsoLogIfUnclassified("confirmCode")
                     _state.update {
-                        it.copy(isSubmitting = false, error = thrown.toDriverApiError())
+                        it.copy(isSubmitting = false, error = error)
                     }
                 }
         }
@@ -212,11 +221,28 @@ class OtpViewModel @Inject constructor(
                 _state.update { it.copy(isSubmitting = false, isAutoVerifying = false) }
                 onConfirmedCallback?.invoke(response.needsPassword, response.restaurants.isNotEmpty())
             }.onFailure { thrown ->
+                val error = thrown.toDriverApiError().alsoLogIfUnclassified("verify-otp")
                 _state.update {
-                    it.copy(isSubmitting = false, isAutoVerifying = false, error = thrown.toDriverApiError())
+                    it.copy(isSubmitting = false, isAutoVerifying = false, error = error)
                 }
             }
         }
+    }
+
+    /**
+     * An unclassified failure is shown as the generic «حدث خطأ ما» and was
+     * otherwise swallowed — on a minified release build there was no trace of
+     * WHAT failed on the one screen every driver must pass. Logs the class and
+     * message only: never the code, the phone or any token.
+     */
+    private fun DriverApiError.alsoLogIfUnclassified(step: String): DriverApiError = also {
+        if (this is DriverApiError.Unknown) {
+            Log.w(TAG, "$step failed unclassified: ${cause::class.java.name}: ${cause.message}")
+        }
+    }
+
+    private companion object {
+        const val TAG = "OtpViewModel"
     }
 }
 

@@ -27,6 +27,27 @@ interface DriverActionOutboxDao {
     @Query("SELECT COUNT(*) FROM driver_actions_outbox")
     fun observePendingCount(): Flow<Int>
 
+    // Same set [TripRepository.flushPending] actually replays: a row is
+    // eligible if it has no stamped owner (legacy, or the owner wasn't known
+    // yet) OR its owner is the driver currently signed in on this device —
+    // see DriverActionOutboxEntity's class doc. Oldest first, same ordering
+    // guarantee as [observePending].
+    @Query(
+        "SELECT * FROM driver_actions_outbox " +
+            "WHERE driver_id IS NULL OR driver_id = :driverId " +
+            "ORDER BY created_at ASC",
+    )
+    fun observePendingForDriver(driverId: Long?): Flow<List<DriverActionOutboxEntity>>
+
+    // The current driver's own share of the queue, for the sign-out warning
+    // and the unsent-actions banner — a row belonging to a PREVIOUS driver on
+    // a shared device is not "unsent" from this driver's point of view.
+    @Query(
+        "SELECT COUNT(*) FROM driver_actions_outbox " +
+            "WHERE driver_id IS NULL OR driver_id = :driverId",
+    )
+    fun observePendingCountForDriver(driverId: Long?): Flow<Int>
+
     // A row is "sent" purely by ceasing to exist — there is no separate
     // status column to fall out of sync with the table's actual contents.
     @Query("DELETE FROM driver_actions_outbox WHERE idempotency_key = :idempotencyKey")

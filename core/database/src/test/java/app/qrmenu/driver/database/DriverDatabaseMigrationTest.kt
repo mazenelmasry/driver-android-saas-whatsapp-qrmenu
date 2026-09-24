@@ -63,7 +63,10 @@ class DriverDatabaseMigrationTest {
             DriverDatabase::class.java,
             dbName,
         )
-            .addMigrations(MIGRATION_1_2)
+            // The database's compiled version is 3 now, so a v1 file needs
+            // the whole chain to open — not just the migration this test is
+            // actually exercising.
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .allowMainThreadQueries()
             // Robolectric's SQLite shadow cannot reliably open a
             // file-backed database in WAL mode on this host (CANTOPEN);

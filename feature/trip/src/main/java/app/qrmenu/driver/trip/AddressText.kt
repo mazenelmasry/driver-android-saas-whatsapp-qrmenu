@@ -17,6 +17,16 @@ package app.qrmenu.driver.trip
  * rejoins the remaining pieces with the same Arabic comma the backend itself
  * uses — so a plain address with no URL round-trips essentially unchanged
  * (only whitespace around each segment is normalised).
+ *
+ * 🔴 Blank input (empty string, or a string that is only whitespace) returns
+ * `null`, not the blank string itself. Every call site treats a non-null
+ * return as "there is something to show" via `?.let { ... }` — returning the
+ * blank string back would satisfy that null-check while drawing an icon next
+ * to nothing, which is exactly the "icon with no value" bug this whole pass
+ * exists to remove (see `TripScreen.kt`'s guards on the delivery-area line and
+ * the address card). Normalising here, once, means every caller downstream —
+ * present and future — gets the safe contract for free instead of having to
+ * remember an `isNotBlank()` check on top of the null check.
  */
 private val urlPattern = Regex("""https?://\S+""")
 
@@ -24,7 +34,7 @@ private val urlPattern = Regex("""https?://\S+""")
 private val splitPattern = Regex("""[،,]|\u0000""")
 
 internal fun stripMapLinks(text: String?): String? {
-    if (text.isNullOrBlank()) return text
+    if (text.isNullOrBlank()) return null
 
     val withoutUrls = urlPattern.replace(text, "\u0000")
     val segments = withoutUrls

@@ -45,6 +45,13 @@
 
     <string name="trip_outcome_close">Close</string>
 
+    <!-- Trip screen — the restaurant ended this order while the driver still held it -->
+    <string name="trip_ended_cancelled_title">Order cancelled</string>
+    <string name="trip_ended_rejected_title">Order rejected</string>
+    <string name="trip_ended_body_return_to_branch">The restaurant ended this order. Take it back to the branch.</string>
+    <string name="trip_ended_body_nothing_to_return">The restaurant ended this order before you collected it. There is nothing to return — you can head back to your orders.</string>
+    <string name="trip_ended_back_to_orders">Back to orders</string>
+
     <!-- ═══════════════════════ Screen 10 — the trip ═══════════════════════ -->
     <string name="trip_title">Trip</string>
     <string name="trip_area_label">Delivery area</string>
@@ -86,6 +93,7 @@
     <string name="trip_delivery_code_label">Delivery code</string>
     <string name="trip_delivery_code_hint">Ask the customer to read the 4-digit code from their order page</string>
     <string name="trip_delivery_code_required">Enter the code the customer gives you</string>
+    <string name="trip_delivery_code_locked">Too many attempts for this order. Call the branch to have the code waived.</string>
     <string name="trip_delivery_already_paid">Paid online — nothing to collect</string>
     <string name="trip_delivery_confirm">Confirm delivery</string>
     <string name="trip_delivery_cancel">Back</string>

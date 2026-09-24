@@ -2,6 +2,7 @@ package app.qrmenu.driver.trip
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.qrmenu.driver.database.entity.DriverActionType
 import app.qrmenu.driver.network.dto.DeliveredResponse
 import app.qrmenu.driver.network.dto.DriverIssueCode
 import app.qrmenu.driver.network.dto.DriverOrderDto
@@ -41,6 +42,18 @@ sealed interface TripPhase {
 
     /** The trip's own GET failed outright — nothing to act on yet. */
     data class LoadFailed(val error: DriverApiError) : TripPhase
+
+    /**
+     * 🔴 Terminal: the restaurant ended this order while the driver was still
+     * holding it. [order] is kept (not just the outcome) because the outcome
+     * screen still needs to let the driver call the branch — the exact same
+     * mechanism [TripContent]'s quick-actions row uses, not a second one —
+     * and needs [DriverOrderDto.pickedUpAt] to say the one thing that
+     * actually differs: whether there is food in the driver's hand that now
+     * has to go back, or nothing to return at all. See [TripOutcome]'s own
+     * doc for why this can happen at all.
+     */
+    data class Resolved(val order: DriverOrderDto, val outcome: TripOutcome) : TripPhase
 }
 
 /** Screen 11 — collects `cash_collected` before it is sent. */
@@ -67,6 +80,19 @@ data class DeliverySheetState(
      * the attempt entirely).
      */
     val codeRequired: Boolean = false,
+    /**
+     * 🔴 The backend permanently answers `too_many_attempts` for THIS order
+     * once five wrong codes have been tried — only the restaurant waiving the
+     * code (or, on the next load/poll, the order's own
+     * `requires_delivery_code` flipping to `false` once they do) lifts it.
+     * `false` on every fresh open of the sheet, same as [deliveryCode] — a
+     * previous delivery attempt's lockout must not haunt a driver who just
+     * reopened the trip. Set once by [TripViewModel.confirmDelivery] and left
+     * `true` from then on: [DeliverySheet] disables the confirm button the
+     * instant this is `true`, so no later call can come back and unset it
+     * within the same sheet session (see that Composable's own doc).
+     */
+    val deliveryLocked: Boolean = false,
     val isSubmitting: Boolean = false,
     val error: DriverApiError? = null,
 )
@@ -128,6 +154,34 @@ class TripViewModel @Inject constructor(
     private var issueKey: String? = null
 
     /**
+     * 🔴 The in-memory `var`s above only survive within ONE process lifetime.
+     * A driver who tapped an action, had the app killed before the response
+     * came back (a real crash, low-memory reclaim, or just swiping the app
+     * away), and reopened the trip used to mint a BRAND NEW key here — even
+     * though [TripRepository.enqueueAction] had already written a row for the
+     * first tap to Room before the process died. If that first request had
+     * only been slow rather than lost, both eventually reach the server: two
+     * `delivered` calls, two ledger credits, for one delivery.
+     *
+     * Called before every fresh mint from here on: it asks Room whether a row
+     * for this exact (order, action) is still queued from before the process
+     * died and, if so, hands back ITS key instead of orphaning it under a
+     * second, abandoned key. Only a cache miss (nothing queued) falls through
+     * to minting a genuinely new [UUID].
+     */
+    private suspend fun resolveKey(
+        cached: String?,
+        orderId: Long,
+        type: DriverActionType,
+        remember: (String) -> Unit,
+    ): String {
+        cached?.let { return it }
+        val key = repository.pendingKeyFor(orderId, type) ?: UUID.randomUUID().toString()
+        remember(key)
+        return key
+    }
+
+    /**
      * 🔴 [seed] is the ASSIGNED [DriverOrderDto] `OfferRoute.onAccepted` already
      * handed the caller — when it is present this makes NO network call at
      * all, per the task brief: the accept response already carried everything
@@ -140,7 +194,7 @@ class TripViewModel @Inject constructor(
         if (hasStarted) return
         hasStarted = true
         if (seed != null) {
-            _state.update { it.copy(phase = TripPhase.Content(order = seed)) }
+            _state.update { it.copy(phase = seed.toTripPhase()) }
         } else {
             load(orderId)
         }
@@ -173,7 +227,7 @@ class TripViewModel @Inject constructor(
         _state.update { it.copy(phase = TripPhase.Loading) }
         viewModelScope.launch {
             runCatching { repository.fetch(orderId) }
-                .onSuccess { dto -> _state.update { it.copy(phase = TripPhase.Content(order = dto)) } }
+                .onSuccess { dto -> _state.update { it.copy(phase = dto.toTripPhase()) } }
                 .onFailure { thrown ->
                     _state.update { it.copy(phase = TripPhase.LoadFailed(thrown.toDriverApiError())) }
                 }
@@ -188,17 +242,61 @@ class TripViewModel @Inject constructor(
      * (see [TripScreen]), and this guard is what keeps a stale recomposition
      * or a fast double-tap from sneaking a call through anyway.
      */
+    /**
+     * The resumed-screen poll (see [TripRoute]) — how a driver STANDING ON
+     * this screen finds out the restaurant ended their order.
+     *
+     * 🔴 Without this the whole cancelled-trip screen was decorative. The
+     * trip loaded exactly once and never asked again, so the one person who
+     * most needs to know — someone holding the food, already driving — would
+     * have sat looking at a live-looking trip screen for an order that no
+     * longer existed, and found out only by leaving and coming back.
+     *
+     * Deliberately narrower than [load]:
+     *
+     *  · It NEVER shows a spinner. Replacing a trip the driver is reading
+     *    with a skeleton every few seconds, on a phone in a car mount, would
+     *    be its own bug.
+     *  · A failure is SILENT. The driver's own actions («استلمت»/«سلّمت»)
+     *    surface their own errors; a background fetch that could not reach
+     *    the server must not paint a red banner over a trip that is
+     *    proceeding perfectly well, and must certainly not imply the trip is
+     *    in doubt.
+     *  · It only ever moves the screen INTO [TripPhase.Resolved]. A poll is
+     *    not allowed to rebuild Content underneath a driver mid-interaction
+     *    — that would clear a half-typed cash amount or close a sheet they
+     *    had open. The ONE thing worth interrupting them for is "this order
+     *    is over", and that is the only thing this can do.
+     */
+    fun refreshQuietly(orderId: Long) {
+        // Nothing to interrupt if they are not actually on a live trip.
+        if (_state.value.phase !is TripPhase.Content) {
+            return
+        }
+
+        viewModelScope.launch {
+            runCatching { repository.fetch(orderId) }
+                .onSuccess { dto ->
+                    val phase = dto.toTripPhase()
+
+                    if (phase is TripPhase.Resolved) {
+                        _state.update { it.copy(phase = phase) }
+                    }
+                }
+        }
+    }
+
     fun pickUp(orderId: Long) {
         val content = _state.value.phase as? TripPhase.Content ?: return
         if (content.isPickingUp || !content.order.isReadyForPickup()) return
 
-        val key = pickedUpKey ?: UUID.randomUUID().toString().also { pickedUpKey = it }
         _state.update { it.copy(phase = content.copy(isPickingUp = true, error = null)) }
         viewModelScope.launch {
+            val key = resolveKey(pickedUpKey, orderId, DriverActionType.PickedUp) { pickedUpKey = it }
             runCatching { repository.pickedUp(orderId, key) }
                 .onSuccess { dto ->
                     pickedUpKey = null
-                    _state.update { it.copy(phase = TripPhase.Content(order = dto)) }
+                    _state.update { it.copy(phase = dto.toTripPhase()) }
                     flushQueuedActions()
                 }
                 .onFailure { thrown ->
@@ -251,9 +349,9 @@ class TripViewModel @Inject constructor(
     }
 
     /**
-     * Confirmed by a LONG PRESS on the caller's side ([TripScreen] — a tap
-     * next to a moving car delivers an order that was not delivered), not by
-     * anything this function is responsible for enforcing.
+     * Confirmed by a plain tap on the caller's side ([TripScreen] — see that
+     * Composable's own doc on why the long press it used to require was
+     * dropped), not by anything this function is responsible for enforcing.
      *
      * `cashCollected` is `null` here whenever the order was already paid
      * online — see [DeliverySheetState] callers ([TripScreen]) for where that
@@ -275,9 +373,9 @@ class TripViewModel @Inject constructor(
         )
         if (blockReason != null) return
 
-        val key = deliveredKey ?: UUID.randomUUID().toString().also { deliveredKey = it }
         _state.update { it.copy(deliverySheet = it.deliverySheet.copy(isSubmitting = true, error = null)) }
         viewModelScope.launch {
+            val key = resolveKey(deliveredKey, orderId, DriverActionType.Delivered) { deliveredKey = it }
             runCatching {
                 repository.delivered(
                     orderId = orderId,
@@ -307,7 +405,13 @@ class TripViewModel @Inject constructor(
                     val failureCode = (apiError as? DriverApiError.Api)?.code
                     val isAboutTheDeliveryCode = failureCode == DriverErrorCode.DeliveryCodeRequired ||
                         failureCode == DriverErrorCode.DeliveryCodeMismatch
-                    if (isAboutTheDeliveryCode) {
+                    // 🔴 The order's five-attempt budget on the SERVER, not a
+                    // client-side retry limit — from here on the server keeps
+                    // answering `too_many_attempts` for this order no matter
+                    // what is typed, so nothing is gained by leaving the
+                    // field open for another try. See [DeliverySheetState.deliveryLocked].
+                    val isTooManyAttempts = failureCode == DriverErrorCode.TooManyAttempts
+                    if (isAboutTheDeliveryCode || isTooManyAttempts) {
                         // 🔴 Nothing was applied server-side — a 422 is a pure
                         // rejection, never a partial write — and the retry
                         // that follows carries a DIFFERENT body (it adds or
@@ -330,6 +434,7 @@ class TripViewModel @Inject constructor(
                                 isSubmitting = false,
                                 error = apiError,
                                 codeRequired = it.deliverySheet.codeRequired || isAboutTheDeliveryCode,
+                                deliveryLocked = it.deliverySheet.deliveryLocked || isTooManyAttempts,
                                 // A wrong code is cleared so the driver retypes
                                 // it rather than re-submitting the same wrong
                                 // digits by mistake — see driver-ui-standards.
@@ -384,9 +489,9 @@ class TripViewModel @Inject constructor(
         val code = sheet.selectedCode ?: return
         if (sheet.isSubmitting) return
 
-        val key = issueKey ?: UUID.randomUUID().toString().also { issueKey = it }
         _state.update { it.copy(issueSheet = it.issueSheet.copy(isSubmitting = true, error = null)) }
         viewModelScope.launch {
+            val key = resolveKey(issueKey, orderId, DriverActionType.Issue) { issueKey = it }
             runCatching { repository.issue(orderId, key, code.wire, sheet.note.ifBlank { null }) }
                 .onSuccess {
                     issueKey = null
@@ -403,5 +508,28 @@ class TripViewModel @Inject constructor(
 
     fun consumeIssueReported() {
         _state.update { it.copy(issueReported = false) }
+    }
+
+    /**
+     * 🔴 THE one decision point (task brief): every place this ViewModel
+     * receives a fresh [DriverOrderDto] for the trip it is displaying — the
+     * accept hand-off, a fresh GET, a successful pick-up — routes through
+     * here rather than each hand-rolling its own "is this still a trip?"
+     * check. A driver observing the restaurant's cancel/reject from ANY of
+     * those three moments must land on the exact same outcome screen, never
+     * on [TripPhase.Content] rendering a dead order's action buttons.
+     */
+    private fun DriverOrderDto.toTripPhase(): TripPhase =
+        toTripOutcome()?.let { TripPhase.Resolved(order = this, outcome = it) } ?: TripPhase.Content(order = this)
+}
+
+/** The resumed-trip poll interval — how quickly a cancelled order reaches the driver holding it. */
+internal const val TRIP_POLL_INTERVAL_MS = 15_000L
+
+/** Suspends forever, calling [onTick] every [TRIP_POLL_INTERVAL_MS] — cancelled with its scope. */
+internal suspend fun pollTripForever(onTick: () -> Unit) {
+    while (true) {
+        kotlinx.coroutines.delay(TRIP_POLL_INTERVAL_MS)
+        onTick()
     }
 }

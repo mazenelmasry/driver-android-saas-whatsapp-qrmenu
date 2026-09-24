@@ -36,6 +36,7 @@
 
     <string name="account_sign_out_confirm_title">সাইন আউট করবেন?</string>
     <string name="account_sign_out_confirm_body">আবার সাইন ইন করতে আপনার ফোন নম্বর প্রয়োজন হবে।</string>
+    <string name="account_sign_out_confirm_unsent_actions_warning">আপনার কিছু কার্যক্রম এখনও রেস্তোরাঁয় পৌঁছায়নি। এই ডিভাইসে আবার সাইন ইন করলে সেগুলো স্বয়ংক্রিয়ভাবে পাঠানো হবে।</string>
     <string name="account_sign_out_confirm_confirm">সাইন আউট</string>
     <string name="account_sign_out_confirm_cancel">বাতিল</string>
 

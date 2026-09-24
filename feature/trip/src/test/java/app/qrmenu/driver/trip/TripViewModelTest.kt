@@ -3,6 +3,8 @@ package app.qrmenu.driver.trip
 import app.qrmenu.driver.database.dao.DriverActionOutboxDao
 import app.qrmenu.driver.trip.outbox.OutboxFlushScheduler
 import app.qrmenu.driver.database.entity.DriverActionOutboxEntity
+import app.qrmenu.driver.database.entity.DriverActionType
+import app.qrmenu.driver.datastore.TokenStore
 import app.qrmenu.driver.network.api.OrderApi
 import app.qrmenu.driver.network.dto.AcceptedDto
 import app.qrmenu.driver.network.dto.BranchDto
@@ -16,6 +18,7 @@ import app.qrmenu.driver.network.dto.OrderCompanyDto
 import app.qrmenu.driver.network.dto.OrderCustomerDto
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.Dispatchers
@@ -30,6 +33,7 @@ import kotlinx.coroutines.test.setMain
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.After
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -63,6 +67,12 @@ private class FakeDriverActionOutboxDao : DriverActionOutboxDao {
 
     override fun observePendingCount(): Flow<Int> = rows.map { it.size }
 
+    override fun observePendingForDriver(driverId: Long?): Flow<List<DriverActionOutboxEntity>> =
+        rows.map { list -> list.filter { it.driver_id == null || it.driver_id == driverId } }
+
+    override fun observePendingCountForDriver(driverId: Long?): Flow<Int> =
+        observePendingForDriver(driverId).map { it.size }
+
     override suspend fun acknowledge(idempotencyKey: String) {
         rows.value = rows.value.filterNot { it.idempotency_key == idempotencyKey }
     }
@@ -88,6 +98,18 @@ class TripViewModelTest {
     private val dispatcher = StandardTestDispatcher()
 
     private lateinit var orderApi: OrderApi
+
+    /**
+     * A mock, not a real [TokenStore] — the real one needs an Android
+     * `Context` to stand up `EncryptedSharedPreferences`, which this plain-JVM
+     * module has no way to provide. Every test here signs in as no one in
+     * particular (`driverId = null`), which [DriverActionOutboxDao]'s own
+     * filtering rule treats identically to "the driver who queued this row" —
+     * exactly the legacy/no-owner case these tests do not care about.
+     */
+    private fun fakeTokenStore(driverId: Long? = null): TokenStore = mockk {
+        every { this@mockk.driverId } returns MutableStateFlow(driverId)
+    }
 
     @Before
     fun setUp() {
@@ -141,7 +163,7 @@ class TripViewModelTest {
     private fun viewModel(
         outboxDao: DriverActionOutboxDao = FakeDriverActionOutboxDao(),
         scheduler: OutboxFlushScheduler = RecordingFlushScheduler(),
-    ): TripViewModel = TripViewModel(TripRepository(orderApi, outboxDao, scheduler))
+    ): TripViewModel = TripViewModel(TripRepository(orderApi, outboxDao, scheduler, fakeTokenStore()))
 
     // ───────────────────────── seeded start makes no network call ─────────────────────────
 
@@ -203,6 +225,89 @@ class TripViewModelTest {
         assertEquals("2026-09-21T10:00:00Z", content.order.pickedUpAt)
     }
 
+    // ───────────────────────── the restaurant ends a trip out from under the driver ─────────────────────────
+
+    @Test
+    fun `a seeded order that is already cancelled resolves straight to the ended screen, never Content`() = runTest(dispatcher) {
+        val model = viewModel()
+        model.start(7, seed = assignedOrder(status = "cancelled"))
+        dispatcher.scheduler.runCurrent()
+
+        val resolved = model.state.value.phase as TripPhase.Resolved
+        assertEquals(TripOutcome.Cancelled, resolved.outcome)
+    }
+
+    @Test
+    fun `a normal ready order seeded at start renders as Content, not Resolved`() = runTest(dispatcher) {
+        val model = viewModel()
+        model.start(7, seed = assignedOrder(status = "ready"))
+        dispatcher.scheduler.runCurrent()
+
+        assertTrue(model.state.value.phase is TripPhase.Content)
+    }
+
+    @Test
+    fun `resuming after process death into a cancelled order resolves to the ended screen`() = runTest(dispatcher) {
+        coEvery { orderApi.order(7) } returns assignedOrder(status = "cancelled", pickedUpAt = "2026-09-21T10:00:00Z")
+
+        val model = viewModel()
+        model.start(7, seed = null)
+        dispatcher.scheduler.runCurrent()
+
+        val resolved = model.state.value.phase as TripPhase.Resolved
+        assertEquals(TripOutcome.Cancelled, resolved.outcome)
+        assertEquals("2026-09-21T10:00:00Z", resolved.order.pickedUpAt)
+    }
+
+    @Test
+    fun `resuming into a rejected order resolves with the Rejected outcome, not Cancelled`() = runTest(dispatcher) {
+        coEvery { orderApi.order(7) } returns assignedOrder(status = "rejected")
+
+        val model = viewModel()
+        model.start(7, seed = null)
+        dispatcher.scheduler.runCurrent()
+
+        val resolved = model.state.value.phase as TripPhase.Resolved
+        assertEquals(TripOutcome.Rejected, resolved.outcome)
+    }
+
+    @Test
+    fun `a retry-load landing on a cancelled order resolves to the ended screen too`() = runTest(dispatcher) {
+        coEvery { orderApi.order(7) } returns assignedOrder(status = "ready")
+        val model = viewModel()
+        model.start(7, seed = null)
+        dispatcher.scheduler.runCurrent()
+        check(model.state.value.phase is TripPhase.Content)
+
+        coEvery { orderApi.order(7) } returns assignedOrder(status = "cancelled")
+        model.retryLoad(7)
+        dispatcher.scheduler.runCurrent()
+
+        assertTrue(model.state.value.phase is TripPhase.Resolved)
+    }
+
+    @Test
+    fun `a pick-up response that comes back cancelled resolves to the ended screen instead of Content`() = runTest(dispatcher) {
+        // A race is possible in principle (the restaurant cancels in the same
+        // window as the pick-up call) — this proves the SAME decision point
+        // catches it here too, not just on load.
+        coEvery { orderApi.pickedUp(7, any(), any()) } returns assignedOrder(
+            status = "cancelled",
+            pickedUpAt = "2026-09-21T10:00:00Z",
+        )
+
+        val model = viewModel()
+        model.start(7, seed = assignedOrder(status = "ready"))
+        dispatcher.scheduler.runCurrent()
+
+        model.pickUp(7)
+        dispatcher.scheduler.runCurrent()
+
+        val resolved = model.state.value.phase as TripPhase.Resolved
+        assertEquals(TripOutcome.Cancelled, resolved.outcome)
+        assertEquals("2026-09-21T10:00:00Z", resolved.order.pickedUpAt)
+    }
+
     // ───────────────────────── changed cash amount needs a reason (pure function) ─────────────────────────
 
     @Test
@@ -254,9 +359,23 @@ class TripViewModelTest {
     }
 
     @Test
-    fun `a filled-in code is never blocked once it is non-blank — the server is the one that judges it`() {
+    fun `a full four-digit code is never blocked — the server is the one that judges it`() {
         assertNull(
             deliveryBlockReason(isCashOrder = true, cashToCollect = 40.0, enteredAmount = 40.0, note = null, codeRequired = true, enteredCode = "4821"),
+        )
+    }
+
+    @Test
+    fun `a partial code still blocks — non-blank is not the same as complete`() {
+        assertEquals(
+            "three digits is not a code yet; submitting early is a guaranteed 422 the driver could have avoided",
+            DeliveryBlockReason.CodeRequired,
+            deliveryBlockReason(isCashOrder = true, cashToCollect = 40.0, enteredAmount = 40.0, note = null, codeRequired = true, enteredCode = "482"),
+        )
+        assertEquals(
+            "more than four digits is just as invalid as fewer",
+            DeliveryBlockReason.CodeRequired,
+            deliveryBlockReason(isCashOrder = true, cashToCollect = 40.0, enteredAmount = 40.0, note = null, codeRequired = true, enteredCode = "48212"),
         )
     }
 
@@ -763,6 +882,64 @@ class TripViewModelTest {
     }
 
     /**
+     * 🔴 Reproduces process death BETWEEN the tap and the response: the row
+     * [TripRepository.enqueueAction] wrote before the network call is already
+     * in Room when this (fresh, just-recreated) [TripViewModel] is asked to
+     * confirm the SAME delivery again — exactly what happens when the driver
+     * reopens a killed app and taps "سلّمت" a second time.
+     *
+     * Before this fix [TripViewModel.confirmDelivery] minted a BRAND NEW
+     * UUID every time, orphaning the queued row and — if that first request
+     * had only been slow rather than lost — eventually sending two
+     * `delivered` calls for one trip. The fix is [TripRepository.pendingKeyFor]:
+     * this pins that the SECOND tap's request goes out under the FIRST tap's
+     * key, not a fresh one.
+     */
+    @Test
+    fun `confirming a delivery after simulated process death reuses the still-queued idempotency key`() = runTest(dispatcher) {
+        val dao = FakeDriverActionOutboxDao()
+        // What `enqueueAction` would already have written before the app died —
+        // the payload's exact contents do not matter to this test, only that a
+        // row exists under this key for this (order, action).
+        dao.enqueue(
+            DriverActionOutboxEntity(
+                idempotency_key = "key-before-the-app-died",
+                order_id = 7,
+                action_type = DriverActionType.Delivered,
+                payload_json = "{}",
+                occurred_at = 0L,
+                created_at = 0L,
+            ),
+        )
+        coEvery { orderApi.delivered(7, any(), any()) } returns DeliveredResponse(
+            order = assignedOrder(status = "delivered", pickedUpAt = "x"),
+            ledger = LedgerSummaryDto(companyId = 1, currency = "SAR", earnedToday = 6.0, cashOnHand = 40.0, net = -34.0, cashLimit = null),
+        )
+
+        // A brand new ViewModel instance — the process just restarted — reading
+        // the SAME dao a previous instance would have written to.
+        val model = viewModel(dao)
+        model.start(7, seed = assignedOrder(status = "out_for_delivery", pickedUpAt = "x", cashToCollect = 40.0))
+        dispatcher.scheduler.runCurrent()
+
+        model.openDeliverySheet()
+        model.confirmDelivery(7, isCashOrder = true, cashToCollect = 40.0)
+        dispatcher.scheduler.runCurrent()
+
+        // Exactly one call, and it must be under the pre-existing key — a
+        // fresh UUID here would mean a second, unrelated row queued under a
+        // key nothing else in the queue recognises.
+        coVerify(exactly = 1) { orderApi.delivered(any(), any(), any()) }
+        coVerify(exactly = 1) {
+            orderApi.delivered(
+                id = 7,
+                idempotencyKey = "key-before-the-app-died",
+                body = any(),
+            )
+        }
+    }
+
+    /**
      * 🔴 What `OutboxFlushWorker` actually calls — untested until now, which
      * made the whole background drain an assumption.
      *
@@ -776,7 +953,7 @@ class TripViewModelTest {
     fun `flushing replays a queued delivery under its ORIGINAL idempotency key and clears it`() = runTest(dispatcher) {
         val dao = FakeDriverActionOutboxDao()
         val scheduler = RecordingFlushScheduler()
-        val repository = TripRepository(orderApi, dao, scheduler)
+        val repository = TripRepository(orderApi, dao, scheduler, fakeTokenStore())
 
         // First attempt dies offline: the row survives.
         coEvery { orderApi.delivered(7, any(), any()) } throws java.io.IOException("no signal")
@@ -812,7 +989,7 @@ class TripViewModelTest {
     @Test
     fun `flushing keeps the row when the retry also fails`() = runTest(dispatcher) {
         val dao = FakeDriverActionOutboxDao()
-        val repository = TripRepository(orderApi, dao, RecordingFlushScheduler())
+        val repository = TripRepository(orderApi, dao, RecordingFlushScheduler(), fakeTokenStore())
 
         coEvery { orderApi.delivered(7, any(), any()) } throws java.io.IOException("still no signal")
         runCatching {
@@ -944,4 +1121,82 @@ class TripViewModelTest {
         assertTrue("app-open must drain what an earlier session left queued", dao.current.isEmpty())
         coVerify(exactly = 1) { orderApi.pickedUp(7, key, any()) }
     }
+
+    // ───────────────────────── the resumed-screen poll ─────────────────────────
+    //
+    // 🔴 These are the half that makes the ended-trip screen reach anyone at
+    // all. Without the poll the trip loaded exactly once and never asked
+    // again, so a driver STANDING ON this screen — holding the food, already
+    // driving — would have gone on reading a live-looking trip for an order
+    // that no longer existed.
+
+    @Test
+    fun `a quiet refresh ends the trip when the restaurant cancelled it`() = runTest(dispatcher) {
+        coEvery { orderApi.order(7) } returns assignedOrder(status = "cancelled")
+
+        val model = viewModel()
+        model.start(7, seed = assignedOrder(status = "out_for_delivery", pickedUpAt = "2026-09-21T10:00:00Z"))
+        dispatcher.scheduler.runCurrent()
+        assertTrue(model.state.value.phase is TripPhase.Content)
+
+        model.refreshQuietly(7)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val resolved = model.state.value.phase as TripPhase.Resolved
+        assertEquals(TripOutcome.Cancelled, resolved.outcome)
+    }
+
+    @Test
+    fun `a quiet refresh never rebuilds a live trip underneath the driver`() = runTest(dispatcher) {
+        // A poll that replaced Content every few seconds would clear a
+        // half-typed cash amount or close a sheet the driver had open. The
+        // ONE thing worth interrupting them for is "this order is over".
+        coEvery { orderApi.order(7) } returns assignedOrder(status = "out_for_delivery")
+
+        val model = viewModel()
+        val seeded = assignedOrder(status = "out_for_delivery", pickedUpAt = "2026-09-21T10:00:00Z")
+        model.start(7, seed = seeded)
+        dispatcher.scheduler.runCurrent()
+
+        val before = model.state.value.phase
+
+        model.refreshQuietly(7)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertSame(before, model.state.value.phase)
+    }
+
+    @Test
+    fun `a quiet refresh that cannot reach the server says nothing at all`() = runTest(dispatcher) {
+        // The driver's own taps surface their own errors. A background fetch
+        // painting a red banner over a trip that is proceeding fine would
+        // imply the trip is in doubt when it is not.
+        coEvery { orderApi.order(7) } throws java.io.IOException("no signal")
+
+        val model = viewModel()
+        model.start(7, seed = assignedOrder(status = "out_for_delivery"))
+        dispatcher.scheduler.runCurrent()
+
+        val before = model.state.value.phase
+
+        model.refreshQuietly(7)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertSame(before, model.state.value.phase)
+    }
+
+    @Test
+    fun `a quiet refresh does nothing at all when the trip has already ended`() = runTest(dispatcher) {
+        // Already on the ended screen: there is nothing left to poll for, and
+        // re-entering the same state would be a wasted request per tick.
+        val model = viewModel()
+        model.start(7, seed = assignedOrder(status = "cancelled"))
+        dispatcher.scheduler.runCurrent()
+
+        model.refreshQuietly(7)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 0) { orderApi.order(7) }
+    }
+
 }

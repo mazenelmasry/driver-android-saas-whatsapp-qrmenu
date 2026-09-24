@@ -199,6 +199,47 @@ class AvailabilityViewModelTest {
         assertNull(result.onlineSince)
     }
 
+    // ── quiet, self-healing retry (a stuck initial load recovers on its own) ─
+
+    @Test
+    fun `retryQuietly heals a failed initial load without a visible loading flicker`() = runTest(dispatcher) {
+        coEvery { authApi.me() } throws IOException("dead zone")
+        val model = viewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+        assertTrue(model.state.value.error is DriverApiError.Offline)
+
+        coEvery { authApi.me() } returns MeResponse(
+            driver = offlineDriver.copy(isOnline = true, onlineSince = "2026-01-01T09:00:00Z"),
+        )
+        model.retryQuietly()
+
+        // 🔴 Never flips back to a loading skeleton — that is the whole
+        // difference from retry(): a resumed-screen auto-retry must not
+        // redraw the screen the driver is already looking at.
+        assertFalse(model.state.value.isLoading)
+
+        dispatcher.scheduler.advanceUntilIdle()
+
+        val healed = model.state.value
+        assertTrue(healed.isOnline)
+        assertNull(healed.error)
+    }
+
+    @Test
+    fun `retryQuietly is a no-op when there is nothing to retry`() = runTest(dispatcher) {
+        coEvery { authApi.me() } returns MeResponse(driver = offlineDriver)
+        val model = viewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+        assertNull(model.state.value.error)
+
+        model.retryQuietly()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        // The healthy screen's one initial `me()` call, and no more — a
+        // no-op retry must not spend a network call to confirm nothing changed.
+        coVerify(exactly = 1) { authApi.me() }
+    }
+
     // ── re-entrancy ───────────────────────────────────────────────────────
 
     @Test

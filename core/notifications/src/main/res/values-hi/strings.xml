@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notif_channel_offers_name">डिलीवरी ऑफ़र</string>
+    <string name="notif_channel_offers_description">आपको एक नई ट्रिप ऑफ़र की जा रही है। यह चैनल डू नॉट डिस्टर्ब को नज़रअंदाज़ करता है ताकि आप इसे न चूकें।</string>
+
+    <string name="notif_channel_general_name">सामान्य</string>
+    <string name="notif_channel_general_description">भुगतान, खाता अपडेट और अन्य संदेश जो समय-सीमित ऑफ़र नहीं हैं।</string>
+
+    <string name="notif_health_notifications_disabled">नोटिफिकेशन बंद हैं</string>
+    <string name="notif_health_offer_channel_disabled">ऑफ़र नोटिफिकेशन बंद हैं</string>
+    <string name="notif_health_full_screen_intent_not_granted">फ़ुल-स्क्रीन ऑफ़र अलर्ट की अनुमति नहीं है</string>
+    <string name="notif_health_dnd_bypass_not_granted">डू नॉट डिस्टर्ब के दौरान ऑफ़र नहीं बजेंगे</string>
+</resources>

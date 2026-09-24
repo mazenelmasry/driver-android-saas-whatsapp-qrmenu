@@ -33,4 +33,5 @@ dependencies {
     implementation(libs.firebase.auth)
 
     testImplementation(libs.junit)
+    testImplementation(libs.mockk)
 }

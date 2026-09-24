@@ -26,6 +26,18 @@ import androidx.room.PrimaryKey
  * retry, a queued send) must not be the thing that keeps them alive. Only
  * [order_id] is kept; whatever the backend still needs about the order is its
  * own problem to look up, not this table's to cache.
+ *
+ * [driver_id] — added in schema v3 — is who took the action, not who is
+ * currently signed in. On a shared device, sign-out never clears this table
+ * (a queued `delivered` may still be unsent money), so without a stamped
+ * owner a second driver's session would inherit and replay the first
+ * driver's queued commands under their own token, which the server answers
+ * with 404 (order not theirs) — and [isPureRejection]'s existing 4xx handling
+ * would then DELETE that row, permanently losing driver A's delivery/cash
+ * record. `null` means "queued before this column existed" and keeps today's
+ * behaviour (replayed by whoever is signed in) — see
+ * [app.qrmenu.driver.trip.TripRepository]'s own doc on where the filtering
+ * happens.
  */
 @Entity(
     tableName = "driver_actions_outbox",
@@ -47,4 +59,8 @@ data class DriverActionOutboxEntity(
     val created_at: Long,
     val attempts: Int = 0,
     val last_error: String? = null,
+    // Null = legacy row queued before this column existed, or a device where
+    // the driver id wasn't yet known — always replayed regardless of who is
+    // signed in now (see class doc).
+    val driver_id: Long? = null,
 )

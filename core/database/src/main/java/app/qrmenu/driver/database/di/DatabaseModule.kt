@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import app.qrmenu.driver.database.DriverDatabase
 import app.qrmenu.driver.database.MIGRATION_1_2
+import app.qrmenu.driver.database.MIGRATION_2_3
 import app.qrmenu.driver.database.dao.DriverActionOutboxDao
 import app.qrmenu.driver.database.dao.NotificationHistoryDao
 import dagger.Module
@@ -25,7 +26,7 @@ object DatabaseModule {
             // DriverActionOutboxEntity's class doc: a row here can be unsent,
             // money-affecting driver state. Wiping it on a schema mismatch is
             // worse than crashing and forcing a real migration.
-            .addMigrations(MIGRATION_1_2)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .build()
 
     @Provides

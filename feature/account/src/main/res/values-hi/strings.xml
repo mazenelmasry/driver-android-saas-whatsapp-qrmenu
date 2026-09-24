@@ -36,6 +36,7 @@
 
     <string name="account_sign_out_confirm_title">साइन आउट करें?</string>
     <string name="account_sign_out_confirm_body">दोबारा साइन इन करने के लिए आपको अपने फ़ोन नंबर की आवश्यकता होगी।</string>
+    <string name="account_sign_out_confirm_unsent_actions_warning">आपकी कुछ कार्रवाइयाँ अभी तक रेस्तरां तक नहीं पहुँची हैं। इस डिवाइस पर दोबारा साइन इन करने पर वे स्वतः भेज दी जाएँगी।</string>
     <string name="account_sign_out_confirm_confirm">साइन आउट</string>
     <string name="account_sign_out_confirm_cancel">रद्द करें</string>
 

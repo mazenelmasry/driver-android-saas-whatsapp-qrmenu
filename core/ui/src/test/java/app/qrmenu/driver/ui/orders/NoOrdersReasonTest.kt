@@ -26,7 +26,7 @@ class NoOrdersReasonTest {
             .map { it.groupValues[1] }
             .toSet()
 
-    /** The seven values the contract's `AvailabilityContext.reason` enum lists. */
+    /** The eight values the contract's `AvailabilityContext.reason` enum lists. */
     @Test
     fun `every wire value the server can send maps to a reason`() {
         val wire = listOf(
@@ -35,6 +35,7 @@ class NoOrdersReasonTest {
             "all_branches_closed",
             "outside_radius",
             "location_unknown",
+            "location_stale",
             "has_active_trip",
             "nothing_pending",
         )
@@ -43,6 +44,22 @@ class NoOrdersReasonTest {
             assertNotNull("No reason for wire value '$value'", NoOrdersReason.fromWire(value))
             assertEquals(value, NoOrdersReason.fromWire(value)?.wire)
         }
+    }
+
+    /**
+     * [LocationUnknown] ("never arrived, grant a permission") and [LocationStale]
+     * ("stopped arriving, reopen the app") are different faults with different fixes.
+     * Sharing a sentence would send half these drivers to the wrong one.
+     */
+    @Test
+    fun `location unknown and location stale render different messages`() {
+        val unknown = NoOrdersReason.fromWire("location_unknown")
+        val stale = NoOrdersReason.fromWire("location_stale")
+
+        assertNotNull(unknown)
+        assertNotNull(stale)
+        assertTrue(unknown != stale)
+        assertTrue(unknown!!.messageResource() != stale!!.messageResource())
     }
 
     /** A reason this build has never heard of must still say something honest. */

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notif_channel_offers_name">ڈیلیوری کی پیشکشیں</string>
+    <string name="notif_channel_offers_description">آپ کو ایک نیا ٹرپ پیش کیا جا رہا ہے۔ یہ چینل ڈسٹرب نہ کریں کو نظرانداز کرتا ہے تاکہ آپ سے یہ نہ چھوٹے۔</string>
+
+    <string name="notif_channel_general_name">عمومی</string>
+    <string name="notif_channel_general_description">ادائیگیاں، اکاؤنٹ اپڈیٹس اور دیگر پیغامات جو وقت کی پابند پیشکش نہیں ہیں۔</string>
+
+    <string name="notif_health_notifications_disabled">اطلاعات بند ہیں</string>
+    <string name="notif_health_offer_channel_disabled">پیشکش کی اطلاعات بند ہیں</string>
+    <string name="notif_health_full_screen_intent_not_granted">فل اسکرین پیشکش الرٹس کی اجازت نہیں ہے</string>
+    <string name="notif_health_dnd_bypass_not_granted">ڈسٹرب نہ کریں کے دوران پیشکشیں نہیں بجیں گی</string>
+</resources>

@@ -164,6 +164,7 @@ fun AccountRoute(
     val language by viewModel.language.collectAsStateWithLifecycle()
     val uiScale by viewModel.uiScale.collectAsStateWithLifecycle()
     val deletionRequest by viewModel.deletionRequest.collectAsStateWithLifecycle()
+    val hasUnsentActions by viewModel.hasUnsentActions.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
 
@@ -171,6 +172,7 @@ fun AccountRoute(
         me = me,
         language = language,
         uiScale = uiScale,
+        hasUnsentActions = hasUnsentActions,
         unreadNotifications = unreadNotifications,
         onOpenNotifications = onOpenNotifications,
         appVersionName = appVersionName,
@@ -222,6 +224,7 @@ internal fun AccountScreen(
     onSelectUiScale: (UiScale) -> Unit,
     onSignOut: () -> Unit,
     onEnterInviteCode: () -> Unit,
+    hasUnsentActions: Boolean = false,
     unreadNotifications: Int = 0,
     onOpenNotifications: (() -> Unit)? = null,
     appVersionName: String? = null,
@@ -370,6 +373,7 @@ internal fun AccountScreen(
 
     if (showSignOutConfirm) {
         SignOutConfirmDialog(
+            hasUnsentActions = hasUnsentActions,
             onConfirm = {
                 showSignOutConfirm = false
                 onSignOut()
@@ -855,11 +859,32 @@ private fun PreviewBadge(modifier: Modifier = Modifier) {
 // region Sign out confirm
 
 @Composable
-private fun SignOutConfirmDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+private fun SignOutConfirmDialog(
+    hasUnsentActions: Boolean,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.account_sign_out_confirm_title)) },
-        text = { Text(stringResource(R.string.account_sign_out_confirm_body)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.account_sign_out_confirm_body))
+                // Distinct from the generic body above — a driver about to
+                // hand this phone to someone else should know some of their
+                // own actions haven't reached the restaurant yet (see
+                // AccountViewModel.hasUnsentActions's own doc). The outbox
+                // row itself is never touched by signing out.
+                if (hasUnsentActions) {
+                    Spacer(Modifier.height(Spacing.sm))
+                    Text(
+                        text = stringResource(R.string.account_sign_out_confirm_unsent_actions_warning),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+        },
         confirmButton = {
             Button(
                 onClick = onConfirm,

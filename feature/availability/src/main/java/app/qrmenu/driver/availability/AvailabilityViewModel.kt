@@ -133,6 +133,38 @@ class AvailabilityViewModel @Inject constructor(
     }
 
     /**
+     * A QUIET retry — never flips [AvailabilityUiState.isLoading] back on, so
+     * a transient failure heals itself with no visible flicker, exactly like
+     * `:feature:orders`' `refreshQuietly()` (both exist for the same reason:
+     * a driver should not have to notice, let alone tap [retry], for the app
+     * to recover from a network blip it was never their fault to fix).
+     *
+     * A no-op whenever there is nothing to retry ([AvailabilityUiState.error]
+     * is null) or a load is already in flight — called opportunistically on
+     * every screen resume by [AvailabilityRoute], so this is cheap to call
+     * far more often than it actually needs to do anything.
+     */
+    fun retryQuietly() {
+        if (_state.value.error == null || _state.value.isLoading) return
+        viewModelScope.launch {
+            runCatching { authApi.me() }
+                .onSuccess { me ->
+                    _state.update {
+                        it.copy(
+                            isOnline = me.driver.isOnline,
+                            onlineSince = me.driver.onlineSince,
+                            error = null,
+                        )
+                    }
+                }
+            // Failure intentionally changes nothing — the existing error
+            // banner (and its manual retry button) stays exactly as it was;
+            // the next resume, or the next poll tick, tries again.
+        }
+        refreshContext()
+    }
+
+    /**
      * The tap handler. See the class doc for why this does not flip [isOnline]
      * itself — only [isPending] changes synchronously, so the switch visibly
      * "thinks" rather than lies.

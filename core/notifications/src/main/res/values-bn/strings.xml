@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notif_channel_offers_name">ডেলিভারি অফার</string>
+    <string name="notif_channel_offers_description">আপনাকে একটি নতুন ট্রিপ অফার করা হচ্ছে। এই চ্যানেল ডু নট ডিস্টার্ব উপেক্ষা করে যাতে আপনি এটি মিস না করেন।</string>
+
+    <string name="notif_channel_general_name">সাধারণ</string>
+    <string name="notif_channel_general_description">পেআউট, অ্যাকাউন্ট আপডেট এবং অন্যান্য বার্তা যা সময়-সীমাবদ্ধ অফার নয়।</string>
+
+    <string name="notif_health_notifications_disabled">নোটিফিকেশন বন্ধ আছে</string>
+    <string name="notif_health_offer_channel_disabled">অফার নোটিফিকেশন বন্ধ আছে</string>
+    <string name="notif_health_full_screen_intent_not_granted">ফুল-স্ক্রিন অফার অ্যালার্টের অনুমতি নেই</string>
+    <string name="notif_health_dnd_bypass_not_granted">ডু নট ডিস্টার্বের সময় অফার বাজবে না</string>
+</resources>

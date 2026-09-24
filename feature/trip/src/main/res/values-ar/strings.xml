@@ -37,6 +37,13 @@
 
     <string name="trip_outcome_close">إغلاق</string>
 
+    <!-- Trip screen — the restaurant ended this order while the driver still held it -->
+    <string name="trip_ended_cancelled_title">تم إلغاء الطلب</string>
+    <string name="trip_ended_rejected_title">تم رفض الطلب</string>
+    <string name="trip_ended_body_return_to_branch">أنهى المطعم هذا الطلب. يرجى إعادته إلى الفرع.</string>
+    <string name="trip_ended_body_nothing_to_return">أنهى المطعم هذا الطلب قبل أن تستلمه. لا يوجد شىء لإعادته — يمكنك العودة إلى طلباتك.</string>
+    <string name="trip_ended_back_to_orders">العودة إلى الطلبات</string>
+
     <!-- ═══════════════════════ الشاشة ١٠ — الرحلة ═══════════════════════ -->
     <string name="trip_title">الرحلة</string>
     <string name="trip_area_label">حى التوصيل</string>
@@ -76,6 +83,7 @@
     <string name="trip_delivery_code_label">رمز التسليم</string>
     <string name="trip_delivery_code_hint">اطلب من العميل قراءة الرمز المكوَّن من ٤ أرقام من صفحة طلبه</string>
     <string name="trip_delivery_code_required">أدخل الرمز الذى يعطيك إياه العميل</string>
+    <string name="trip_delivery_code_locked">تجاوزت عدد المحاولات لهذا الطلب. اتصل بالفرع ليعفيه من الرمز.</string>
     <string name="trip_delivery_already_paid">مدفوع أونلاين — لا يوجد ما تحصّله</string>
     <string name="trip_delivery_confirm">تأكيد التسليم</string>
     <string name="trip_delivery_cancel">رجوع</string>

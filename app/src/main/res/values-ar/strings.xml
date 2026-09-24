@@ -7,6 +7,8 @@
     <string name="permission_location_partial_title">مسموح أثناء فتح التطبيق فقط</string>
     <string name="permission_location_partial_body">يعمل بهذه الطريقة. لكن إن نام جوالك مدة طويلة فقد تتوقف الطلبات عنك.</string>
     <string name="permission_location_action">الإعدادات</string>
+    <string name="location_services_disabled_title">الموقع مُطفأ</string>
+    <string name="location_services_disabled_body">فعّل خدمة الموقع ليتمكن المطعم من رؤية مكانك — أنت لا تزال ظاهراً كمتاح، لكن لا يصل الخادم أي موقع حيّ.</string>
     <string name="notification_health_disabled_title">الإشعارات مغلقة</string>
     <string name="notification_health_disabled_body">لن يصلك أى عرض توصيل حتى تُعيد تشغيلها — لا شىء آخر فى التطبيق يقدر يوقظ جوالك.</string>
     <string name="notification_health_channel_title">تنبيه العروض مكتوم</string>

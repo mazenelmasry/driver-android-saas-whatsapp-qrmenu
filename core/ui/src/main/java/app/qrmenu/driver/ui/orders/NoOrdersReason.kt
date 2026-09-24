@@ -28,6 +28,14 @@ enum class NoOrdersReason(val wire: String?) {
     AllBranchesClosed("all_branches_closed"),
     OutsideRadius("outside_radius"),
     LocationUnknown("location_unknown"),
+
+    /**
+     * A position WAS arriving and stopped (app closed/killed/backgrounded too long) — distinct
+     * from [LocationUnknown], where a position has NEVER arrived. Different fault, different fix:
+     * this one is fixed by reopening the app, not by granting a permission. Never share wording
+     * with [LocationUnknown] — that would send half of these drivers to the wrong fix.
+     */
+    LocationStale("location_stale"),
     HasActiveTrip("has_active_trip"),
 
     /** The healthy case: online, in range, a branch is open — there is simply nothing to offer yet. */
@@ -56,6 +64,7 @@ fun NoOrdersReason.messageResource(): Int = when (this) {
     NoOrdersReason.AllBranchesClosed -> R.string.availability_reason_all_branches_closed
     NoOrdersReason.OutsideRadius -> R.string.availability_reason_outside_radius
     NoOrdersReason.LocationUnknown -> R.string.availability_reason_location_unknown
+    NoOrdersReason.LocationStale -> R.string.availability_reason_location_stale
     NoOrdersReason.HasActiveTrip -> R.string.availability_reason_has_active_trip
     NoOrdersReason.NothingPending -> R.string.availability_reason_nothing_pending
     NoOrdersReason.Unknown -> R.string.availability_reason_unknown

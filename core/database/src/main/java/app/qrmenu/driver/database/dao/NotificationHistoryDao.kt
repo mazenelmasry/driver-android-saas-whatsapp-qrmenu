@@ -30,6 +30,13 @@ interface NotificationHistoryDao {
     @Query("DELETE FROM notification_history WHERE occurred_at < :cutoffMillis")
     suspend fun purgeOlderThan(cutoffMillis: Long)
 
+    // Sign-out privacy: a shared device's next driver must not see the
+    // previous driver's offers/notifications. Unlike the outbox (unsent,
+    // possibly money-affecting state — kept on purpose), this table is a
+    // pure notification log with nothing to lose by clearing it.
+    @Query("DELETE FROM notification_history")
+    suspend fun clearAll()
+
     // Row-count cap, independent of age — a driver working long, busy shifts
     // can accumulate more than the age window would prune in a single day.
     @Query(

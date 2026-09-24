@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -25,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
@@ -62,6 +64,7 @@ import app.qrmenu.driver.network.dto.ContextBranchDto
 import app.qrmenu.driver.network.dto.DriverOrderDto
 import app.qrmenu.driver.network.errors.DriverApiError
 import app.qrmenu.driver.ui.components.DriverErrorBanner
+import app.qrmenu.driver.ui.error.localized
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -116,6 +119,13 @@ fun OrdersRoute(
         onRefreshAvailable = { viewModel.loadAvailable(isRefresh = true) },
         onRetry = viewModel::retry,
         onOpenTrip = onOpenTrip,
+        // A claim that wins lands the driver on the trip screen — the same
+        // place accepting a pushed offer lands, because from here on the two
+        // are the same situation: an order in their hands and a pickup to
+        // make. The navigation itself stays the screen's business, not the
+        // ViewModel's.
+        onClaim = { orderId -> viewModel.claim(orderId, onClaimed = onOpenTrip) },
+        onDismissClaimMessage = viewModel::dismissClaimMessage,
         onOpenNotifications = onOpenNotifications,
             unreadNotifications = unreadNotifications,
     )
@@ -130,6 +140,8 @@ internal fun OrdersScreen(
     onRefreshAvailable: () -> Unit,
     onRetry: (OrdersTab) -> Unit,
     onOpenTrip: (Long) -> Unit = {},
+    onClaim: (Long) -> Unit = {},
+    onDismissClaimMessage: () -> Unit = {},
     onOpenNotifications: (() -> Unit)? = null,
     /**
      * How many notifications the driver has not opened yet — the number on
@@ -163,8 +175,13 @@ internal fun OrdersScreen(
                 OrdersTab.Available -> AvailableList(
                     listState = state.available,
                     context = state.availableContext,
+                    claimingOrderId = state.claimingOrderId,
+                    claimMessage = state.claimMessage,
+                    claimFailure = state.claimFailure,
                     onRefresh = onRefreshAvailable,
                     onRetry = { onRetry(OrdersTab.Available) },
+                    onClaim = onClaim,
+                    onDismissClaimMessage = onDismissClaimMessage,
                 )
             }
         }
@@ -258,8 +275,13 @@ private fun MineList(
 private fun AvailableList(
     listState: OrderListState,
     context: AvailabilityContextDto?,
+    claimingOrderId: Long?,
+    claimMessage: ClaimMessage?,
+    claimFailure: DriverApiError?,
     onRefresh: () -> Unit,
     onRetry: () -> Unit,
+    onClaim: (Long) -> Unit,
+    onDismissClaimMessage: () -> Unit,
 ) {
     when {
         listState.isLoading -> OrdersLoadingSkeleton()
@@ -271,6 +293,22 @@ private fun AvailableList(
             ) {
                 if (listState.error != null) {
                     item { DriverErrorBanner(error = listState.error, onRetry = onRetry) }
+                }
+
+                // 🔴 FIRST in the list, above the cash banner and above the
+                // empty state — not merely above the cards. Verified on the
+                // device: taking the last offer empties the list, and an
+                // answer placed after the empty state landed BELOW a
+                // full-height illustration, off the fold. The reply to a tap
+                // belongs where the thumb just was.
+                if (claimMessage != null) {
+                    item {
+                        ClaimMessageLine(
+                            message = claimMessage,
+                            failure = claimFailure,
+                            onDismiss = onDismissClaimMessage,
+                        )
+                    }
                 }
 
                 // Deliberately independent of `orders`/`error`/`reason`: a driver
@@ -287,9 +325,76 @@ private fun AvailableList(
                 }
 
                 items(listState.orders, key = DriverOrderDto::id) { order ->
-                    OfferedOrderCard(summary = order.toOfferedSummary())
+                    OfferedOrderCard(
+                        summary = order.toOfferedSummary(),
+                        onClaim = { onClaim(order.id) },
+                        isClaiming = claimingOrderId == order.id,
+                        isAnotherClaimInFlight = claimingOrderId != null && claimingOrderId != order.id,
+                    )
                 }
             }
+        }
+    }
+}
+
+/**
+ * The one line that answers a tap on «خُذ الطلب» that did not end in a trip.
+ *
+ * 🔴 [ClaimMessage.Lost] is deliberately NOT red, and deliberately not the
+ * error banner. Being beaten to an order is the ordinary rhythm of
+ * `self_claim` — every driver at that branch sees the same order and one of
+ * them is first — and dressing it as a fault would teach a driver that a
+ * normal working day is full of errors, until the red that does matter stops
+ * registering. It reads as a neutral note. A genuine failure (offline,
+ * cancelled, over the cash ceiling) keeps the error colour and the server's
+ * own sentence, mapped by code, never by the server's message text.
+ *
+ * Dismissable by tapping it, and cleared by the next claim: it must never
+ * become a stale sentence about an order that scrolled away long ago.
+ */
+@Composable
+private fun ClaimMessageLine(
+    message: ClaimMessage,
+    failure: DriverApiError?,
+    onDismiss: () -> Unit,
+) {
+    val isLost = message == ClaimMessage.Lost
+    val container = if (isLost) {
+        MaterialTheme.colorScheme.surfaceContainerHigh
+    } else {
+        MaterialTheme.colorScheme.errorContainer
+    }
+    val ink = if (isLost) {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    } else {
+        MaterialTheme.colorScheme.onErrorContainer
+    }
+    // A Failed message that somehow arrived without its error falls back to
+    // the lost wording rather than to a blank strip — an empty coloured band
+    // says nothing and reads as a rendering fault.
+    val text = if (isLost) {
+        stringResource(R.string.orders_claim_lost)
+    } else {
+        failure?.localized() ?: stringResource(R.string.orders_claim_lost)
+    }
+
+    Surface(
+        shape = RoundedCornerShape(Radius.card),
+        color = container,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        TextButton(
+            onClick = onDismiss,
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = TouchTarget.compact),
+        ) {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyMedium,
+                color = ink,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }
@@ -509,6 +614,67 @@ private fun OrdersAvailableContentPreview() {
             state = OrdersUiState(
                 tab = OrdersTab.Available,
                 available = OrderListState(isLoading = false, orders = listOf(previewOfferedOrder)),
+            ),
+            onSelectTab = {},
+            onRefreshMine = {},
+            onRefreshAvailable = {},
+            onRetry = {},
+        )
+    }
+}
+
+@OrdersStatePreviews
+@Composable
+private fun OrdersAvailableClaimingPreview() {
+    DriverTheme {
+        OrdersScreen(
+            state = OrdersUiState(
+                tab = OrdersTab.Available,
+                available = OrderListState(isLoading = false, orders = listOf(previewOfferedOrder)),
+                claimingOrderId = previewOfferedOrder.id,
+            ),
+            onSelectTab = {},
+            onRefreshMine = {},
+            onRefreshAvailable = {},
+            onRetry = {},
+        )
+    }
+}
+
+/**
+ * Losing the race — the state a `self_claim` driver hits most often after a
+ * tap, and the one that must NOT look like a fault. Previewed in all five
+ * locales and in dark, because a neutral note that turns unreadable in dark
+ * is a note nobody reads.
+ */
+@OrdersStatePreviews
+@Composable
+private fun OrdersAvailableClaimLostPreview() {
+    DriverTheme {
+        OrdersScreen(
+            state = OrdersUiState(
+                tab = OrdersTab.Available,
+                available = OrderListState(isLoading = false, orders = listOf(previewOfferedOrder.copy(id = 2))),
+                claimMessage = ClaimMessage.Lost,
+            ),
+            onSelectTab = {},
+            onRefreshMine = {},
+            onRefreshAvailable = {},
+            onRetry = {},
+        )
+    }
+}
+
+@OrdersStatePreviews
+@Composable
+private fun OrdersAvailableClaimFailedPreview() {
+    DriverTheme {
+        OrdersScreen(
+            state = OrdersUiState(
+                tab = OrdersTab.Available,
+                available = OrderListState(isLoading = false, orders = listOf(previewOfferedOrder)),
+                claimMessage = ClaimMessage.Failed,
+                claimFailure = DriverApiError.Offline,
             ),
             onSelectTab = {},
             onRefreshMine = {},

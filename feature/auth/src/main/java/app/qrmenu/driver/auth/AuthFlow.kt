@@ -7,7 +7,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -67,9 +68,45 @@ sealed interface AuthStep {
     data object RedeemInvite : AuthStep
 }
 
+/**
+ * 🔴 Process death loses [AuthStep] without this — an interrupted app (a
+ * driver switches to their SMS app to copy the code, or the OS reclaims the
+ * process while waiting on it) used to bounce back to [AuthStep.SignIn],
+ * discarding the phone number and forcing the driver to retype it and
+ * request a fresh code.
+ *
+ * A plain `Saver` (not `Parcelize`) because [AuthStep] is a small, closed set
+ * of primitive fields — a 4-slot list of primitives round-trips through the
+ * saved-instance-state Bundle without needing every step to implement
+ * `Parcelable` (and [AuthStep.RedeemInvite]/[AuthStep.SignIn] carry no state
+ * to lose in the first place, hence `null` for phone/flags in their rows).
+ */
+internal val AuthStepSaver: Saver<AuthStep, List<Any?>> = Saver(
+    save = { step ->
+        when (step) {
+            AuthStep.SignIn -> listOf("sign_in", null, null, null)
+            is AuthStep.ConfirmPhone -> listOf("confirm_phone", step.phone, step.isReset, null)
+            is AuthStep.ChoosePassword -> listOf("choose_password", step.phone, null, step.hasRestaurants)
+            AuthStep.RedeemInvite -> listOf("redeem_invite", null, null, null)
+        }
+    },
+    restore = { saved ->
+        val type = saved[0] as String
+        val phone = saved[1] as String?
+        val isReset = saved[2] as Boolean?
+        val hasRestaurants = saved[3] as Boolean?
+        when (type) {
+            "confirm_phone" -> AuthStep.ConfirmPhone(phone = phone.orEmpty(), isReset = isReset ?: false)
+            "choose_password" -> AuthStep.ChoosePassword(phone = phone.orEmpty(), hasRestaurants = hasRestaurants ?: false)
+            "redeem_invite" -> AuthStep.RedeemInvite
+            else -> AuthStep.SignIn
+        }
+    },
+)
+
 @Composable
 fun AuthFlow(onSignedIn: () -> Unit) {
-    var step by remember { mutableStateOf<AuthStep>(AuthStep.SignIn) }
+    var step by rememberSaveable(stateSaver = AuthStepSaver) { mutableStateOf<AuthStep>(AuthStep.SignIn) }
 
     when (val current = step) {
         AuthStep.SignIn -> LoginRoute(

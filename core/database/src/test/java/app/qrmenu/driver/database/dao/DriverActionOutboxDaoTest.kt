@@ -48,6 +48,7 @@ class DriverActionOutboxDaoTest {
         key: String,
         orderId: Long = 501L,
         createdAt: Long = 1_700_000_000_000L,
+        driverId: Long? = null,
     ) = DriverActionOutboxEntity(
         idempotency_key = key,
         order_id = orderId,
@@ -55,6 +56,7 @@ class DriverActionOutboxDaoTest {
         payload_json = """{"cash_collected":25.0}""",
         occurred_at = createdAt - 5_000L,
         created_at = createdAt,
+        driver_id = driverId,
     )
 
     @Test
@@ -116,5 +118,28 @@ class DriverActionOutboxDaoTest {
         dao.acknowledge("key-1")
         assertEquals(1, dao.observePendingCount().first())
         assertNull(dao.observePending().first().find { it.idempotency_key == "key-1" })
+    }
+
+    @Test
+    fun `observePendingForDriver includes legacy null-owner rows and this driver's own rows only`() = runBlocking {
+        dao.enqueue(actionOf("legacy", createdAt = 1_000L, driverId = null))
+        dao.enqueue(actionOf("mine", createdAt = 2_000L, driverId = 42L))
+        dao.enqueue(actionOf("someone-elses", createdAt = 3_000L, driverId = 99L))
+
+        val visible = dao.observePendingForDriver(42L).first()
+
+        assertEquals(listOf("legacy", "mine"), visible.map { it.idempotency_key })
+    }
+
+    @Test
+    fun `observePendingCountForDriver excludes another driver's queued rows`() = runBlocking {
+        dao.enqueue(actionOf("legacy", driverId = null))
+        dao.enqueue(actionOf("mine", driverId = 42L))
+        dao.enqueue(actionOf("someone-elses", driverId = 99L))
+
+        assertEquals(2, dao.observePendingCountForDriver(42L).first())
+        assertEquals(2, dao.observePendingCountForDriver(99L).first())
+        // A device with nobody signed in yet still sees legacy unowned rows.
+        assertEquals(1, dao.observePendingCountForDriver(null).first())
     }
 }

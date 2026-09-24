@@ -35,6 +35,7 @@
 
     <string name="account_sign_out_confirm_title">تسجيل الخروج؟</string>
     <string name="account_sign_out_confirm_body">ستحتاج رقم جوالك لتسجيل الدخول مرة أخرى.</string>
+    <string name="account_sign_out_confirm_unsent_actions_warning">بعض إجراءاتك لم تصل إلى المطعم بعد. ستُرسَل تلقائياً عند تسجيل دخولك مرة أخرى على هذا الجهاز.</string>
     <string name="account_sign_out_confirm_confirm">تسجيل الخروج</string>
     <string name="account_sign_out_confirm_cancel">إلغاء</string>
 

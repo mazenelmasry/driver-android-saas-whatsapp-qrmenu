@@ -8,6 +8,7 @@ import app.qrmenu.driver.datastore.TokenStore
 import app.qrmenu.driver.trip.TripRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import kotlinx.coroutines.CancellationException
 
 /**
  * Drains `driver_actions_outbox` while the app is CLOSED.
@@ -61,6 +62,12 @@ class OutboxFlushWorker @AssistedInject constructor(
         return try {
             tripRepository.flushPending()
             Result.success()
+        } catch (cancelled: CancellationException) {
+            // WorkManager cancelling this worker (constraints no longer met,
+            // app told it to stop) is not a send failure — rethrow so
+            // structured concurrency actually cancels, rather than being
+            // reinterpreted as "retry" or "give up" below.
+            throw cancelled
         } catch (thrown: Throwable) {
             if (runAttemptCount >= MAX_ATTEMPTS) {
                 // Stop the backoff, keep the rows. See guard 2 above.

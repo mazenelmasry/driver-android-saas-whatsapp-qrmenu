@@ -28,6 +28,14 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -75,6 +83,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.Lifecycle
 import app.qrmenu.driver.designsystem.theme.ControlSize
 import app.qrmenu.driver.designsystem.theme.DriverTheme
 import app.qrmenu.driver.designsystem.theme.Elevation
@@ -127,10 +138,27 @@ fun TripRoute(
 
     LaunchedEffect(orderId) { viewModel.start(orderId, initialOrder) }
 
+    // 🔴 Runs ONLY while this screen is actually resumed, the same separation
+    // `OrdersRoute` keeps: a poll belongs to "the OS says this is on screen",
+    // which is a lifecycle question, not something a state holder can answer.
+    // Backgrounding the app stops it rather than burning a driving driver's
+    // battery on a screen nobody is looking at.
+    val tripLifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(tripLifecycleOwner, orderId) {
+        tripLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            // Asked once on resume as well as on the interval: returning to
+            // the app after a few minutes away is exactly when the answer is
+            // most likely to have changed.
+            viewModel.refreshQuietly(orderId)
+            pollTripForever { viewModel.refreshQuietly(orderId) }
+        }
+    }
+
     TripScreen(
         state = state,
         onOpenNotifications = onOpenNotifications,
         onRetryLoad = { viewModel.retryLoad(orderId) },
+        onExitEndedTrip = onExit,
         onPickUp = { viewModel.pickUp(orderId) },
         onOpenDeliverySheet = viewModel::openDeliverySheet,
         onDismissDeliverySheet = viewModel::dismissDeliverySheet,
@@ -157,6 +185,8 @@ internal fun TripScreen(
     state: TripUiState,
     onOpenNotifications: (() -> Unit)?,
     onRetryLoad: () -> Unit,
+    /** [TripPhase.Resolved]'s own way out — no delivery, no earnings, just back to the list. */
+    onExitEndedTrip: () -> Unit,
     onPickUp: () -> Unit,
     onOpenDeliverySheet: () -> Unit,
     onDismissDeliverySheet: () -> Unit,
@@ -173,7 +203,19 @@ internal fun TripScreen(
     onDismissIssueReported: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Scaffold(modifier = modifier) { padding ->
+    // 🔴 `DriverScreenScaffold` wraps `DriverHeader`, which pays the
+    // status-bar inset ITSELF (`windowInsetsPadding(WindowInsets.statusBars)`
+    // — it draws its coloured band behind the clock on purpose). `Scaffold`'s
+    // own default `contentWindowInsets` is `WindowInsets.safeDrawing`, which
+    // ALSO reserves the status-bar's height at the top of `padding` — so this
+    // screen paid for the status bar twice: once as a real gap above the
+    // header, once again inside it. The result on a real device was a thin
+    // light strip sitting above the coloured header. Bottom and horizontal
+    // stay in the request — the trip's bottom action buttons and the delivery
+    // sheet's own "رجوع" button still need the navigation-bar and side-notch
+    // insets Scaffold was already supplying correctly.
+    val contentInsets = WindowInsets.systemBars.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
+    Scaffold(modifier = modifier, contentWindowInsets = contentInsets) { padding ->
         Box(modifier = Modifier.padding(padding).fillMaxSize()) {
             DriverScreenScaffold(
                 title = stringResource(R.string.trip_title),
@@ -188,6 +230,7 @@ internal fun TripScreen(
                         onOpenDeliverySheet = onOpenDeliverySheet,
                         onOpenIssueSheet = onOpenIssueSheet,
                     )
+                    is TripPhase.Resolved -> TripEndedScreen(order = phase.order, outcome = phase.outcome, onExit = onExitEndedTrip)
                 }
             }
         }
@@ -254,7 +297,7 @@ private fun TripContent(
 
             QuickActionsRow(order = order, context = context)
 
-            order.customer?.name?.let { name ->
+            displayableRecipientName(order.customer?.name)?.let { name ->
                 TripRecipientCard(name = name)
             }
 
@@ -269,10 +312,19 @@ private fun TripContent(
             // shorter. It has nothing new to say — and must not render an
             // empty shell — when a zone was NOT shown up top (so this would
             // repeat the exact text already on screen) AND there are no notes.
-            if (address != null && (order.zone != null || address.notes != null)) {
+            //
+            // This is still only a COARSE pre-filter: a blank `zone.name`
+            // still counts as "no zone" for this check (`?.name` alone would
+            // let an empty string through), and even when it passes,
+            // [TripAddressCard] itself runs the precise
+            // [addressCardHasContent] check below before drawing anything —
+            // a zone shown up top does not guarantee `address.text` itself is
+            // non-blank once map links are stripped from it.
+            val showZoneNameUpTop = blankToNull(order.zone?.name) != null
+            if (address != null && (showZoneNameUpTop || address.notes != null)) {
                 TripAddressCard(
                     address = address,
-                    showAddressText = order.zone != null,
+                    showAddressText = showZoneNameUpTop,
                     isApproximateLocation = address.isApproximatePin(),
                     showMapLink = address.shouldOfferMapLink(),
                 )
@@ -301,6 +353,101 @@ private fun TripContent(
     }
 }
 
+/**
+ * 🔴 The full-screen outcome (option ب, the project owner's own decision):
+ * "the trip simply vanished in silence" is the bug this replaces. A driver
+ * who was mid-trip when the restaurant cancelled or rejected the order lands
+ * HERE instead of on a trip screen whose buttons either fail outright
+ * (pick-up/deliver on a dead order) or, worse, would let them complete a sale
+ * that no longer exists — see [TripPhase.Resolved]'s own doc for why the
+ * order can still be sitting in this driver's hands on the wire at all.
+ *
+ * Same full-screen-outcome shape [OfferOutcomeScreen] already established for
+ * this module (artwork + title + body) — deliberately not a second pattern.
+ * What differs from that screen: this one needs the branch's phone number
+ * (the owner's own words: the restaurant has to tell the driver to bring the
+ * order back, and calling them is the fastest way to actually have that
+ * conversation), so it reuses [QuickActionButton] + [dialIntent] directly —
+ * the exact mechanism [QuickActionsRow] already calls this screen's own
+ * "call branch" button through, not a rebuilt one — and an explicit button
+ * back to the orders list, since there is no earnings screen or delivery
+ * sheet after this to carry the driver forward on its own.
+ */
+@Composable
+private fun TripEndedScreen(order: DriverOrderDto, outcome: TripOutcome, onExit: () -> Unit) {
+    val context = LocalContext.current
+    val title = when (outcome) {
+        TripOutcome.Cancelled -> R.string.trip_ended_cancelled_title
+        TripOutcome.Rejected -> R.string.trip_ended_rejected_title
+    }
+    // 🔴 The ONE thing that actually differs for the driver, per the task
+    // brief: "take the order back" is the wrong sentence for someone who
+    // never collected it in the first place. [DriverOrderDto.pickedUpAt] is
+    // the one signal this DTO carries for that — non-null the instant
+    // `pickedUp` succeeded (TripViewModel.pickUp) — so it, not the outcome
+    // itself, decides which of the two bodies below is shown.
+    val body = if (order.pickedUpAt != null) {
+        R.string.trip_ended_body_return_to_branch
+    } else {
+        R.string.trip_ended_body_nothing_to_return
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(Spacing.lg),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        DriverArtwork(art = DriverArt.EmptyBag)
+        Spacer(modifier = Modifier.height(Spacing.md))
+        Text(
+            text = stringResource(title),
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(modifier = Modifier.height(Spacing.sm))
+        Text(
+            text = stringResource(body),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(modifier = Modifier.height(Spacing.lg))
+
+        // 🔴 NOT the accept/decline/pick-up/deliver row this screen normally
+        // shows — this order cannot be acted on any more. Only the two
+        // things that actually help: reach the restaurant, and leave.
+        order.branch.phone?.let { phone ->
+            QuickActionButton(
+                icon = Icons.Filled.Storefront,
+                label = stringResource(R.string.trip_action_call_branch),
+                contentDescription = stringResource(R.string.a11y_call_branch),
+                modifier = Modifier.fillMaxWidth().heightIn(min = TouchTarget.primaryPhysical),
+                onClick = { safeStartActivity(context, dialIntent(phone)) },
+            )
+            Spacer(modifier = Modifier.height(Spacing.sm))
+        }
+
+        Button(
+            onClick = onExit,
+            shape = RoundedCornerShape(Radius.card),
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = TouchTarget.primaryPhysical),
+        ) {
+            Text(
+                text = stringResource(R.string.trip_ended_back_to_orders),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+    }
+}
+
 @Composable
 private fun TripTopFacts(order: DriverOrderDto) {
     Surface(
@@ -321,27 +468,31 @@ private fun TripTopFacts(order: DriverOrderDto) {
             modifier = Modifier.padding(Spacing.md),
             verticalArrangement = Arrangement.spacedBy(Spacing.xs),
         ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Storefront,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(ControlSize.inlineIcon),
-                )
-                Text(
-                    text = order.branch.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f),
-                )
+            // 🔴 See [displayableBranchName]'s own doc for why a blank name
+            // hides this whole row instead of falling back to a placeholder.
+            displayableBranchName(order.branch.name)?.let { branchName ->
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Storefront,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(ControlSize.inlineIcon),
+                    )
+                    Text(
+                        text = branchName,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             }
 
-            val area = order.zone?.name ?: stripMapLinks(order.deliveryAddress?.text)
-            if (area != null) {
+            val area = displayableArea(order.zone?.name, order.deliveryAddress?.text)
+            if (!area.isNullOrBlank()) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
                     verticalAlignment = Alignment.CenterVertically,
@@ -510,8 +661,16 @@ private fun TripRecipientCard(name: String) {
 /**
  * [showAddressText] is `false` exactly when [TripTopFacts] is already showing
  * this same [DeliveryAddressDto.text] as its "delivery area" line (no zone
- * name to show instead) — see the call site's own doc. The card is not shown
- * at all when that would leave it with nothing else to say; see the call site.
+ * name to show instead) — see the call site's own doc. The call site's guard
+ * is only a coarse pre-filter, though (it does not know yet whether the
+ * address text survives [stripMapLinks], or whether it is blank) — this
+ * Composable runs the precise [addressCardHasContent] check itself, below,
+ * and renders nothing at all when it comes back `false`. That is the fix for
+ * the "bare card" bug: a zone name shown up top (so `showAddressText` is
+ * `false`) with a blank/null `address.text`, no notes, an exact (not
+ * approximate) pin, and no map link to offer left this card as nothing more
+ * than its own "العنوان" label — an icon-shaped promise with nothing behind
+ * it, the same failure mode as every other row fixed in this file.
  *
  * Both [DeliveryAddressDto.text] and [DeliveryAddressDto.notes] go through
  * [stripMapLinks] before being rendered — defence in depth against a raw URL
@@ -533,6 +692,14 @@ private fun TripAddressCard(
     isApproximateLocation: Boolean = false,
     showMapLink: Boolean = false,
 ) {
+    val hasContent = addressCardHasContent(
+        addressText = if (showAddressText) address.text else null,
+        notes = address.notes,
+        isApproximateLocation = isApproximateLocation,
+        showMapLink = showMapLink,
+    )
+    if (!hasContent) return
+
     val context = LocalContext.current
     val a11yOpenCustomerLocation = stringResource(R.string.a11y_open_customer_location)
     Surface(shape = RoundedCornerShape(Radius.card), color = MaterialTheme.colorScheme.surface, border = BorderStroke(Stroke.hairline, MaterialTheme.colorScheme.outlineVariant), modifier = Modifier.fillMaxWidth()) {
@@ -731,9 +898,6 @@ private fun DriverApiError?.isAboutTheDeliveryCode(): Boolean =
         code == DriverErrorCode.DeliveryCodeRequired || code == DriverErrorCode.DeliveryCodeMismatch
         )
 
-/** The customer's code is always exactly four digits (contract: `^[0-9]{4}$`). */
-private const val DELIVERY_CODE_LENGTH = 4
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun DeliverySheet(
@@ -758,18 +922,30 @@ private fun DeliverySheet(
     val haptics = LocalHapticFeedback.current
 
     Box(
-        // 🔴 `imePadding()` belongs on THIS box, not on the column inside the
-        // sheet. `enableEdgeToEdge()` means the window never resizes for the
-        // keyboard, so a full-screen box still spans the area the keyboard
-        // now covers — and a sheet anchored to ITS bottom sits underneath.
-        // Shrinking the box by the IME inset is what lifts the sheet to rest
-        // on top of the keyboard. Padding the inner column only moved content
-        // around inside a sheet that was still in the wrong place, which is
-        // exactly what the first attempt at this did.
+        // 🔴 The inset padding belongs on THIS box, not on the column inside
+        // the sheet. `enableEdgeToEdge()` means the window never resizes for
+        // the keyboard, so a full-screen box still spans the area the
+        // keyboard now covers — and a sheet anchored to ITS bottom sits
+        // underneath. Shrinking the box by the IME inset is what lifts the
+        // sheet to rest on top of the keyboard. Padding the inner column only
+        // moved content around inside a sheet that was still in the wrong
+        // place, which is exactly what the first attempt at this did.
+        //
+        // 🔴 `WindowInsets.navigationBars.union(WindowInsets.ime)` — NOT
+        // `.imePadding()` alone, and NOT the two chained (which would double
+        // the gap: the IME inset already reaches past the navigation bar once
+        // the keyboard is up, so padding for both would add the nav bar's
+        // height a second time). `union` takes the LARGER of the two on each
+        // side, so this box pads by the nav bar's own height when no keyboard
+        // is showing, and by the (taller) keyboard's height once one is — and
+        // either way, the confirm/"رجوع" pair at the bottom of the sheet ends
+        // up above whichever obstruction is actually on screen, instead of
+        // "رجوع" sitting clipped under the gesture bar the moment the code
+        // field closes the keyboard again.
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.6f))
-            .imePadding(),
+            .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime)),
         contentAlignment = Alignment.BottomCenter,
     ) {
         Surface(
@@ -779,8 +955,8 @@ private fun DeliverySheet(
         ) {
             // 🔴 `enableEdgeToEdge()` in MainActivity means the manifest's
             // `adjustResize` never applies — the window no longer fits system
-            // windows, so the keyboard is OUR inset to handle. Without
-            // `imePadding()` the numeric keypad covered the code cells, the
+            // windows, so the keyboard is OUR inset to handle. Without the
+            // IME inset above, the numeric keypad covered the code cells, the
             // hint telling the driver to ask for them, and the confirm button:
             // a driver at a door typing blind into something they cannot see,
             // unable to reach the one button that finishes the delivery.
@@ -882,7 +1058,33 @@ private fun DeliverySheet(
                     }
                 }
 
-                if (sheet.error != null) {
+                // 🔴 The server's own five-attempt budget for THIS order, not a
+                // client-side guess — from here on every `delivered` call
+                // answers `too_many_attempts` no matter what is typed, so the
+                // generic banner ("حاول لاحقاً") below is replaced, not
+                // supplemented, by a message that actually tells the driver
+                // what to do: this order's code is locked, and only the
+                // restaurant can lift it. See [DeliverySheetState.deliveryLocked].
+                if (sheet.deliveryLocked) {
+                    Text(
+                        text = stringResource(R.string.trip_delivery_code_locked),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                    order.branch.phone?.let { phone ->
+                        val context = LocalContext.current
+                        OutlinedButton(
+                            onClick = { safeStartActivity(context, dialIntent(phone)) },
+                            shape = RoundedCornerShape(Radius.card),
+                            modifier = Modifier.fillMaxWidth().heightIn(min = TouchTarget.compact),
+                        ) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xxs), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(imageVector = Icons.Filled.Storefront, contentDescription = null, modifier = Modifier.size(ControlSize.inlineIcon))
+                                Text(text = stringResource(R.string.trip_action_call_branch), style = MaterialTheme.typography.labelLarge)
+                            }
+                        }
+                    }
+                } else if (sheet.error != null) {
                     DriverErrorBanner(error = sheet.error)
                 }
 
@@ -898,7 +1100,7 @@ private fun DeliverySheet(
                 // code already locks.
                 Button(
                     onClick = onConfirm,
-                    enabled = blockReason == null && !sheet.isSubmitting,
+                    enabled = blockReason == null && !sheet.isSubmitting && !sheet.deliveryLocked,
                     shape = RoundedCornerShape(Radius.card),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -942,18 +1144,14 @@ private fun IssueSheet(
     onSubmit: () -> Unit,
 ) {
     Box(
-        // 🔴 `imePadding()` belongs on THIS box, not on the column inside the
-        // sheet. `enableEdgeToEdge()` means the window never resizes for the
-        // keyboard, so a full-screen box still spans the area the keyboard
-        // now covers — and a sheet anchored to ITS bottom sits underneath.
-        // Shrinking the box by the IME inset is what lifts the sheet to rest
-        // on top of the keyboard. Padding the inner column only moved content
-        // around inside a sheet that was still in the wrong place, which is
-        // exactly what the first attempt at this did.
+        // 🔴 Same reasoning — and the same `navigationBars.union(ime)` fix —
+        // as the delivery sheet above: this sheet's own "إلغاء" sits at the
+        // bottom too, and plain `imePadding()` left it clipped under the
+        // gesture bar the moment the note field's keyboard closed.
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.6f))
-            .imePadding(),
+            .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime)),
         contentAlignment = Alignment.BottomCenter,
     ) {
         Surface(
@@ -1300,7 +1498,7 @@ private fun TripResumingPreview() {
     DriverTheme {
         TripScreen(
             state = TripUiState(phase = TripPhase.Loading),
-            onOpenNotifications = null, onRetryLoad = {}, onPickUp = {}, onOpenDeliverySheet = {}, onDismissDeliverySheet = {},
+            onOpenNotifications = null, onRetryLoad = {}, onExitEndedTrip = {}, onPickUp = {}, onOpenDeliverySheet = {}, onDismissDeliverySheet = {},
             onDeliveryAmountChange = {}, onDeliveryNoteChange = {}, onDeliveryCodeChange = {}, onConfirmDelivery = { _, _ -> }, onDoneAfterDelivery = {},
             onOpenIssueSheet = {}, onDismissIssueSheet = {}, onSelectIssueCode = {}, onIssueNoteChange = {}, onSubmitIssue = {}, onDismissIssueReported = {},
         )
@@ -1313,7 +1511,7 @@ private fun TripNotReadyPreview() {
     DriverTheme {
         TripScreen(
             state = TripUiState(phase = TripPhase.Content(order = previewAssignedOrder.copy(status = "confirmed"))),
-            onOpenNotifications = null, onRetryLoad = {}, onPickUp = {}, onOpenDeliverySheet = {}, onDismissDeliverySheet = {},
+            onOpenNotifications = null, onRetryLoad = {}, onExitEndedTrip = {}, onPickUp = {}, onOpenDeliverySheet = {}, onDismissDeliverySheet = {},
             onDeliveryAmountChange = {}, onDeliveryNoteChange = {}, onDeliveryCodeChange = {}, onConfirmDelivery = { _, _ -> }, onDoneAfterDelivery = {},
             onOpenIssueSheet = {}, onDismissIssueSheet = {}, onSelectIssueCode = {}, onIssueNoteChange = {}, onSubmitIssue = {}, onDismissIssueReported = {},
         )
@@ -1326,7 +1524,7 @@ private fun TripReadyPreview() {
     DriverTheme {
         TripScreen(
             state = TripUiState(phase = TripPhase.Content(order = previewAssignedOrder)),
-            onOpenNotifications = null, onRetryLoad = {}, onPickUp = {}, onOpenDeliverySheet = {}, onDismissDeliverySheet = {},
+            onOpenNotifications = null, onRetryLoad = {}, onExitEndedTrip = {}, onPickUp = {}, onOpenDeliverySheet = {}, onDismissDeliverySheet = {},
             onDeliveryAmountChange = {}, onDeliveryNoteChange = {}, onDeliveryCodeChange = {}, onConfirmDelivery = { _, _ -> }, onDoneAfterDelivery = {},
             onOpenIssueSheet = {}, onDismissIssueSheet = {}, onSelectIssueCode = {}, onIssueNoteChange = {}, onSubmitIssue = {}, onDismissIssueReported = {},
         )
@@ -1342,7 +1540,7 @@ private fun TripPickedUpWithDeliverySheetPreview() {
                 phase = TripPhase.Content(order = previewAssignedOrder.copy(status = "out_for_delivery", pickedUpAt = "2026-09-21T10:00:00Z")),
                 deliverySheet = DeliverySheetState(visible = true, amountText = "68.50"),
             ),
-            onOpenNotifications = null, onRetryLoad = {}, onPickUp = {}, onOpenDeliverySheet = {}, onDismissDeliverySheet = {},
+            onOpenNotifications = null, onRetryLoad = {}, onExitEndedTrip = {}, onPickUp = {}, onOpenDeliverySheet = {}, onDismissDeliverySheet = {},
             onDeliveryAmountChange = {}, onDeliveryNoteChange = {}, onDeliveryCodeChange = {}, onConfirmDelivery = { _, _ -> }, onDoneAfterDelivery = {},
             onOpenIssueSheet = {}, onDismissIssueSheet = {}, onSelectIssueCode = {}, onIssueNoteChange = {}, onSubmitIssue = {}, onDismissIssueReported = {},
         )
@@ -1361,7 +1559,43 @@ private fun TripDeliveredPreview() {
                     ledger = LedgerSummaryDto(companyId = 1, currency = "SAR", earnedToday = 9.0, cashOnHand = 68.5, net = -59.5, cashLimit = null),
                 ),
             ),
-            onOpenNotifications = null, onRetryLoad = {}, onPickUp = {}, onOpenDeliverySheet = {}, onDismissDeliverySheet = {},
+            onOpenNotifications = null, onRetryLoad = {}, onExitEndedTrip = {}, onPickUp = {}, onOpenDeliverySheet = {}, onDismissDeliverySheet = {},
+            onDeliveryAmountChange = {}, onDeliveryNoteChange = {}, onDeliveryCodeChange = {}, onConfirmDelivery = { _, _ -> }, onDoneAfterDelivery = {},
+            onOpenIssueSheet = {}, onDismissIssueSheet = {}, onSelectIssueCode = {}, onIssueNoteChange = {}, onSubmitIssue = {}, onDismissIssueReported = {},
+        )
+    }
+}
+
+@TripStatePreviews
+@Composable
+private fun TripEndedAfterPickupPreview() {
+    DriverTheme {
+        TripScreen(
+            state = TripUiState(
+                phase = TripPhase.Resolved(
+                    order = previewAssignedOrder.copy(status = "cancelled", pickedUpAt = "2026-09-21T10:00:00Z"),
+                    outcome = TripOutcome.Cancelled,
+                ),
+            ),
+            onOpenNotifications = null, onRetryLoad = {}, onExitEndedTrip = {}, onPickUp = {}, onOpenDeliverySheet = {}, onDismissDeliverySheet = {},
+            onDeliveryAmountChange = {}, onDeliveryNoteChange = {}, onDeliveryCodeChange = {}, onConfirmDelivery = { _, _ -> }, onDoneAfterDelivery = {},
+            onOpenIssueSheet = {}, onDismissIssueSheet = {}, onSelectIssueCode = {}, onIssueNoteChange = {}, onSubmitIssue = {}, onDismissIssueReported = {},
+        )
+    }
+}
+
+@TripStatePreviews
+@Composable
+private fun TripEndedBeforePickupPreview() {
+    DriverTheme {
+        TripScreen(
+            state = TripUiState(
+                phase = TripPhase.Resolved(
+                    order = previewAssignedOrder.copy(status = "rejected", pickedUpAt = null),
+                    outcome = TripOutcome.Rejected,
+                ),
+            ),
+            onOpenNotifications = null, onRetryLoad = {}, onExitEndedTrip = {}, onPickUp = {}, onOpenDeliverySheet = {}, onDismissDeliverySheet = {},
             onDeliveryAmountChange = {}, onDeliveryNoteChange = {}, onDeliveryCodeChange = {}, onConfirmDelivery = { _, _ -> }, onDoneAfterDelivery = {},
             onOpenIssueSheet = {}, onDismissIssueSheet = {}, onSelectIssueCode = {}, onIssueNoteChange = {}, onSubmitIssue = {}, onDismissIssueReported = {},
         )
@@ -1374,7 +1608,7 @@ private fun TripLoadFailedPreview() {
     DriverTheme {
         TripScreen(
             state = TripUiState(phase = TripPhase.LoadFailed(DriverApiError.Offline)),
-            onOpenNotifications = null, onRetryLoad = {}, onPickUp = {}, onOpenDeliverySheet = {}, onDismissDeliverySheet = {},
+            onOpenNotifications = null, onRetryLoad = {}, onExitEndedTrip = {}, onPickUp = {}, onOpenDeliverySheet = {}, onDismissDeliverySheet = {},
             onDeliveryAmountChange = {}, onDeliveryNoteChange = {}, onDeliveryCodeChange = {}, onConfirmDelivery = { _, _ -> }, onDoneAfterDelivery = {},
             onOpenIssueSheet = {}, onDismissIssueSheet = {}, onSelectIssueCode = {}, onIssueNoteChange = {}, onSubmitIssue = {}, onDismissIssueReported = {},
         )

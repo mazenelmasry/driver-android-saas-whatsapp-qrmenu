@@ -36,6 +36,7 @@
 
     <string name="account_sign_out_confirm_title">سائن آؤٹ کریں؟</string>
     <string name="account_sign_out_confirm_body">دوبارہ سائن ان کرنے کے لیے آپ کو اپنا فون نمبر درکار ہوگا۔</string>
+    <string name="account_sign_out_confirm_unsent_actions_warning">آپ کے کچھ اقدامات ابھی تک ریسٹورنٹ تک نہیں پہنچے۔ اس ڈیوائس پر دوبارہ سائن ان کرنے پر وہ خودکار طور پر بھیج دیے جائیں گے۔</string>
     <string name="account_sign_out_confirm_confirm">سائن آؤٹ</string>
     <string name="account_sign_out_confirm_cancel">منسوخ کریں</string>
 

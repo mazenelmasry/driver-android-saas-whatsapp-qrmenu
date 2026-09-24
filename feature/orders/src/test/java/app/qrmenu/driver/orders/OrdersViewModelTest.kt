@@ -383,4 +383,217 @@ class OrdersViewModelTest {
         val mine = model.state.value.mine
         assertEquals(listOf(first), mine.orders)
     }
+
+    // ── «خُذ الطلب» ─────────────────────────────────────────────────────
+    //
+    // 🔴 These drive the VIEWMODEL, which is what the screen's button calls —
+    // not the repository or the API directly. The whole reason this feature
+    // was missing for ten weeks is that the backend's `claim` was fully built
+    // and fully tested while NOTHING on the phone could reach it, and a test
+    // that calls the service itself would have stayed green throughout
+    // (CLAUDE.md, «اختبار يستدعى الخدمة لا يُثبت شيئاً عن وصول المستخدم إليها»).
+
+    @Test
+    fun `claiming an order opens its trip and drops it from the available list`() = runTest(dispatcher) {
+        val open = order(id = 31)
+        coEvery { orderApi.mine() } returns MyOrdersResponse(data = emptyList())
+        coEvery { orderApi.available() } returns AvailableOrdersResponse(data = listOf(open), context = defaultContext)
+        coEvery { orderApi.claim(31, any()) } returns open
+
+        val model = viewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+        assertEquals(listOf(open), model.state.value.available.orders)
+
+        var openedTrip: Long? = null
+        model.claim(31) { openedTrip = it }
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals("a won claim must land the driver on the trip", 31L, openedTrip)
+        assertNull(model.state.value.claimingOrderId)
+        assertNull("winning is not a message", model.state.value.claimMessage)
+        assertTrue(
+            "the order is the driver's now — leaving it in «المتاحة» invites a second tap",
+            model.state.value.available.orders.none { it.id == 31L },
+        )
+    }
+
+    @Test
+    fun `losing the race says so, drops the card, and never opens a trip`() = runTest(dispatcher) {
+        val open = order(id = 31)
+        // A realistic server: once somebody else holds the order it stops
+        // being offered. A stub that kept returning it would be testing a
+        // backend that cannot exist — and would hide the fact that the
+        // reconciling refresh is deliberately allowed to bring an order BACK,
+        // which is exactly what must happen if the winner later releases it.
+        var taken = false
+        coEvery { orderApi.mine() } returns MyOrdersResponse(data = emptyList())
+        coEvery { orderApi.available() } answers {
+            AvailableOrdersResponse(
+                data = if (taken) emptyList() else listOf(open),
+                context = defaultContext,
+            )
+        }
+        coEvery { orderApi.claim(31, any()) } answers {
+            taken = true
+            throw httpError(409, """{"code":"already_claimed","message":"Taken"}""")
+        }
+
+        val model = viewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+        assertTrue("precondition: the order is on offer", model.state.value.available.orders.any { it.id == 31L })
+
+        var openedTrip: Long? = null
+        model.claim(31) { openedTrip = it }
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertNull("a lost race must not navigate anywhere", openedTrip)
+        assertEquals(ClaimMessage.Lost, model.state.value.claimMessage)
+        assertNull(
+            "losing is the ordinary rhythm of self_claim, so it carries no error to render in red",
+            model.state.value.claimFailure,
+        )
+        assertNull(
+            "and it must never reach the list's red error banner either",
+            model.state.value.available.error,
+        )
+        assertTrue(
+            "somebody else has it — it cannot stay on offer",
+            model.state.value.available.orders.none { it.id == 31L },
+        )
+    }
+
+    @Test
+    fun `an order the winner releases is allowed back into the list`() = runTest(dispatcher) {
+        // The companion to the test above, and the reason the lost card is
+        // dropped from STATE rather than remembered in a "never show again"
+        // set: `release` puts an order back on offer, and a driver who lost
+        // the first race must be able to win the second.
+        val open = order(id = 31)
+        coEvery { orderApi.mine() } returns MyOrdersResponse(data = emptyList())
+        coEvery { orderApi.available() } returns AvailableOrdersResponse(data = listOf(open), context = defaultContext)
+        coEvery { orderApi.claim(31, any()) } throws
+            httpError(409, """{"code":"already_claimed","message":"Taken"}""")
+
+        val model = viewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        model.claim(31) {}
+        dispatcher.scheduler.advanceUntilIdle()
+
+        // The stub here NEVER stops offering the order, which is what the
+        // server does after a release. The refresh must therefore restore it.
+        assertTrue(
+            "a released order has to be winnable again",
+            model.state.value.available.orders.any { it.id == 31L },
+        )
+        assertEquals(
+            "and the driver is still told they lost the first race",
+            ClaimMessage.Lost,
+            model.state.value.claimMessage,
+        )
+    }
+
+    @Test
+    fun `a claim that fails for any other reason leaves the order on offer`() = runTest(dispatcher) {
+        // Offline is the case that matters: the order is still there to be
+        // taken once the driver is back on signal, and removing it would hide
+        // work they can still do.
+        val open = order(id = 31)
+        coEvery { orderApi.mine() } returns MyOrdersResponse(data = emptyList())
+        coEvery { orderApi.available() } returns AvailableOrdersResponse(data = listOf(open), context = defaultContext)
+        coEvery { orderApi.claim(31, any()) } throws IOException("no signal")
+
+        val model = viewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        model.claim(31) { throw AssertionError("must not navigate on a failed claim") }
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(ClaimMessage.Failed, model.state.value.claimMessage)
+        assertEquals(DriverApiError.Offline, model.state.value.claimFailure)
+        assertTrue(
+            "the order is still open — a lost connection is not a lost race",
+            model.state.value.available.orders.any { it.id == 31L },
+        )
+    }
+
+    @Test
+    fun `a second tap while a claim is in flight is dropped, not queued`() = runTest(dispatcher) {
+        // A driver holds one trip at a time (decision 21), so a queued second
+        // claim could only ever end in a refusal the driver never asked for.
+        val first = order(id = 31)
+        val second = order(id = 32)
+        coEvery { orderApi.mine() } returns MyOrdersResponse(data = emptyList())
+        coEvery { orderApi.available() } returns
+            AvailableOrdersResponse(data = listOf(first, second), context = defaultContext)
+        coEvery { orderApi.claim(31, any()) } returns first
+
+        val model = viewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        model.claim(31) {}
+        // Not advanced: the first claim is still in flight right here.
+        assertEquals(31L, model.state.value.claimingOrderId)
+
+        model.claim(32) { throw AssertionError("the second tap must not run") }
+        assertEquals(
+            "the in-flight claim is untouched by the second tap",
+            31L,
+            model.state.value.claimingOrderId,
+        )
+
+        dispatcher.scheduler.advanceUntilIdle()
+        coVerify(exactly = 0) { orderApi.claim(32, any()) }
+    }
+
+    @Test
+    fun `each claim carries its own idempotency key`() = runTest(dispatcher) {
+        // Generated once per COMMAND, never per attempt — a driver's re-tap is
+        // a new command and must not be collapsed into the previous one by the
+        // server's idempotency middleware.
+        val open = order(id = 31)
+        val keys = mutableListOf<String>()
+        coEvery { orderApi.mine() } returns MyOrdersResponse(data = emptyList())
+        coEvery { orderApi.available() } returns AvailableOrdersResponse(data = listOf(open), context = defaultContext)
+        coEvery { orderApi.claim(31, capture(keys)) } throws IOException("no signal")
+
+        val model = viewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        model.claim(31) {}
+        dispatcher.scheduler.advanceUntilIdle()
+        model.claim(31) {}
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(2, keys.size)
+        assertTrue("two taps are two commands", keys[0] != keys[1])
+        assertTrue("and neither may be blank", keys.all { it.isNotBlank() })
+    }
+
+    @Test
+    fun `starting a new claim clears the previous message`() = runTest(dispatcher) {
+        val open = order(id = 31)
+        coEvery { orderApi.mine() } returns MyOrdersResponse(data = emptyList())
+        coEvery { orderApi.available() } returns AvailableOrdersResponse(data = listOf(open), context = defaultContext)
+        coEvery { orderApi.claim(31, any()) } throws IOException("no signal")
+
+        val model = viewModel()
+        dispatcher.scheduler.advanceUntilIdle()
+
+        model.claim(31) {}
+        dispatcher.scheduler.advanceUntilIdle()
+        assertEquals(ClaimMessage.Failed, model.state.value.claimMessage)
+
+        model.claim(31) {}
+        assertNull(
+            "a stale sentence about the last attempt must not sit over the new one",
+            model.state.value.claimMessage,
+        )
+
+        dispatcher.scheduler.advanceUntilIdle()
+        model.dismissClaimMessage()
+        assertNull(model.state.value.claimMessage)
+        assertNull(model.state.value.claimFailure)
+    }
+
 }

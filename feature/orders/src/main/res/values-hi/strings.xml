@@ -18,10 +18,15 @@
     <string name="orders_card_fee_label">आपकी कमाई</string>
 
     <string name="orders_action_picked_up">ऑर्डर ले लिया</string>
+    <string name="orders_action_continue_delivery">डिलीवरी जारी रखें</string>
 
     <string name="orders_readiness_counting">लगभग %1$s मिनट में तैयार</string>
     <string name="orders_readiness_ready">तैयार</string>
     <string name="orders_readiness_awaiting_kitchen">रसोई में — अभी तैयार नहीं</string>
 
     <string name="orders_error_retry">फिर से कोशिश करें</string>
+    <string name="orders_action_claim">यह ऑर्डर लें</string>
+    <string name="orders_claim_in_progress">लिया जा रहा है…</string>
+    <string name="orders_claim_lost">किसी अन्य ड्राइवर ने आपसे पहले यह ऑर्डर ले लिया।</string>
+    <string name="a11y_claim_order">%1$s का ऑर्डर लें, %2$s</string>
 </resources>

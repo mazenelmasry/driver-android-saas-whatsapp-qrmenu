@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -38,7 +39,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import app.qrmenu.driver.designsystem.theme.ControlSize
@@ -75,7 +79,13 @@ import kotlinx.coroutines.delay
  * guarantee and not a discipline this function has to uphold on its own.
  */
 @Composable
-fun OfferedOrderCard(summary: OfferedOrderSummary, modifier: Modifier = Modifier) {
+fun OfferedOrderCard(
+    summary: OfferedOrderSummary,
+    onClaim: () -> Unit,
+    isClaiming: Boolean,
+    isAnotherClaimInFlight: Boolean,
+    modifier: Modifier = Modifier,
+) {
     OrderCardShell(modifier = modifier, isMine = false) {
         OrderCardHeader(
             companyName = summary.companyName,
@@ -98,14 +108,86 @@ fun OfferedOrderCard(summary: OfferedOrderSummary, modifier: Modifier = Modifier
             currency = summary.currency,
             isPaidOnline = summary.isPaidOnline,
         )
+
+        ClaimButton(
+            summary = summary,
+            onClaim = onClaim,
+            isClaiming = isClaiming,
+            isAnotherClaimInFlight = isAnotherClaimInFlight,
+        )
+    }
+}
+
+/**
+ * «خُذ الطلب» — the whole reason this card stopped being read-only.
+ *
+ * 🔴 Shown on EVERY card in «المتاحة», with no knowledge of the branch's
+ * assignment mode, because the list's contents are already the permission:
+ * the server's `isVisibleToDriver()` is the exact predicate its `claim`
+ * re-checks (see `OrdersRepository.claim`). A mode flag on the wire would be
+ * a second, drifting copy of a decision the server has already made.
+ *
+ * 🔴 NOT disabled on an unready order. Unlike «استلمت الطلب» on the assigned
+ * card — which asserts the food is in the driver's hands and so must wait for
+ * the kitchen — taking an order is exactly what a driver SHOULD do while it
+ * is still cooking: that is the whole point of `driver_show_before_ready`,
+ * and the readiness pill above already tells them how long the wait is.
+ * Disabling this would hand every early order to whoever refreshed last.
+ *
+ * Disabled only while a DIFFERENT card's claim is in flight — a driver holds
+ * one trip at a time, so a second tap could only end in a refusal.
+ */
+@Composable
+private fun ClaimButton(
+    summary: OfferedOrderSummary,
+    onClaim: () -> Unit,
+    isClaiming: Boolean,
+    isAnotherClaimInFlight: Boolean,
+) {
+    // The button's own label is two words; a driver moving by voice or by
+    // TalkBack needs to know WHICH order it belongs to, since a list of
+    // identical "Take this order" buttons names nothing.
+    val a11yLabel = stringResource(R.string.a11y_claim_order, summary.companyName, summary.branchName)
+
+    Button(
+        onClick = onClaim,
+        enabled = !isClaiming && !isAnotherClaimInFlight,
+        shape = RoundedCornerShape(Radius.card),
+        modifier = Modifier
+            .fillMaxWidth()
+            // 64dp, never less — a thumb on a moving vehicle, possibly
+            // gloved. Same floor as every other primary action in the app.
+            .heightIn(min = TouchTarget.primary)
+            .semantics { contentDescription = a11yLabel },
+    ) {
+        if (isClaiming) {
+            // The one place a spinner is allowed: INSIDE the button that was
+            // just pressed, saying "this press is being worked on" — never
+            // standing in for a screen's content.
+            CircularProgressIndicator(
+                modifier = Modifier.size(ControlSize.buttonSpinner),
+                strokeWidth = ControlSize.buttonSpinnerStroke,
+                color = MaterialTheme.colorScheme.onPrimary,
+            )
+        } else {
+            Text(
+                text = stringResource(R.string.orders_action_claim),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+            )
+        }
     }
 }
 
 /**
  * The "طلباتى" card — the ASSIGNED shape, so the customer and address are
  * exactly the fields this driver has earned by holding the order (see
- * [AssignedOrderSummary]). The pickup action is rendered here but DISABLED
- * until the order reads ready.
+ * [AssignedOrderSummary]). The primary button's label and enabled state come
+ * from [assignedCardAction] — DISABLED and "استلمت الطلب" until the order
+ * reads ready, ENABLED as "استلمت الطلب" once it does, and — see that
+ * function's own doc — ENABLED as "متابعة التوصيل" once [pickedUpAt] is set,
+ * rather than staying disabled forever with no way back into a trip already
+ * in progress.
  *
  * 🔴 [onOpenTrip] is week 5 landing the tap handler week 3 deliberately left
  * empty. It matters more than "the button now works": accepting an offer is
@@ -122,13 +204,13 @@ fun AssignedOrderCard(
     modifier: Modifier = Modifier,
 ) {
     val ready = readinessState(summary.expectedReadyAt, summary.readyAt, Instant.now()) is Readiness.Ready
-    val alreadyPickedUp = summary.pickedUpAt != null
+    val action = assignedCardAction(ready = ready, pickedUp = summary.pickedUpAt != null)
 
-    // 🔴 The whole card opens the trip, not just the button. The button is
-    // correctly disabled once the order is picked up — and wiring the only
-    // way into the trip screen to it meant a driver MID-DELIVERY, holding the
-    // food, had no route back to "سلّمت" at all. The action a card offers may
-    // run out; the card is how you reach the thing itself.
+    // 🔴 The whole card opens the trip, not just the button — a driver
+    // MID-DELIVERY, holding the food, needs a route back to "سلّمت" as much as
+    // one who has yet to pick up needs a route to "استلمت". The action a
+    // card's button offers may be disabled; the card itself is always how you
+    // reach the thing itself.
     OrderCardShell(modifier = modifier, isMine = true, onClick = onOpenTrip) {
         OrderCardHeader(
             companyName = summary.companyName,
@@ -154,15 +236,20 @@ fun AssignedOrderCard(
 
         CardDivider()
 
-        // Earned by holding the order — never rendered on an offer.
-        DetailRow(icon = Icons.Filled.Person, text = summary.customerName)
+        // Earned by holding the order — never rendered on an offer. A blank
+        // name is treated as absent, same rule `TripDisplay`'s
+        // `blankToNull` enforces on the trip screen itself: an icon paired
+        // with nothing reads as a broken app, not as "no name given".
+        if (summary.customerName.isNotBlank()) {
+            DetailRow(icon = Icons.Filled.Person, text = summary.customerName)
+        }
         if (summary.addressText.isNotBlank()) {
             DetailRow(icon = Icons.Filled.Place, text = summary.addressText, maxLines = 2)
         }
 
         Button(
             onClick = onOpenTrip,
-            enabled = ready && !alreadyPickedUp,
+            enabled = action != AssignedCardAction.WaitingForReady,
             shape = RoundedCornerShape(Radius.card),
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary,
@@ -175,7 +262,13 @@ fun AssignedOrderCard(
                 .heightIn(min = TouchTarget.primary),
         ) {
             Text(
-                text = stringResource(R.string.orders_action_picked_up),
+                text = stringResource(
+                    if (action == AssignedCardAction.ContinueDelivery) {
+                        R.string.orders_action_continue_delivery
+                    } else {
+                        R.string.orders_action_picked_up
+                    },
+                ),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
             )
@@ -249,13 +342,18 @@ private fun OrderCardHeader(
         RestaurantMark(companyName)
 
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
+            // 🔴 No `maxLines`/ellipsis, by project rule: a restaurant or
+            // branch name is never truncated. At 200% system font — which
+            // this app is required to support — "Flow Test Cafe" was being
+            // served to the driver as "Flow Tes…", and a driver choosing
+            // between two branches of the same chain cannot tell them apart
+            // from a cut name. It wraps instead; a taller card is the cheap
+            // half of that trade.
             Text(
                 text = companyName,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
             )
             Row(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.xxs),
@@ -267,12 +365,12 @@ private fun OrderCardHeader(
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(ControlSize.inlineIcon),
                 )
+                // Same rule, same reason — the branch name is half of
+                // "which of these two do I drive to".
                 Text(
                     text = listOfNotNull(branchName, zoneName).joinToString(" · "),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }
@@ -350,12 +448,22 @@ private fun OrderMoneyBlock(
     currency: String,
     isPaidOnline: Boolean,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-        verticalAlignment = Alignment.Bottom,
-    ) {
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
+    // 🔴 A money bug, not a layout preference — the exact one CLAUDE.md
+    // already records against the wallet's two tiles, reappearing here
+    // because the fix was applied to that screen and not to this card.
+    // Measured at 200% system font on the device: the fee shared a row with
+    // the cash chip, `maxLines = 1` with no ellipsis clipped "12.00 SAR"
+    // down to "12." — losing both decimals AND the currency. That is not a
+    // smaller number, it is a WRONG one, and it is the number the driver
+    // decides on. Above the threshold the two stop sharing a row, and the
+    // figure is allowed a second line as a backstop.
+    val stacked = LocalDensity.current.fontScale >= STACK_MONEY_ABOVE_FONT_SCALE
+
+    val fee: @Composable (Modifier) -> Unit = { feeModifier ->
+        Column(
+            modifier = feeModifier,
+            verticalArrangement = Arrangement.spacedBy(Spacing.xxs),
+        ) {
             Text(
                 text = stringResource(R.string.orders_card_fee_label),
                 style = MaterialTheme.typography.labelMedium,
@@ -366,10 +474,41 @@ private fun OrderMoneyBlock(
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
-                maxLines = 1,
+                maxLines = 2,
             )
         }
+    }
 
+    if (stacked) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+        ) {
+            fee(Modifier.fillMaxWidth())
+            MoneyStatusChip(cashToCollect = cashToCollect, currency = currency, isPaidOnline = isPaidOnline)
+        }
+
+        return
+    }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+        verticalAlignment = Alignment.Bottom,
+    ) {
+        fee(Modifier.weight(1f))
+
+        MoneyStatusChip(cashToCollect = cashToCollect, currency = currency, isPaidOnline = isPaidOnline)
+    }
+}
+
+/**
+ * "Paid online" or "collect N" — one chip, so the stacked and side-by-side
+ * layouts above cannot drift into saying different things about the money.
+ */
+@Composable
+private fun MoneyStatusChip(cashToCollect: Double, currency: String, isPaidOnline: Boolean) {
+    Box {
         if (isPaidOnline) {
             InfoChip(
                 icon = Icons.Filled.CreditCard,
@@ -393,6 +532,16 @@ private fun OrderMoneyBlock(
         }
     }
 }
+
+/**
+ * Above this system font scale the fee and the payment chip stop sharing a
+ * row. Same number and same reason as the wallet's `STACK_FIGURES_ABOVE_FONT_SCALE`
+ * — deliberately a second constant rather than a shared one, because these
+ * are two different layouts that happen to break at the same width, and
+ * tying them together would make a future change to one silently move the
+ * other.
+ */
+private const val STACK_MONEY_ABOVE_FONT_SCALE = 1.5f
 
 @Composable
 private fun InfoChip(

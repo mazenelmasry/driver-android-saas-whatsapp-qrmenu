@@ -38,6 +38,13 @@
 
     <string name="trip_outcome_close">বন্ধ করুন</string>
 
+    <!-- Trip screen — the restaurant ended this order while the driver still held it -->
+    <string name="trip_ended_cancelled_title">অর্ডার বাতিল করা হয়েছে</string>
+    <string name="trip_ended_rejected_title">অর্ডার প্রত্যাখ্যান করা হয়েছে</string>
+    <string name="trip_ended_body_return_to_branch">রেস্তোরাঁ এই অর্ডারটি শেষ করে দিয়েছে। এটি শাখায় ফেরত দিন।</string>
+    <string name="trip_ended_body_nothing_to_return">আপনি অর্ডারটি সংগ্রহ করার আগেই রেস্তোরাঁ এটি শেষ করে দিয়েছে। ফেরত দেওয়ার কিছু নেই — আপনি আপনার অর্ডারে ফিরে যেতে পারেন।</string>
+    <string name="trip_ended_back_to_orders">অর্ডারে ফিরে যান</string>
+
     <string name="trip_title">ট্রিপ</string>
     <string name="trip_area_label">ডেলিভারি এলাকা</string>
     <string name="trip_address_label">ঠিকানা</string>
@@ -75,6 +82,7 @@
     <string name="trip_delivery_code_label">ডেলিভারি কোড</string>
     <string name="trip_delivery_code_hint">গ্রাহককে তাদের অর্ডার পৃষ্ঠা থেকে ৪-সংখ্যার কোড পড়তে বলুন</string>
     <string name="trip_delivery_code_required">গ্রাহক আপনাকে যে কোডটি দেয় তা লিখুন</string>
+    <string name="trip_delivery_code_locked">এই অর্ডারের জন্য অনেক বেশি চেষ্টা হয়ে গেছে। কোডটি মওকুফ করাতে শাখায় কল করুন।</string>
     <string name="trip_delivery_already_paid">অনলাইনে পরিশোধিত — সংগ্রহ করার কিছু নেই</string>
     <string name="trip_delivery_confirm">ডেলিভারি নিশ্চিত করুন</string>
     <string name="trip_delivery_cancel">ফিরে যান</string>

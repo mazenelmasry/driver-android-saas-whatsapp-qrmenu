@@ -7,6 +7,8 @@
     <string name="permission_location_partial_title">केवल ऐप खुला होने पर अनुमति</string>
     <string name="permission_location_partial_body">यह इसी तरह काम करता है। पर फ़ोन लंबे समय तक सोया रहे तो ऑर्डर आना रुक सकता है।</string>
     <string name="permission_location_action">सेटिंग्स</string>
+    <string name="location_services_disabled_title">लोकेशन बंद है</string>
+    <string name="location_services_disabled_body">लोकेशन सेवाएँ चालू करें ताकि रेस्तराँ आपकी जगह देख सके — आप अभी भी उपलब्ध दिख रहे हैं, लेकिन सर्वर तक कोई लाइव लोकेशन नहीं पहुँच रही।</string>
     <string name="tab_wallet">वॉलेट</string>
     <string name="tab_account">मेरा खाता</string>
 
@@ -17,4 +19,11 @@
     <string name="unsent_actions_body">सिग्नल आते ही आपका फ़ोन इन्हें अपने आप भेज देगा। इन्हें दोबारा न करें।</string>
     <string name="notification_health_dnd_title">डू नॉट डिस्टर्ब अभी चालू है</string>
     <string name="notification_health_dnd_body">ऑर्डर बिना आवाज़ के आ सकता है और आप उसे चूक सकते हैं। सेटिंग्स में इस ऐप को अनुमति दें, या डू नॉट डिस्टर्ब बंद करें।</string>
+    <string name="notification_health_disabled_title">नोटिफिकेशन बंद हैं</string>
+    <string name="notification_health_disabled_body">जब तक आप उन्हें दोबारा चालू नहीं करते, आपको किसी भी ऑर्डर की सूचना नहीं मिलेगी — ऐप में कुछ और आपका फ़ोन नहीं जगा सकता।</string>
+    <string name="notification_health_channel_title">ऑर्डर अलर्ट म्यूट हैं</string>
+    <string name="notification_health_channel_body">नोटिफिकेशन चालू हैं, लेकिन ऑर्डर अलर्ट खुद आपके फ़ोन की सेटिंग्स में बंद है।</string>
+    <string name="notification_health_action">सेटिंग्स</string>
+    <string name="offer_notification_title">नई डिलीवरी ऑफ़र</string>
+    <string name="offer_notification_body">समाप्त होने से पहले स्वीकार करने के लिए ऐप खोलें।</string>
 </resources>

@@ -39,6 +39,7 @@
 
     <string name="account_sign_out_confirm_title">Sign out?</string>
     <string name="account_sign_out_confirm_body">You will need your phone number to sign in again.</string>
+    <string name="account_sign_out_confirm_unsent_actions_warning">Some of your actions haven\'t reached the restaurant yet. They will be sent automatically once you sign in again on this device.</string>
     <string name="account_sign_out_confirm_confirm">Sign out</string>
     <string name="account_sign_out_confirm_cancel">Cancel</string>
 

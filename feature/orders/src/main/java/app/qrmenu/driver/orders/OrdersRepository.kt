@@ -3,6 +3,7 @@ package app.qrmenu.driver.orders
 import app.qrmenu.driver.network.api.OrderApi
 import app.qrmenu.driver.network.dto.AvailabilityContextDto
 import app.qrmenu.driver.network.dto.DriverOrderDto
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -41,4 +42,32 @@ class OrdersRepository @Inject constructor(
      * line's job.
      */
     suspend fun mine(): List<DriverOrderDto> = orderApi.mine().data.take(1)
+
+    /**
+     * «خُذ الطلب» — take an order out of the open list.
+     *
+     * 🔴 Safe to call on EVERY card in «المتاحة», in every assignment mode,
+     * and that is a property of the server rather than a rule this app has to
+     * remember: `DispatchPolicy::isVisibleToDriver()` is the exact predicate
+     * the backend's own `claim` re-checks. `manual` puts nothing in this list
+     * at all; an automatic mode puts in only the order this driver already
+     * holds a live offer for, or one the assigner opened to everyone after
+     * running out of candidates. So the app never needs to know the branch's
+     * `driver_assignment_mode` — which is why it is deliberately absent from
+     * the contract, not merely missing from it.
+     *
+     * Claiming an order this driver was individually offered settles that
+     * offer identically to `accept`, so the one button is correct for both
+     * shapes of row.
+     *
+     * Returns the order in its ASSIGNED shape (customer and address now
+     * present — earned by holding it). Throws on 409 `already_claimed`, which
+     * is the ordinary outcome of losing a race, not a fault.
+     *
+     * The `Idempotency-Key` is generated here, once per COMMAND — a driver's
+     * tap is what invokes this, and a re-tap is a new command deserving a new
+     * key. Same rule as `OfferRepository`.
+     */
+    suspend fun claim(orderId: Long): DriverOrderDto =
+        orderApi.claim(orderId, UUID.randomUUID().toString())
 }

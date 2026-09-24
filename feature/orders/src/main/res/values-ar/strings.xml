@@ -17,10 +17,15 @@
     <string name="orders_card_fee_label">أجرتك</string>
 
     <string name="orders_action_picked_up">استلمت الطلب</string>
+    <string name="orders_action_continue_delivery">متابعة التوصيل</string>
 
     <string name="orders_readiness_counting">جاهز خلال ~%1$s د</string>
     <string name="orders_readiness_ready">جاهز</string>
     <string name="orders_readiness_awaiting_kitchen">عند المطبخ — لم يجهز بعد</string>
 
     <string name="orders_error_retry">أعد المحاولة</string>
+    <string name="orders_action_claim">خُذ الطلب</string>
+    <string name="orders_claim_in_progress">جارٍ الأخذ…</string>
+    <string name="orders_claim_lost">سُبقت إليه — أخذه سائق آخر قبلك.</string>
+    <string name="a11y_claim_order">خُذ طلب %1$s، %2$s</string>
 </resources>

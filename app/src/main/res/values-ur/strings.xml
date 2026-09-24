@@ -7,6 +7,8 @@
     <string name="permission_location_partial_title">صرف ایپ کھلی ہو تو اجازت ہے</string>
     <string name="permission_location_partial_body">یہ اس طرح کام کرتا ہے۔ لیکن اگر فون دیر تک بند رہے تو آرڈر آنا رک سکتے ہیں۔</string>
     <string name="permission_location_action">ترتیبات</string>
+    <string name="location_services_disabled_title">لوکیشن بند ہے</string>
+    <string name="location_services_disabled_body">لوکیشن سروسز آن کریں تاکہ ریسٹورنٹ آپ کی جگہ دیکھ سکے — آپ اب بھی دستیاب دکھائی دے رہے ہیں، لیکن سرور تک کوئی لائیو لوکیشن نہیں پہنچ رہی۔</string>
     <string name="tab_wallet">بٹوہ</string>
     <string name="tab_account">میرا اکاؤنٹ</string>
 
@@ -17,4 +19,11 @@
     <string name="unsent_actions_body">سگنل آتے ہی آپ کا فون انہیں خودکار بھیج دے گا۔ انہیں دوبارہ نہ کریں۔</string>
     <string name="notification_health_dnd_title">ڈسٹرب نہ کریں‬ اِس وقت آن ہے</string>
     <string name="notification_health_dnd_body">آرڈر بغیر آواز کے آ سکتا ہے اور آپ سے چھوٹ سکتا ہے۔ سیٹنگز میں اس ایپ کو اجازت دیں، یا ڈسٹرب نہ کریں بند کریں۔</string>
+    <string name="notification_health_disabled_title">اطلاعات بند ہیں</string>
+    <string name="notification_health_disabled_body">جب تک آپ انہیں دوبارہ آن نہیں کرتے، آپ کو کسی بھی آرڈر کی اطلاع نہیں ملے گی — ایپ میں کوئی اور چیز آپ کا فون نہیں جگا سکتی۔</string>
+    <string name="notification_health_channel_title">آرڈر الرٹس خاموش ہیں</string>
+    <string name="notification_health_channel_body">اطلاعات آن ہیں، لیکن آرڈر الرٹ خود آپ کے فون کی سیٹنگز میں بند ہے۔</string>
+    <string name="notification_health_action">ترتیبات</string>
+    <string name="offer_notification_title">نئی ڈیلیوری کی پیشکش</string>
+    <string name="offer_notification_body">ختم ہونے سے پہلے قبول کرنے کے لیے ایپ کھولیں۔</string>
 </resources>

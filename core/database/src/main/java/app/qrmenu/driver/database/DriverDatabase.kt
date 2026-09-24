@@ -13,7 +13,7 @@ import app.qrmenu.driver.database.entity.NotificationHistoryEntity
 // See CLAUDE.md's "سجلّ مخطط Room" — keep that table in sync with every
 // version bump made here.
 @Database(
-    version = 2,
+    version = 3,
     exportSchema = true,
     entities = [
         DriverActionOutboxEntity::class,
@@ -55,6 +55,23 @@ val MIGRATION_1_2: Migration = object : Migration(1, 2) {
         db.execSQL(
             "CREATE INDEX IF NOT EXISTS `index_notification_history_is_read` " +
                 "ON `notification_history` (`is_read`)",
+        )
+    }
+}
+
+/**
+ * Adds `driver_actions_outbox.driver_id` — see [DriverActionOutboxEntity]'s
+ * class doc for why an unstamped outbox row on a shared device could be
+ * replayed and lost under a second driver's session. Nullable with no
+ * backfill: an existing queued row (queued by whoever was signed in before
+ * this migration ships) has no way to know its author retroactively, so it
+ * keeps today's behaviour — replayed regardless of who is signed in now —
+ * rather than being guessed at or dropped.
+ */
+val MIGRATION_2_3: Migration = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "ALTER TABLE `driver_actions_outbox` ADD COLUMN `driver_id` INTEGER DEFAULT NULL",
         )
     }
 }

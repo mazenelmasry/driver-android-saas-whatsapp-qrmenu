@@ -37,6 +37,37 @@ fun DriverOrderDto.strippedOfPii(): DriverOrderDto = copy(customer = null, deliv
 fun DriverOrderDto.isReadyForPickup(): Boolean = status == STATUS_READY
 
 private const val STATUS_READY = "ready"
+private const val STATUS_CANCELLED = "cancelled"
+private const val STATUS_REJECTED = "rejected"
+
+/**
+ * 🔴 The restaurant ending a trip the driver is still HOLDING — not this
+ * driver declining, not the offer expiring (those are [OfferOutcome], a
+ * screen this driver already left behind by the time this can happen).
+ *
+ * The backend does not clear `orders.delivery_driver_id` on cancel/reject —
+ * `GET driver/orders/{id}` keeps answering with THIS order, in the ASSIGNED
+ * shape, status now `cancelled`/`rejected` (`DispatchPolicy::driverHoldsOrder`
+ * has no status filter). Silently rendering that as an ordinary
+ * [TripPhase.Content] is the bug this type exists to close: a driver reading
+ * a normal-looking trip screen for an order that is dead, with no button on
+ * it that does not either fail outright or complete a sale that no longer
+ * exists.
+ */
+enum class TripOutcome {
+    /** A confirmed order the restaurant called off after the fact. */
+    Cancelled,
+
+    /** A not-yet-accepted order the restaurant turned away. Rare for a driver to ever hold one — the dispatch usually only reaches a driver once an order is `ready` — but the wire vocabulary allows it, so this screen must too. */
+    Rejected,
+}
+
+/** `null` unless [DriverOrderDto.status] is one the restaurant used to end this order out from under a driver still holding it. */
+fun DriverOrderDto.toTripOutcome(): TripOutcome? = when (status) {
+    STATUS_CANCELLED -> TripOutcome.Cancelled
+    STATUS_REJECTED -> TripOutcome.Rejected
+    else -> null
+}
 
 /**
  * Whether a driver-entered `cash_collected` requires the mandatory reason the
@@ -51,6 +82,18 @@ private const val STATUS_READY = "ready"
  */
 fun deliveryAmountChanged(cashToCollect: Double, enteredAmount: Double): Boolean =
     kotlin.math.abs(enteredAmount - cashToCollect) > 0.005
+
+/**
+ * The customer's code is always exactly four digits (contract: `^[0-9]{4}$`).
+ *
+ * Lives here, not in [TripScreen], because [deliveryBlockReason] needs the
+ * same number to decide when a code counts as "entered" — a bug fix in
+ * itself: the block reason used to accept any non-blank string, so three
+ * typed digits left "تأكيد التسليم" enabled and sent a request the server
+ * was always going to reject with `delivery_code_required`, the very error
+ * this field exists to pre-empt client-side.
+ */
+const val DELIVERY_CODE_LENGTH = 4
 
 /**
  * `null` when the delivery may proceed as entered. A non-null value is
@@ -94,7 +137,7 @@ fun deliveryBlockReason(
     codeRequired: Boolean = false,
     enteredCode: String? = null,
 ): DeliveryBlockReason? {
-    if (codeRequired && enteredCode.isNullOrBlank()) return DeliveryBlockReason.CodeRequired
+    if (codeRequired && enteredCode?.length != DELIVERY_CODE_LENGTH) return DeliveryBlockReason.CodeRequired
     if (!isCashOrder) return null
     if (enteredAmount == null) return DeliveryBlockReason.AmountRequired
     val changed = deliveryAmountChanged(cashToCollect, enteredAmount)

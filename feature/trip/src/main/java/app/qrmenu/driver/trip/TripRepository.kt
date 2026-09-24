@@ -3,6 +3,7 @@ package app.qrmenu.driver.trip
 import app.qrmenu.driver.database.dao.DriverActionOutboxDao
 import app.qrmenu.driver.database.entity.DriverActionOutboxEntity
 import app.qrmenu.driver.database.entity.DriverActionType
+import app.qrmenu.driver.datastore.TokenStore
 import app.qrmenu.driver.network.api.OrderApi
 import app.qrmenu.driver.network.dto.AcceptedDto
 import app.qrmenu.driver.network.dto.DeliveredRequest
@@ -68,9 +69,37 @@ class TripRepository @Inject constructor(
     private val orderApi: OrderApi,
     private val outboxDao: DriverActionOutboxDao,
     private val flushScheduler: OutboxFlushScheduler,
+    private val tokenStore: TokenStore,
 ) {
     /** Resumes a trip already in progress — after process death, the app was killed, or a fresh open of the tab. */
     suspend fun fetch(orderId: Long): DriverOrderDto = orderApi.order(orderId)
+
+    /**
+     * 🔴 The idempotency key a still-queued row already holds for this exact
+     * (order, action) pair — or `null` when there is none.
+     *
+     * [TripViewModel] mints one key per driver-committed action and is
+     * supposed to reuse it across every retry, but that promise only held
+     * within a single process lifetime: the key lived in a plain `var`, so a
+     * driver who tapped "سلّمت", had the app killed before a response came
+     * back, and reopened it, got a BRAND NEW key on the next tap — and a
+     * fresh [DriverActionOutboxEntity] row alongside whatever the first tap
+     * already queued. If both eventually reached the server (the first one
+     * having only been slow, not actually lost), that is two `delivered`
+     * calls for one delivery. [TripViewModel] calls this BEFORE minting a
+     * fresh key so a queued row from before the process died is reused
+     * instead of orphaned.
+     *
+     * Scoped to the driver signed in now, same rule [flushPending] already
+     * applies — a row a previous driver on a shared device left queued must
+     * not be handed back as if it belonged to whoever is signed in today.
+     */
+    suspend fun pendingKeyFor(orderId: Long, type: DriverActionType): String? {
+        val currentDriverId = tokenStore.driverId.value
+        return outboxDao.observePendingForDriver(currentDriverId).first()
+            .firstOrNull { it.order_id == orderId && it.action_type == type }
+            ?.idempotency_key
+    }
 
     suspend fun pickedUp(orderId: Long, idempotencyKey: String): DriverOrderDto {
         val occurredAtMillis = System.currentTimeMillis()
@@ -133,9 +162,18 @@ class TripRepository @Inject constructor(
      * right now) — see [TripViewModel]'s own doc for why that is the best this
      * module can do without a connectivity listener or WorkManager wired at
      * the app level.
+     *
+     * 🔴 Only replays rows that belong to the driver signed in RIGHT NOW (or
+     * carry no owner at all — see [DriverActionOutboxEntity.driver_id]'s own
+     * doc). On a shared device, driver B signing in must not inherit and
+     * replay driver A's still-queued commands under B's token: the server
+     * would answer 404 (order not B's) and [isPureRejection] would then
+     * DELETE that row, permanently losing A's delivery/cash record. A row
+     * skipped here simply stays queued — untouched — until A signs back in.
      */
     suspend fun flushPending() {
-        val pending = outboxDao.observePending().first()
+        val currentDriverId = tokenStore.driverId.value
+        val pending = outboxDao.observePendingForDriver(currentDriverId).first()
         for (action in pending) {
             val succeeded = runCatching { replay(action) }.isSuccess
             if (!succeeded) break
@@ -181,6 +219,7 @@ class TripRepository @Inject constructor(
                 payload_json = json.encodeToString(serializer, body),
                 occurred_at = occurredAtMillis,
                 created_at = System.currentTimeMillis(),
+                driver_id = tokenStore.driverId.value,
             ),
         )
     }

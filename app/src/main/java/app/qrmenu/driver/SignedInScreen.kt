@@ -360,6 +360,17 @@ fun SignedInScreen(
             // hide it the moment they switch away from it.
             NotificationHealthBanner()
 
+            // The SYSTEM location toggle, not the app's permission grant (see
+            // its own class doc) — same "shown on every tab" reasoning as the
+            // notification banner above: a driver spends the whole shift on
+            // متاح, and this is exactly the state that silently starves the
+            // server of live positions while nothing else here would say so.
+            LocationServicesDisabledBanner(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Spacing.md, vertical = Spacing.xxs),
+            )
+
             // A queued delivery is money the restaurant has not been told
             // about, and the driver must not have to be on one particular tab
             // to learn of it. Renders nothing when the queue is empty, which

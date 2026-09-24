@@ -1536,12 +1536,24 @@ components:
             - all_branches_closed
             - outside_radius
             - location_unknown
+            - location_stale
             - has_active_trip
             - nothing_pending
           description: >
             `nothing_pending` is the healthy case: online, in range, a branch is
             open, there simply is no order yet. It must read differently in the
             UI from `outside_radius`, which is the driver's own to fix.
+
+
+            `location_unknown` and `location_stale` are two different faults
+            with two different fixes and must never share a sentence:
+            `location_unknown` means no position has ever arrived (a
+            permission the driver grants in settings), while `location_stale`
+            means their position WAS arriving and stopped — the app was
+            closed or killed — so dispatch cannot see them even though they
+            are still flagged online. Before this reason existed that driver
+            was told `nothing_pending`, i.e. "all good, just wait", while no
+            order could ever reach them.
 
     LedgerSummary:
       type: object

@@ -47,6 +47,7 @@
     <string name="availability_reason_all_branches_closed">आपकी सभी जुड़ी शाखाएँ अभी बंद हैं।</string>
     <string name="availability_reason_outside_radius">आप अपनी सभी जुड़ी शाखाओं की डिलीवरी सीमा से बाहर हैं।</string>
     <string name="availability_reason_location_unknown">आपका स्थान अभी ज्ञात नहीं है — जब तक यह ज्ञात न हो, ऑर्डर आपसे मेल नहीं खा सकते।</string>
+    <string name="availability_reason_location_stale">हमें आपका स्थान नहीं मिल रहा — ऑर्डर पहुंचने के लिए ऐप खोलें।</string>
     <string name="availability_reason_has_active_trip">आपके पास एक ऑर्डर है। नए ऑफ़र इसके पूरा होने तक रुके रहेंगे।</string>
     <string name="availability_reason_nothing_pending">आप तैयार हैं — बस अभी आपके लिए कोई ऑर्डर नहीं है।</string>
     <string name="availability_reason_unknown">अभी कोई ऑर्डर नहीं।</string>

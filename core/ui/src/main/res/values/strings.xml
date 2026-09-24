@@ -47,6 +47,7 @@
     <string name="availability_reason_all_branches_closed">All your linked branches are closed right now.</string>
     <string name="availability_reason_outside_radius">You are outside every linked branch\'s delivery radius.</string>
     <string name="availability_reason_location_unknown">Your location is not known yet — orders cannot be matched to you until it is.</string>
+    <string name="availability_reason_location_stale">We are not receiving your location — open the app so orders can reach you.</string>
     <string name="availability_reason_has_active_trip">You have an order in hand. New offers pause until it is finished.</string>
     <string name="availability_reason_nothing_pending">You are ready — there is simply no order for you yet.</string>
     <string name="availability_reason_unknown">No orders right now.</string>

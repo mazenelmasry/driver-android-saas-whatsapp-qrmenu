@@ -43,6 +43,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.delay
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -137,6 +141,25 @@ fun AvailabilityRoute(
         onOpenNotifications = onOpenNotifications,
             unreadNotifications = unreadNotifications,
     )
+
+    // 🔴 Self-heals a transient initial-load failure — without this, a
+    // network blip at the exact moment this screen opened left it stuck
+    // showing "لا يوجد اتصال بالإنترنت" / "غير متاح" until the driver
+    // noticed and tapped retry themselves, even though they were online and
+    // available the whole time. Mirrors `:feature:orders`' own resumed-screen
+    // poll: runs ONLY while RESUMED (backgrounding, or switching to another
+    // tab under `SignedInScreen`'s `when`, cancels it), and `retryQuietly()`
+    // itself is a cheap no-op whenever there is no error to retry.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            viewModel.retryQuietly()
+            while (true) {
+                delay(AVAILABILITY_RETRY_INTERVAL_MS)
+                viewModel.retryQuietly()
+            }
+        }
+    }
 
     // Fires only once a request has SETTLED (never mid-flight, `isPending`
     // guards that), and only on the value the server actually returned — the
@@ -841,3 +864,6 @@ private fun AvailabilityLoadErrorPreview() {
 }
 
 // endregion
+
+/** How often [AvailabilityRoute] quietly retries a stuck initial load while resumed — see its own doc. */
+internal const val AVAILABILITY_RETRY_INTERVAL_MS = 10_000L

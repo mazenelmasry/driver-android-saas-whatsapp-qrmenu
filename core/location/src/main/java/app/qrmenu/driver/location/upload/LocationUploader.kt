@@ -5,6 +5,7 @@ import app.qrmenu.driver.network.dto.LocationBatchRequest
 import java.time.Clock
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CancellationException
 
 /**
  * Drives one batched `POST driver/location` cycle: take whatever
@@ -36,6 +37,13 @@ class LocationUploader @Inject constructor(
             api.sendLocations(LocationBatchRequest(points = batch))
             batcher.markUploadSucceeded()
             connectivity.markSendSucceeded(clock.millis())
+        } catch (cancelled: CancellationException) {
+            // A cancelled upload is not a failed one — swallowing this would
+            // both mask coroutine cancellation (breaking structured
+            // concurrency for whatever scope this ran in) and wrongly mark
+            // the batch failed/offline for a send that was never actually
+            // attempted-and-lost.
+            throw cancelled
         } catch (t: Throwable) {
             // A driver in a dead zone is the normal case, not the exception —
             // the points are NOT lost, they go back to the front of the queue.

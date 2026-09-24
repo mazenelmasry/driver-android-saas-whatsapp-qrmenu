@@ -7,6 +7,8 @@
     <string name="permission_location_partial_title">শুধু অ্যাপ খোলা থাকলে অনুমতি</string>
     <string name="permission_location_partial_body">এভাবেই কাজ করে। তবে ফোন দীর্ঘক্ষণ ঘুমিয়ে থাকলে অর্ডার আসা বন্ধ হতে পারে।</string>
     <string name="permission_location_action">সেটিংস</string>
+    <string name="location_services_disabled_title">লোকেশন বন্ধ আছে</string>
+    <string name="location_services_disabled_body">লোকেশন সার্ভিস চালু করুন যাতে রেস্তোরাঁ আপনার অবস্থান দেখতে পায় — আপনি এখনও উপলব্ধ দেখাচ্ছেন, কিন্তু সার্ভারে কোনো লাইভ লোকেশন পৌঁছাচ্ছে না।</string>
     <string name="tab_wallet">ওয়ালেট</string>
     <string name="tab_account">আমার অ্যাকাউন্ট</string>
 
@@ -17,4 +19,11 @@
     <string name="unsent_actions_body">সিগন্যাল এলেই আপনার ফোন নিজেই পাঠিয়ে দেবে। আবার করবেন না।</string>
     <string name="notification_health_dnd_title">ডু নট ডিস্টার্ব এখন চালু আছে</string>
     <string name="notification_health_dnd_body">অর্ডার শব্দ ছাড়াই আসতে পারে এবং আপনি সেটি মিস করতে পারেন। সেটিংসে এই অ্যাপটিকে অনুমতি দিন, অথবা ডু নট ডিস্টার্ব বন্ধ করুন।</string>
+    <string name="notification_health_disabled_title">নোটিফিকেশন বন্ধ আছে</string>
+    <string name="notification_health_disabled_body">আবার চালু না করা পর্যন্ত আপনি কোনো অর্ডারের সতর্কতা পাবেন না — অ্যাপে আর কিছুই আপনার ফোন জাগাতে পারবে না।</string>
+    <string name="notification_health_channel_title">অর্ডার সতর্কতা নিঃশব্দ করা আছে</string>
+    <string name="notification_health_channel_body">নোটিফিকেশন চালু আছে, কিন্তু অর্ডার সতর্কতা নিজেই আপনার ফোনের সেটিংসে বন্ধ করা আছে।</string>
+    <string name="notification_health_action">সেটিংস</string>
+    <string name="offer_notification_title">নতুন ডেলিভারি অফার</string>
+    <string name="offer_notification_body">মেয়াদ শেষ হওয়ার আগে গ্রহণ করতে অ্যাপ খুলুন।</string>
 </resources>
