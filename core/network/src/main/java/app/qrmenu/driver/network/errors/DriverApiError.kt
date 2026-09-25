@@ -42,6 +42,49 @@ sealed class DriverApiError {
     data class Decode(val cause: Throwable) : DriverApiError()
 
     data class Unknown(val cause: Throwable) : DriverApiError()
+
+    /**
+     * A phone-verification failure Firebase itself reported on-device — never
+     * a server round-trip, so it has no [DriverErrorCode] of its own (that
+     * enum is the FROZEN mirror of `openapi/driver.v1.yaml`'s `ErrorCode`,
+     * see [DriverErrorCode]'s doc; a client-local reason must not be added
+     * there or [BackendContractMirrorTest][app.qrmenu.driver.network.dto.BackendContractMirrorTest]
+     * fails the moment it drifts from that list).
+     *
+     * [PhoneVerificationFailureReason] carries just enough for `:core:ui` to
+     * pick a sentence (`DriverErrorText`), the same way [Api.code] does for a
+     * server rejection.
+     */
+    data class PhoneVerification(val reason: PhoneVerificationFailureReason) : DriverApiError()
+}
+
+/** See [DriverApiError.PhoneVerification]. */
+enum class PhoneVerificationFailureReason {
+    /**
+     * Play Integrity AND reCAPTCHA both failed to attest this app/device
+     * (`ERROR_MISSING_CLIENT_IDENTIFIER`, `ERROR_INVALID_APP_CREDENTIAL`).
+     * Usually transient — a stale Play Integrity token, a flaky reCAPTCHA
+     * page — so sending again is the right advice.
+     */
+    Unavailable,
+
+    /**
+     * `ERROR_APP_NOT_AUTHORIZED` — the SHA fingerprint/package this build
+     * ships does not match what is registered with Firebase. Retrying
+     * changes nothing; only a config fix (by us) does.
+     */
+    ConfigError,
+
+    /** `ERROR_WEB_CONTEXT_CANCELED` — the driver closed the reCAPTCHA tab/page themselves. */
+    Cancelled,
+
+    /**
+     * [com.google.firebase.FirebaseTooManyRequestsException] — Firebase has
+     * blocked ALL verification requests from this device for a period
+     * (hours), distinct from [DriverErrorCode.TooManyAttempts]'s "wait a
+     * little and try again" (a single code's short-lived attempt limit).
+     */
+    Blocked,
 }
 
 /**

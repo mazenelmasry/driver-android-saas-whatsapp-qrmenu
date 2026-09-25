@@ -6,6 +6,7 @@ import android.util.Log
 import java.util.concurrent.atomic.AtomicBoolean
 import app.qrmenu.driver.network.errors.DriverApiError
 import app.qrmenu.driver.network.errors.DriverErrorCode
+import app.qrmenu.driver.network.errors.PhoneVerificationFailureReason
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseException
 import com.google.firebase.FirebaseNetworkException
@@ -175,8 +176,11 @@ class FirebaseDriverPhoneVerifier @Inject constructor(
 internal fun Throwable.toPhoneVerificationError(): DriverApiError = when (this) {
     // Wrong six digits.
     is FirebaseAuthInvalidCredentialsException -> apiError(DriverErrorCode.OtpInvalid)
-    // Firebase's own SMS-quota guard — same shape as the backend's rate limiter.
-    is FirebaseTooManyRequestsException -> apiError(DriverErrorCode.TooManyAttempts)
+    // Firebase has blocked ALL requests from this device ("unusual activity")
+    // — a device-level ban, not the short per-code attempt limit that
+    // `ERROR_TOO_MANY_REQUESTS` below reports. Its own message tells the
+    // driver to wait hours or use their password instead.
+    is FirebaseTooManyRequestsException -> DriverApiError.PhoneVerification(PhoneVerificationFailureReason.Blocked)
     // Not an IOException, so `toDriverApiError()` in :core:network would never
     // catch this on its own — it must be classified here, before it reaches
     // that generic mapper via DriverApiError.Unknown.
@@ -184,7 +188,18 @@ internal fun Throwable.toPhoneVerificationError(): DriverApiError = when (this) 
     is FirebaseAuthException -> when (errorCode) {
         "ERROR_SESSION_EXPIRED", "ERROR_CODE_EXPIRED" -> apiError(DriverErrorCode.OtpExpired)
         "ERROR_INVALID_VERIFICATION_CODE" -> apiError(DriverErrorCode.OtpInvalid)
-        "ERROR_TOO_MANY_REQUESTS" -> apiError(DriverErrorCode.TooManyAttempts)
+        "ERROR_TOO_MANY_REQUESTS", "ERROR_QUOTA_EXCEEDED" -> apiError(DriverErrorCode.TooManyAttempts)
+        // Play Integrity AND reCAPTCHA both failed to attest this app/device,
+        // or the credential Firebase issued for the attempt was rejected —
+        // usually transient (a stale Play Integrity token, a flaky reCAPTCHA
+        // page). Sending again is the right advice.
+        "ERROR_MISSING_CLIENT_IDENTIFIER", "ERROR_INVALID_APP_CREDENTIAL" ->
+            DriverApiError.PhoneVerification(PhoneVerificationFailureReason.Unavailable)
+        // The SHA fingerprint/package this build ships does not match what is
+        // registered with Firebase. Not something a driver can fix by retrying.
+        "ERROR_APP_NOT_AUTHORIZED" -> DriverApiError.PhoneVerification(PhoneVerificationFailureReason.ConfigError)
+        // The driver dismissed the reCAPTCHA browser tab/page themselves.
+        "ERROR_WEB_CONTEXT_CANCELED" -> DriverApiError.PhoneVerification(PhoneVerificationFailureReason.Cancelled)
         else -> DriverApiError.Unknown(this)
     }
     else -> DriverApiError.Unknown(this)

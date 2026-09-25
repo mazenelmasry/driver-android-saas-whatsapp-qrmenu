@@ -5,9 +5,9 @@ kotlin = "2.0.21"
 ksp = "2.0.21-1.0.28"
 
 # Android
-compileSdk = "35"
+compileSdk = "36"
 minSdk = "26"
-targetSdk = "35"
+targetSdk = "36"
 
 # AndroidX core
 androidx-core-ktx = "1.15.0"

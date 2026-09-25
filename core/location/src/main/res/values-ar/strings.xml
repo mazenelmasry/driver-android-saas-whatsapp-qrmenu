@@ -5,7 +5,7 @@
     <string name="location_notification_body">أنت متاح الآن، لذا يستطيع المطاعم القريبة رؤية موقعك. اضغط لفتح التطبيق.</string>
 
     <string name="location_rationale_title">لماذا نحتاج موقعك فى الخلفية</string>
-    <string name="location_rationale_body">أثناء توفّرك، نتتبّع موقعك ليستطيع المطاعم إسناد طلبات قريبة لك ويرى العملاء رحلتك على الخريطة — حتى لو كان التطبيق مغلقاً. لا نتتبّعك إطلاقاً وأنت غير متاح.</string>
+    <string name="location_rationale_body">أثناء توفّرك نستخدم موقعك لتصلك طلبات التوصيل القريبة منك، ويرى المطعم مسار رحلة التوصيل — حتى لو كان التطبيق مغلقاً. لا نستخدم موقعك إطلاقاً وأنت غير متاح.</string>
     <string name="location_rationale_continue">متابعة</string>
 
     <string name="location_foreground_only_banner">موقع الخلفية مُعطَّل — تتحدّث الرحلات فقط والتطبيق مفتوح. اضغط للتصحيح.</string>

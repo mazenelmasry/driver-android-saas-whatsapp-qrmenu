@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import app.qrmenu.driver.network.errors.DriverApiError
 import app.qrmenu.driver.network.errors.DriverErrorCode
+import app.qrmenu.driver.network.errors.PhoneVerificationFailureReason
 import app.qrmenu.driver.ui.R
 
 /**
@@ -34,6 +35,15 @@ fun DriverApiError.messageResource(): Int = when (this) {
     is DriverApiError.Decode -> R.string.error_server_error
     is DriverApiError.Unknown -> R.string.error_unknown
     is DriverApiError.Api -> code?.messageResource() ?: R.string.error_unknown
+    is DriverApiError.PhoneVerification -> reason.messageResource()
+}
+
+@StringRes
+private fun PhoneVerificationFailureReason.messageResource(): Int = when (this) {
+    PhoneVerificationFailureReason.Unavailable -> R.string.error_phone_verification_unavailable
+    PhoneVerificationFailureReason.ConfigError -> R.string.error_phone_verification_config_error
+    PhoneVerificationFailureReason.Cancelled -> R.string.error_phone_verification_cancelled
+    PhoneVerificationFailureReason.Blocked -> R.string.error_phone_verification_blocked
 }
 
 @StringRes
@@ -87,4 +97,8 @@ val DriverApiError.isRetryable: Boolean
             -> true
             else -> false
         }
+        // The three transient local Firebase failures — a fresh send attempt
+        // is exactly the right recovery. `ConfigError` is deliberately
+        // excluded: retrying a fingerprint mismatch does nothing.
+        is DriverApiError.PhoneVerification -> reason != PhoneVerificationFailureReason.ConfigError
     }

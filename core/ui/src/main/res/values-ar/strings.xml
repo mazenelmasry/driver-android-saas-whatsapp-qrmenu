@@ -38,6 +38,10 @@
     <string name="error_validation_failed">راجع ما أدخلته.</string>
     <string name="error_rate_limited">طلبات كثيرة. انتظر قليلاً.</string>
     <string name="error_server_error">حدث خطأ لدينا. حاول مرة أخرى.</string>
+    <string name="error_phone_verification_unavailable">تعذّر تأكيد هذا الرقم الآن. اضغط «إرسال» مرة أخرى.</string>
+    <string name="error_phone_verification_config_error">هذا التطبيق غير مُهيَّأ للتحقق من الأرقام بعد. تواصل مع الدعم الفنى.</string>
+    <string name="error_phone_verification_cancelled">أُغلقت صفحة التحقق. أرسل الرمز مرة أخرى.</string>
+    <string name="error_phone_verification_blocked">أوقفنا مؤقتاً الطلبات من هذا الجوال بسبب نشاط غير معتاد. حاول مرة أخرى خلال بضع ساعات، أو سجّل الدخول بكلمة المرور إن كانت لديك.</string>
     <string name="error_network_unavailable">لا يوجد اتصال بالإنترنت.</string>
     <string name="error_unknown">حدث خطأ ما. حاول مرة أخرى.</string>
     <string name="action_retry">حاول مرة أخرى</string>

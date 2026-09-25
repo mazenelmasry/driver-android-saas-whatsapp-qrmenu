@@ -3,7 +3,9 @@ import app.qrmenu.driver.configureFlavors
 import app.qrmenu.driver.configureKotlinAndroid
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.kotlin.dsl.configure
+import org.gradle.kotlin.dsl.getByType
 
 class AndroidLibraryConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
@@ -15,8 +17,8 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
 
             extensions.configure<LibraryExtension> {
                 configureKotlinAndroid(this)
-                defaultConfig.targetSdk = 35
-                testOptions.targetSdk = 35
+                defaultConfig.targetSdk = extensions.getByType<VersionCatalogsExtension>().named("libs").findVersion("targetSdk").get().requiredVersion.toInt()
+                testOptions.targetSdk = extensions.getByType<VersionCatalogsExtension>().named("libs").findVersion("targetSdk").get().requiredVersion.toInt()
                 configureFlavors(this)
             }
         }

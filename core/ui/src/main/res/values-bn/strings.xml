@@ -38,6 +38,10 @@
     <string name="error_validation_failed">আপনি যা লিখেছেন তা দেখে নিন।</string>
     <string name="error_rate_limited">অনেক বেশি অনুরোধ। একটু অপেক্ষা করুন।</string>
     <string name="error_server_error">আমাদের দিকে কিছু সমস্যা হয়েছে। আবার চেষ্টা করুন।</string>
+    <string name="error_phone_verification_unavailable">এই মুহূর্তে এই ফোন নম্বরটি নিশ্চিত করা যায়নি। আবার \'পাঠান\' চাপুন।</string>
+    <string name="error_phone_verification_config_error">এই অ্যাপটি এখনও ফোন যাচাইয়ের জন্য প্রস্তুত নয়। অনুগ্রহ করে সাপোর্টের সাথে যোগাযোগ করুন।</string>
+    <string name="error_phone_verification_cancelled">যাচাইকরণ পাতাটি বন্ধ হয়ে গেছে। আবার কোড পাঠান।</string>
+    <string name="error_phone_verification_blocked">অস্বাভাবিক কার্যকলাপের কারণে আমরা এই ফোন থেকে অনুরোধ সাময়িকভাবে বন্ধ রেখেছি। কয়েক ঘণ্টা পরে আবার চেষ্টা করুন, অথবা পাসওয়ার্ড থাকলে তা দিয়ে সাইন ইন করুন।</string>
     <string name="error_network_unavailable">ইন্টারনেট সংযোগ নেই।</string>
     <string name="error_unknown">কিছু একটা ভুল হয়েছে। আবার চেষ্টা করুন।</string>
     <string name="action_retry">আবার চেষ্টা করুন</string>

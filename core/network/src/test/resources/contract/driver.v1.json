@@ -1653,6 +1653,11 @@
                         "format": "email",
                         "nullable": true,
                         "description": "`app.contact_email`, only ever a validated email address."
+                    },
+                    "account_deletion_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "description": "Google Play also requires a PUBLIC WEB page (reachable WITHOUT the app) where a driver can request account deletion, alongside the in-app `POST /driver/account/deletion-request` path. This is that page's URL — always present (the backend's own route, not a settings-backed value that can go unset or malformed, unlike the five fields above). The app may show it as a fallback link, or simply not need it since the in-app path exists too.\n"
                     }
                 }
             },

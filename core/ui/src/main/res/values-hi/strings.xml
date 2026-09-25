@@ -38,6 +38,10 @@
     <string name="error_validation_failed">आपने जो भरा है उसे देख लें।</string>
     <string name="error_rate_limited">बहुत ज़्यादा अनुरोध। थोड़ा रुकें।</string>
     <string name="error_server_error">हमारी तरफ़ कुछ गड़बड़ हुई। दोबारा कोशिश करें।</string>
+    <string name="error_phone_verification_unavailable">अभी इस फ़ोन नंबर की पुष्टि नहीं हो सकी। फिर से \'भेजें\' दबाएँ।</string>
+    <string name="error_phone_verification_config_error">यह ऐप अभी फ़ोन सत्यापन के लिए तैयार नहीं है। कृपया सपोर्ट से संपर्क करें।</string>
+    <string name="error_phone_verification_cancelled">सत्यापन पेज बंद हो गया। कोड फिर से भेजें।</string>
+    <string name="error_phone_verification_blocked">असामान्य गतिविधि के कारण हमने इस फ़ोन से अनुरोध अस्थायी रूप से रोक दिए हैं। कुछ घंटों बाद फिर से कोशिश करें, या यदि आपके पास पासवर्ड है तो उससे साइन इन करें।</string>
     <string name="error_network_unavailable">इंटरनेट कनेक्शन नहीं है।</string>
     <string name="error_unknown">कुछ ग़लत हो गया। दोबारा कोशिश करें।</string>
     <string name="action_retry">दोबारा कोशिश करें</string>

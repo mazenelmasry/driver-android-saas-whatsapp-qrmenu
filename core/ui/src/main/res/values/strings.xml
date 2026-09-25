@@ -38,6 +38,10 @@
     <string name="error_validation_failed">Please check what you entered.</string>
     <string name="error_rate_limited">Too many requests. Wait a little.</string>
     <string name="error_server_error">Something went wrong on our side. Try again.</string>
+    <string name="error_phone_verification_unavailable">Couldn\'t confirm this phone right now. Tap Send again.</string>
+    <string name="error_phone_verification_config_error">This app isn\'t set up to verify phones yet. Please contact support.</string>
+    <string name="error_phone_verification_cancelled">The verification page was closed. Send the code again.</string>
+    <string name="error_phone_verification_blocked">We\'ve temporarily paused requests from this phone due to unusual activity. Try again in a few hours, or sign in with your password if you have one.</string>
     <string name="error_network_unavailable">No internet connection.</string>
     <string name="error_unknown">Something went wrong. Try again.</string>
     <string name="action_retry">Try again</string>

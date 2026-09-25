@@ -38,6 +38,10 @@
     <string name="error_validation_failed">براہ کرم درج کردہ معلومات دیکھیں۔</string>
     <string name="error_rate_limited">بہت زیادہ درخواستیں۔ تھوڑا انتظار کریں۔</string>
     <string name="error_server_error">ہماری طرف سے کچھ خرابی ہوئی۔ دوبارہ کوشش کریں۔</string>
+    <string name="error_phone_verification_unavailable">ابھی اس فون نمبر کی تصدیق نہیں ہو سکی۔ دوبارہ \'بھیجیں\' دبائیں۔</string>
+    <string name="error_phone_verification_config_error">یہ ایپ ابھی فون تصدیق کے لیے تیار نہیں ہے۔ براہ کرم سپورٹ سے رابطہ کریں۔</string>
+    <string name="error_phone_verification_cancelled">تصدیقی صفحہ بند ہو گیا۔ کوڈ دوبارہ بھیجیں۔</string>
+    <string name="error_phone_verification_blocked">غیر معمولی سرگرمی کی وجہ سے ہم نے اس فون سے درخواستیں عارضی طور پر روک دی ہیں۔ چند گھنٹوں بعد دوبارہ کوشش کریں، یا اگر آپ کے پاس پاس ورڈ ہے تو اس سے سائن ان کریں۔</string>
     <string name="error_network_unavailable">انٹرنیٹ کنکشن نہیں ہے۔</string>
     <string name="error_unknown">کچھ غلط ہو گیا۔ دوبارہ کوشش کریں۔</string>
     <string name="action_retry">دوبارہ کوشش کریں</string>
